@@ -1,0 +1,20 @@
+LIBRARY    game_tools_lib_plugin
+EXPORTS
+    initWindow
+    botGuard
+    isWindowOpen
+    hasWindowFocus
+    setWindowFocus
+    getMainDisplayWidth
+    getMainDisplayHeight
+    getWindowBounds
+    closeWindow
+    cleanupMemory
+    getFullMainDisplay
+    getFullWindow
+    getImageOfWindow
+    getPixelOfWindow
+    getDisplayMousePos
+    getWindowMousePos
+    setDisplayMousePos
+    setWindowMousePos
