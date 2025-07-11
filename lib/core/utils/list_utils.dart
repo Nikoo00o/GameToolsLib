@@ -1,6 +1,18 @@
+import 'dart:typed_data' show Uint8List;
+
 import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
+import 'package:game_tools_lib/core/utils/num_utils.dart';
 
+/// Provides [equals] for [List]
+extension ListExtension<T> on List<T> {
+  /// Always use this method if you want to compare list equality by comparing the individual elements of the list instead
+  /// of the default comparison of the list references themselves! (does not compare by runtime typ and instead uses the
+  /// comparison operator==)
+  bool equals(List<T> other) => ListUtils.equals(this, other);
+}
+
+/// Provides list element equality comparison
 abstract final class ListUtils {
   /// Always use this method if you want to compare list equality by comparing the individual elements of the list instead
   /// of the default comparison of the list references themselves! (does not compare by runtime typ and instead uses the
@@ -27,10 +39,27 @@ abstract final class ListUtils {
 
     return true;
   }
-}
 
-const DeepCollectionEquality _equality = DeepCollectionEquality();
+  /// Returns a List of [length] bytes with integer values from 0 to 255 which are cryptographically secure random numbers!
+  static Uint8List getRandomBytes(int length) {
+    return Uint8List.fromList(List<int>.generate(length, (int index) => NumUtils.getCryptoRandomNumber(0, 255)));
+  }
 
-bool _isEquatable(dynamic object) {
-  return object is Equatable || object is EquatableMixin;
+  /// returns [first] + [second]
+  static Uint8List combineLists(Uint8List first, Uint8List second) {
+    final Uint8List result = Uint8List(first.length + second.length);
+    for (int i = 0; i < first.length; i++) {
+      result[i] = first[i];
+    }
+    for (int i = 0; i < second.length; i++) {
+      result[i + first.length] = second[i];
+    }
+    return result;
+  }
+
+  static const DeepCollectionEquality _equality = DeepCollectionEquality();
+
+  static bool _isEquatable(dynamic object) {
+    return object is Equatable || object is EquatableMixin;
+  }
 }
