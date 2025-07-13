@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
-import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:game_tools_lib/core/config/fixed_config.dart';
@@ -11,9 +10,10 @@ import 'package:game_tools_lib/core/logger/custom_logger.dart';
 import 'package:game_tools_lib/core/logger/log_color.dart';
 import 'package:game_tools_lib/core/logger/log_level.dart';
 import 'package:game_tools_lib/core/logger/log_message.dart';
-import 'package:game_tools_lib/core/utils/file_utils.dart';
+import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/data/game/game_window.dart';
 import 'package:game_tools_lib/data/native/ffi_loader.dart';
+import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/data/native/native_window.dart' show NativeWindow;
 import 'package:game_tools_lib/domain/entities/model.dart';
 import 'package:hive/hive.dart';
@@ -35,11 +35,16 @@ part 'package:game_tools_lib/data/native/hive_database_mock.dart';
 ///
 /// For Logging use static methods [Logger.error], [Logger.warn], [Logger.info], [Logger.debug], [Logger.verbose].
 /// Config Values should be saved in a subclass of [GameToolsConfig] and can be used with [config].
-/// For other file, or data storage, use [HiveDatabase]
+/// For other file, or data storage, use [HiveDatabase] with [database]
+///
+/// To Interact with the game window with its bounds and status and also images (see [NativeImage]), look at
+/// [GameWindow] with [mainGameWindow]
+///
+/// To Interact with the input like mouse and keyboard events, look at [InputManager] (only static access)
 final class GameToolsLib extends GameToolsLibHelper {
   /// Sets the [GameToolsConfig.config] at the beginning of the program to your subclass instance [config].
   ///
-  /// This should be called by the user. Multiple calls will just return true
+  /// This should be called by the user. Multiple calls will just return true. Read [GameToolsLib] Documentation!
   ///
   /// This will then block until the game tools lib is initialized and return true as soon as it is running (and
   /// otherwise false if an exception happened)

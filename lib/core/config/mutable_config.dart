@@ -25,8 +25,11 @@ part 'package:game_tools_lib/core/config/mutable_config_option.dart';
 base class MutableConfig {
   /// The current [logLevel] of the logger. All logs with a higher value than this will be ignored and only
   /// the more important logs with a lower [LogLevel] will be printed and stored!
-  /// Default is [LogLevel.VERBOSE] to log everything!
-  LogLevelConfigOption get logLevel => LogLevelConfigOption(key: "logLevel", defaultValue: LogLevel.VERBOSE);
+  /// Default is [LogLevel.SPAM] to log everything!
+  LogLevelConfigOption get logLevel => LogLevelConfigOption(key: "Log Level", defaultValue: LogLevel.SPAM);
+
+  /// Like [logLevel], but this here should instead constraint which logs are able to be logged into the UI 
+  LogLevelConfigOption get uiLogLevel => LogLevelConfigOption(key: "UI Log Level", defaultValue: LogLevel.DEBUG);
 
   /// Controls how the window names will be matched ([false] = window title only has to contain the [GameWindow.name].
   /// Otherwise if [true] it has to be exactly the same). Used for [GameWindow], default is [false].

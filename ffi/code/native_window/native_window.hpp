@@ -4,6 +4,14 @@
 #ifndef NATIVE_WINDOW_H
 #define NATIVE_WINDOW_H
 
+/// Simple integer to detect dll library mismatches. Has to be incremented when native code is modified!
+/// Also Modify the version in native_window.dart!
+# define _NATIVE_CODE_VERSION 5
+
+/// Simple integer to detect dll library mismatches. Has to be incremented when native code is modified!
+/// Also Modify the version in native_window.dart!
+EXPORT int nativeCodeVersion();
+
 /// This must be called first to initialize the windowName (also resets the handle).
 /// The windowID starts at 0 and has to be used for the other functions (only numbers 0 >= windowID < 100 )
 /// Name Examples: "Path of Exile", "TL", "League of Legends"
@@ -81,16 +89,25 @@ EXPORT void setDisplayMousePos(int x, int y);
 /// If the window is not open, this will return false
 EXPORT bool setWindowMousePos(int windowID, int x, int y);
 
+/// Relative Mouse Move (can be negative)
+EXPORT void moveMouse(int dx, int dy);
 
-// todo: get key state, set key, etc
+/// Scrolls by this amount of scroll wheel clicks into one direction (can be negative for reverse)
+EXPORT void scrollMouse(int scrollClickAmount);
+/// Sends a mouse event of: _MOUSEEVENTF_LEFTDOWN, _MOUSEEVENTF_LEFTUP, _MOUSEEVENTF_RIGHTDOWN, _MOUSEEVENTF_RIGHTUP,
+/// _MOUSEEVENTF_MIDDLEDOWN, _MOUSEEVENTF_MIDDLEUP
+EXPORT void sendMouseEvent(int mouseEvent);
+/// keyUp=true will send a key release event and otherwise a key pressed down event is send
+/// keyCode represents the virtual keycode of the key
+EXPORT void sendKeyEvent(bool keyUp, unsigned short keyCode);
+/// Same as sendKeyEvent, but with multiple key events at the same time
+EXPORT void sendKeyEvents(bool keyUp, unsigned short* keyCodes, unsigned short amountOfKeys);
 
+/// Returns if the key, or mouse button is currently down (also works correctly if left and right mouse buttons are
+/// swapped). needs virtual key codes!
+EXPORT bool isKeyDown(unsigned short keyCode);
 
-
-
-
-
-/// Should always be the last function in the header and it has to return 5464696 in addition to input
-/// Guard function for the init call so that the dart code can check if this lib was not modified
-EXPORT int botGuard(int input);
+/// Returns true if a key like caps lock, etc is toggled on. (also uses virtual key codes)
+EXPORT bool isKeyToggled(unsigned short keyCode);
 
 #endif //NATIVE_WINDOW_H

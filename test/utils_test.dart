@@ -48,7 +48,7 @@ void _testGeneral() {
     for (int i = 0; i < 7; ++i) {
       Utils.executePeriodicSync(delay: delay * 2, callback: syncCallback);
       await Utils.executePeriodicAsync(delay: delay * 2, callback: asyncCallback);
-      await Future<void>.delayed(delay);
+      await Utils.delay(delay);
     }
     expect(syncCounter, 4, reason: "sync counter should be half");
     expect(asyncCounter, 4, reason: "async counter should be half");

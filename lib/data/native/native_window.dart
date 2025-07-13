@@ -1,15 +1,23 @@
 import 'dart:ffi';
+import 'dart:io' show Platform;
 import 'dart:math' show Point;
 import 'dart:ui' show Color;
 import 'package:ffi/ffi.dart';
+import 'package:flutter/services.dart' show LogicalKeyboardKey, kWindowsToLogicalKey;
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/utils/Bounds.dart';
-import 'package:game_tools_lib/data/game/game_window.dart' show GameWindow;
+import 'package:game_tools_lib/data/game/game_window.dart' show GameWindow, InputManager;
 import 'package:game_tools_lib/data/native/ffi_loader.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:opencv_dart/opencv.dart' as cv;
+
+part 'package:game_tools_lib/core/enums/input_enums.dart';
+
+/// Simple integer to detect dll library mismatches. Has to be incremented when native code is modified!
+/// Also Modify the version in native_window.h
+const int _nativeCodeVersion = 5;
 
 /// First local conversions of classes/structs from c code that are used in the functions below
 final class _Rect extends Struct {
@@ -35,11 +43,11 @@ final class _Point extends Struct {
 }
 
 /// Then Typedefs in pairs of native function syntax, then dart function syntax
+typedef versionFuncN = Int Function();
+typedef versionFuncD = int Function();
+
 typedef initWindowN = Bool Function(Int, Pointer<Utf8>, Bool, Bool);
 typedef initWindowD = bool Function(int, Pointer<Utf8>, bool, bool);
-
-typedef guardFuncN = Int Function(Int);
-typedef guardFuncD = int Function(int);
 
 typedef isWindowOpenN = Bool Function(Int);
 typedef isWindowOpenD = bool Function(int);
@@ -87,6 +95,27 @@ typedef setDisplayMousePosD = void Function(int, int);
 typedef setWindowMousePosN = Bool Function(Int, Int, Int);
 typedef setWindowMousePosD = bool Function(int, int, int);
 
+typedef moveMouseN = Void Function(Int, Int);
+typedef moveMouseD = void Function(int, int);
+
+typedef scrollMouseN = Void Function(Int);
+typedef scrollMouseD = void Function(int);
+
+typedef sendMouseEventN = Void Function(Int);
+typedef sendMouseEventD = void Function(int);
+
+typedef sendKeyEventN = Void Function(Bool, UnsignedShort);
+typedef sendKeyEventD = void Function(bool, int);
+
+typedef sendKeyEventsN = Void Function(Bool, Pointer<UnsignedShort>, UnsignedShort);
+typedef sendKeyEventsD = void Function(bool, Pointer<UnsignedShort>, int);
+
+typedef isKeyDownN = Bool Function(UnsignedShort);
+typedef isKeyDownD = bool Function(int);
+
+typedef isKeyToggledN = Bool Function(UnsignedShort);
+typedef isKeyToggledD = bool Function(int);
+
 /// Wrapper class for native c/c++ functions to interact with a game window, or the screen.
 ///
 /// Before using any methods that need a window id, [initWindow] has to be called once!
@@ -112,6 +141,14 @@ final class NativeWindow {
   late setDisplayMousePosD _setDisplayMousePos;
   late setWindowMousePosD _setWindowMousePos;
 
+  late moveMouseD _moveMouse;
+  late scrollMouseD _scrollMouse;
+  late sendMouseEventD _sendMouseEvent;
+  late sendKeyEventD _sendKeyEvent;
+  late sendKeyEventsD _sendKeyEvents;
+  late isKeyDownD _isKeyDown;
+  late isKeyToggledD _isKeyToggled;
+
   /// Now call constructor that initialized the api reference and looks up all functions with the correct types
   /// defined above!
   /// Afterwards create methods with the same name that calls the private member function pointer
@@ -135,6 +172,13 @@ final class NativeWindow {
     _getWindowMousePos = _api.lookupFunction<getWindowMousePosN, getWindowMousePosD>("getWindowMousePos");
     _setDisplayMousePos = _api.lookupFunction<setDisplayMousePosN, setDisplayMousePosD>("setDisplayMousePos");
     _setWindowMousePos = _api.lookupFunction<setWindowMousePosN, setWindowMousePosD>("setWindowMousePos");
+    _moveMouse = _api.lookupFunction<moveMouseN, moveMouseD>("moveMouse");
+    _scrollMouse = _api.lookupFunction<scrollMouseN, scrollMouseD>("scrollMouse");
+    _sendMouseEvent = _api.lookupFunction<sendMouseEventN, sendMouseEventD>("sendMouseEvent");
+    _sendKeyEvent = _api.lookupFunction<sendKeyEventN, sendKeyEventD>("sendKeyEvent");
+    _sendKeyEvents = _api.lookupFunction<sendKeyEventsN, sendKeyEventsD>("sendKeyEvents");
+    _isKeyDown = _api.lookupFunction<isKeyDownN, isKeyDownD>("isKeyDown");
+    _isKeyToggled = _api.lookupFunction<isKeyToggledN, isKeyToggledD>("isKeyToggled");
   }
 
   /// Has to be called once for each [windowName] to initialize it with its [windowID] which is then used to call the
@@ -172,10 +216,10 @@ final class NativeWindow {
   /// May return null if the window was not open.
   Bounds<int>? getWindowBounds(int windowID) {
     final _Rect bounds = _getWindowBounds.call(windowID);
-    if (bounds.left == 999999999 &&
-        bounds.top == 999999999 &&
-        bounds.right == 999999999 &&
-        bounds.bottom == 999999999) {
+    if (bounds.left == _INVALID_VALUE &&
+        bounds.top == _INVALID_VALUE &&
+        bounds.right == _INVALID_VALUE &&
+        bounds.bottom == _INVALID_VALUE) {
       return null;
     }
     return Bounds<int>.sides(left: bounds.left, top: bounds.top, right: bounds.right, bottom: bounds.bottom);
@@ -206,12 +250,7 @@ final class NativeWindow {
     final int width = getMainDisplayWidth();
     final int height = getMainDisplayHeight();
     final Pointer<UnsignedChar> data = _getFullMainDisplay.call();
-    final cv.Mat mat = cv.Mat.fromBuffer(height, width, cv.MatType.CV_8UC4, data as Pointer<Void>);
-    // still needs to be deleted / cleaned up at some point. imread should also be tested
-    // maybe also write some tests? also at start of program should check if opencv dll is working and also the own
-    // custom dll
-    // or look at https://stackoverflow.com/questions/59422546/an-efficient-way-to-convert-bytedata-in-dart-to-unsigned-char-in-c/59424471#59424471
-    return NativeImage();
+    return NativeImage.native(width: width, height: height, data: data);
   }
 
   /// image displaying the whole window
@@ -221,8 +260,7 @@ final class NativeWindow {
     if (bounds == null || data.address == 0) {
       return null;
     }
-    final cv.Mat mat = cv.Mat.fromBuffer(bounds.height, bounds.width, cv.MatType.CV_8UC4, data as Pointer<Void>);
-    return NativeImage();
+    return NativeImage.native(width: bounds.width, height: bounds.height, data: data);
   }
 
   /// sub image relative to top left corner of the window
@@ -231,14 +269,13 @@ final class NativeWindow {
     if (data.address == 0) {
       return null;
     }
-    final cv.Mat mat = cv.Mat.fromBuffer(height, width, cv.MatType.CV_8UC4, data as Pointer<Void>);
-    return NativeImage(); // todo: implement all 3
+    return NativeImage.native(width: width, height: height, data: data);
   }
 
   /// relative to top left corner of window, alpha is always 255
   Color? getPixelOfWindow(int windowID, int x, int y) {
     final int pixel = _getPixelOfWindow(windowID, x, y);
-    if (pixel == 999999999) {
+    if (pixel == _INVALID_VALUE) {
       return null;
     }
     return Color.fromARGB(255, pixel, pixel >> 8, pixel >> 16);
@@ -253,7 +290,7 @@ final class NativeWindow {
   /// relative to top left corner of window
   Point<int>? getWindowMousePos(int windowID) {
     final _Point point = _getWindowMousePos.call(windowID);
-    if (point.x == 999999999 && point.y == 999999999) {
+    if (point.x == _INVALID_VALUE && point.y == _INVALID_VALUE) {
       return null;
     }
     return Point<int>(point.x, point.y);
@@ -267,6 +304,55 @@ final class NativeWindow {
   /// relative to top left corner of window
   bool setWindowMousePos(int windowID, int x, int y) {
     return _setWindowMousePos.call(windowID, x, y);
+  }
+
+  /// Relative Mouse Move to current mouse position (can be negative)
+  void moveMouse(int dx, int dy) {
+    _moveMouse.call(dx, dy);
+  }
+
+  /// Scrolls by this amount of scroll wheel clicks into one direction (can be negative for reverse)
+  void scrollMouse(int scrollClickAmount) {
+    _scrollMouse.call(scrollClickAmount);
+  }
+
+  /// Sends a mouse event to interact with the mouse buttons
+  void sendMouseEvent(MouseEvent mouseEvent) {
+    _sendMouseEvent.call(mouseEvent._convertToPlatformCode());
+  }
+
+  /// Sends a key event to interact with the keyboard keys.
+  /// [keyUp]=true will send a key release event and otherwise a key pressed down event is send.
+  /// [keyCode] represents the virtual keycode of the key
+  void sendKeyEvent({required bool keyUp, required LogicalKeyboardKey keyCode}) {
+    _sendKeyEvent.call(keyUp, keyCode._convertToPlatformCode());
+  }
+
+  /// Same as sendKeyEvent, but with multiple key events at the same time
+  void sendKeyEvents({required bool keyUp, required List<LogicalKeyboardKey> keyCodes}) {
+    final int amountOfKeys = keyCodes.length;
+    final Pointer<UnsignedShort> pointer = calloc<UnsignedShort>(amountOfKeys + 1);
+    for (int index = 0; index < amountOfKeys; index++) {
+      pointer[index] = keyCodes[index]._convertToPlatformCode();
+    }
+    _sendKeyEvents.call(keyUp, pointer, amountOfKeys);
+    calloc.free(pointer);
+  }
+
+  /// Returns if the virtual keycode is currently pressed down
+  bool isKeyDown(LogicalKeyboardKey keyCode) {
+    return _isKeyDown.call(keyCode._convertToPlatformCode());
+  }
+
+  /// Returns if virtual mouse key code is currently down(also works correctly if left and right mouse buttons are
+  /// swapped).
+  bool isMouseDown(MouseKey keyCode) {
+    return _isKeyDown.call(keyCode._convertToPlatformCode());
+  }
+
+  /// Returns true if a key like caps lock, etc is toggled on. (also uses virtual key codes)
+  bool isKeyToggled(LogicalKeyboardKey keyCode) {
+    return _isKeyToggled.call(keyCode._convertToPlatformCode());
   }
 
   /// Only used for logging and also as the first use to load the opencv library in [GameToolsLib.initGameToolsLib]!
@@ -286,16 +372,17 @@ final class NativeWindow {
   /// unchanged since last time)
   static Future<bool> initNativeWindow() async {
     if (_nativeWindowInstance == null) {
-      _nativeWindowInstance = NativeWindow._();
-      late final guardFuncD fun;
+      late final versionFuncD fun;
       try {
-        fun = _nativeWindowInstance!._api.lookupFunction<guardFuncN, guardFuncD>("botGuard");
+        _nativeWindowInstance = NativeWindow._();
+        fun = _nativeWindowInstance!._api.lookupFunction<versionFuncN, versionFuncD>("nativeCodeVersion");
       } catch (e, s) {
         Logger.warn("initNativeWindow fail details:", e, s);
         return false;
       }
-      final int result = fun.call(39184);
-      if (result != (5464696 + 39184)) {
+      final int version = fun.call();
+      if (version != _nativeCodeVersion) {
+        Logger.warn("Native code has version $version and dart code has version $_nativeCodeVersion");
         return false;
       }
       GameWindow.updateConfigVariables(
@@ -305,6 +392,8 @@ final class NativeWindow {
     }
     return true;
   }
+
+  static const int _INVALID_VALUE = 999999999;
 
   /// removes the internal [instance] reference, so mostly used for testing
   static void clearNativeWindowInstance() {

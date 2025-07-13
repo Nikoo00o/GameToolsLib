@@ -138,7 +138,7 @@ sealed class GameToolsLibHelper extends GameToolsLibPlatform {
 
   /// shows a warning after a delay of 30 seconds if the library was not initialized by then
   static Future<void> _showStartupWarning() async {
-    await Future<void>.delayed(const Duration(seconds: 30));
+    await Utils.delay(const Duration(seconds: 30));
     if (_initialized == false) {
       await StartupLogger().log(
         "GameToolsLib is not initialized! Remember to call GameToolsLib.initGameToolsLib at the start of your program",

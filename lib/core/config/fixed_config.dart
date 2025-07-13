@@ -26,11 +26,14 @@ base class FixedConfig {
   /// Local path to stored database files (for mutable config values) and other files
   String get databaseFolder => FileUtils.combinePath(<String>[resourceFolderPath, "database"]);
 
-  /// Min and max values for a short random delay
-  Point<int> get shortDelayMS => const Point<int>(6, 9);
+  /// Min and max values for a tiny random delay (default is half of [shortDelayMS]. only rarely used)
+  Point<int> get tinyDelayMS => const Point<int>(3, 5);
+
+  /// Min and max values for a short random delay (used for most actions)
+  Point<int> get shortDelayMS => const Point<int>(7, 11);
 
   /// Min and max values for a medium random delay
-  Point<int> get mediumDelayMS => const Point<int>(14, 24);
+  Point<int> get mediumDelayMS => const Point<int>(15, 26);
 
   /// Min and max values for a long random delay
   Point<int> get longDelayMS => const Point<int>(80, 150);

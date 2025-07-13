@@ -1,7 +1,7 @@
 LIBRARY    game_tools_lib_plugin
 EXPORTS
+    nativeCodeVersion
     initWindow
-    botGuard
     isWindowOpen
     hasWindowFocus
     setWindowFocus
@@ -18,3 +18,10 @@ EXPORTS
     getWindowMousePos
     setDisplayMousePos
     setWindowMousePos
+    moveMouse
+    scrollMouse
+    sendMouseEvent
+    sendKeyEvent
+    sendKeyEvents
+    isKeyDown
+    isKeyToggled

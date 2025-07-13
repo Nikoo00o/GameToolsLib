@@ -73,4 +73,7 @@ abstract final class Utils {
     assert(_executors.keys.length < maxExecutorCountGuard);
     callback.call();
   }
+
+  /// Just shorter syntax than Future<void>.delayed
+  static Future<void> delay(Duration delay) async => Future<void>.delayed(delay);
 }

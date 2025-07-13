@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:game_tools_lib/core/config/fixed_config.dart';
+
 /// contains useful number functions and also provides extensions on [int] and [double] with internal helper methods!
 /// Like for example [absPoint], [getRandomNumber], or [gcd]
 abstract final class NumUtils {
@@ -25,6 +27,13 @@ abstract final class NumUtils {
   /// Returns true if a dice was rolled successfully
   /// The values for [percentChance] should range from 0.00 to 1.00 (for 0 to 100 percent where 0.5 would be 50%)
   static bool getRandomPercent(double percentChance) => getRandomNumber(0, 99) < percentChance * 100.0;
+
+  /// Returns a [Duration] object with a random delay in milliseconds between the values of [delayInMS].
+  /// If that's null, it defaults to [defaultIfNull] and if that is null as well, then it uses [FixedConfig.shortDelayMS]
+  static Duration getRandomDuration(Point<int>? delayInMS, {Point<int>? defaultIfNull}) {
+    defaultIfNull ??= FixedConfig.fixedConfig.shortDelayMS;
+    return Duration(milliseconds: NumUtils.getRandomNumberP(delayInMS ?? defaultIfNull));
+  }
 
   /// Returns Absolute non negative values. If [higherThanZero] is true, then this will also not allow values of 0.
   /// For [T] = [double], this will then set the value to [_epsilon]
@@ -145,8 +154,11 @@ extension PointExtension<T extends num> on Point<T> {
   /// Returns a modified copy of this with added [addXValue] and [addYValue]
   Point<T> move(T addXValue, T addYValue) => Point<T>(x + addXValue as T, y + addYValue as T);
 
-  /// Any num point treated as int (no decimal points)
+  /// Any num point copied as int (no decimal points)
   Point<int> toIntPoint() => Point<int>(x.toInt(), y.toInt());
+
+  /// Any num point copied as double (with decimal points)
+  Point<double> toDoublePoint() => Point<double>(x.toDouble(), y.toDouble());
 
   /// Ignores runtime type of other type and uses [DoubleExtension.isEqual] for doubles
   bool equals(Object other) {

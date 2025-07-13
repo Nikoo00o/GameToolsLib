@@ -42,7 +42,7 @@ final class _ExampleFixedConfig extends FixedConfig {
 
 /// Adds a new more complex member [somethingNew] by using a [ModelConfigOption] with a [ExampleModel] as the stored
 /// object.
-/// Also here the [logLevel] is only debug per default
+/// Also here the [logLevel] is overridden with a different key, but the same default value
 final class _ExampleMutableConfig extends MutableConfig {
   /// The key of the config value is just the same as the member variable name
   ModelConfigOption<ExampleModel> get somethingNew => ModelConfigOption<ExampleModel>(
@@ -54,7 +54,7 @@ final class _ExampleMutableConfig extends MutableConfig {
   );
 
   @override
-  LogLevelConfigOption get logLevel => LogLevelConfigOption(key: "logLevel", defaultValue: LogLevel.DEBUG);
+  LogLevelConfigOption get logLevel => LogLevelConfigOption(key: "Example Log Level", defaultValue: LogLevel.VERBOSE);
 }
 
 /// Example on how to override [GameToolsConfig]. Returns newly created objects of the custom config types

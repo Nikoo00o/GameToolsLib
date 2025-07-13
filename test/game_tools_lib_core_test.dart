@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/logger/log_level.dart';
+import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/data/game/game_window.dart';
 import 'package:game_tools_lib/domain/entities/model.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
@@ -12,7 +13,7 @@ void main() {
   setUp(() async {
     // default init call for testing
     final bool init = await _initGameToolsLib();
-    await Future<void>.delayed(Duration(milliseconds: 5)); // get last log out of test
+    await Utils.delay(Duration(milliseconds: 5)); // get last log out of test
     if (init == false) {
       throw TestException(message: "default test init game tools lib failed");
     }
@@ -20,7 +21,7 @@ void main() {
 
   tearDown(() async {
     await GameToolsLib.close(); // cleanup static references
-    await Future<void>.delayed(Duration(milliseconds: 5)); // get last log out of test
+    await Utils.delay(Duration(milliseconds: 5)); // get last log out of test
   });
 
   group("GameToolsLib Core Tests: ", () {
@@ -43,7 +44,7 @@ void _testInit() {
     final bool success = await _initGameToolsLib();
     expect(success, true);
     expect(GameToolsLib.baseConfig.fixed.logIntoStorage, true, reason: "log into storage is true");
-    expect(await GameToolsLib.baseConfig.mutable.logLevel.getValue(), LogLevel.VERBOSE, reason: "log level is verbose");
+    expect(await GameToolsLib.baseConfig.mutable.logLevel.getValue(), LogLevel.SPAM, reason: "log level is spam");
     expect(GameToolsLib.database.basePath, HiveDatabaseMock.FLUTTER_TEST_PATH, reason: "database path is testing");
   });
   test("initialize game tools lib with example config", () async {
@@ -51,7 +52,7 @@ void _testInit() {
     final bool success = await GameToolsLibHelper.useExampleConfig(isCalledFromTesting: true);
     expect(success, true);
     expect(GameToolsLib.baseConfig.fixed.logIntoStorage, false, reason: "log into storage is false");
-    expect(await GameToolsLib.baseConfig.mutable.logLevel.getValue(), LogLevel.DEBUG, reason: "log level is debug");
+    expect(await GameToolsLib.baseConfig.mutable.logLevel.getValue(), LogLevel.VERBOSE, reason: "log level is verbose");
   });
   test("simulating database error in init should return false", () async {
     await GameToolsLib.close();
@@ -135,7 +136,7 @@ void _testInit() {
       key: "logLevel",
       defaultValue: LogLevel.VERBOSE,
       updateCallback: (_) async {
-        await Future<void>.delayed(Duration(milliseconds: 25));
+        await Utils.delay(Duration(milliseconds: 25));
         called = true;
       },
     );
@@ -147,7 +148,7 @@ void _testInit() {
     await logLevel.getValue();
     expect(called, false, reason: "no call after get");
     logLevel.onlyUpdateCachedValue(null);
-    await Future<void>.delayed(Duration(milliseconds: 50)); // longer wait than the callback takes!
+    await Utils.delay(Duration(milliseconds: 50)); // longer wait than the callback takes!
     expect(called, true, reason: "async call after update cached value only with delay");
     logLevel = LogLevelConfigOption(
       key: "logLevel",

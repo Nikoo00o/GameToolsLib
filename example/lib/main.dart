@@ -1,20 +1,17 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
+import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/data/game/game_window.dart';
+import 'package:game_tools_lib/data/native/native_window.dart';
 import 'package:game_tools_lib/domain/entities/model.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 
 /// this should be unawaited
 Future<void> _constantRebuilds(StateSetter setState, int millisecondDelay) async {
   while (true) {
-    await Future<void>.delayed(Duration(milliseconds: millisecondDelay));
-    /*
-    await GameToolsLib.mainGameWindow.moveMouse(
-      GameToolsLib.mainGameWindow.getWindowBounds().size.x ~/ 2,
-      GameToolsLib.mainGameWindow.getWindowBounds().size.y ~/ 2,
-    );
-    */
+    await Utils.delay(Duration(milliseconds: millisecondDelay));
     setState(() {});
   }
 }
@@ -43,12 +40,21 @@ class ExampleApp extends StatelessWidget {
             children: <Widget>[
               Text(windowText),
               SizedBox(height: 5),
-              Text("Display Cursor Pos: ${GameWindow.displayMousePos}"),
+              Text("Display Cursor Pos: ${InputManager.displayMousePos}"),
               SizedBox(height: 5),
               if (windowFound) Text("Window Cursor Pos: ${GameToolsLib.mainGameWindow.windowMousePos}"),
               SizedBox(height: 5),
-              if (windowFound) Text("Pixel Colour: ${GameToolsLib.mainGameWindow.getPixelAtCursor()}"),
+              if (windowFound) Text("Pixel Colour: ${InputManager.getPixelAtCursor(GameToolsLib.mainGameWindow)}"),
               SizedBox(height: 5),
+              ElevatedButton(onPressed: () => GameToolsLib.mainGameWindow.moveMouse(0, 0), child: Text("move mouse")),
+              SizedBox(height: 5),
+              Text("oem1: ${InputManager.isKeyDown(BoardKey.oem1)}"),
+              Text("oem2: ${InputManager.isKeyDown(BoardKey.oem2)}"),
+              Text("oem3: ${InputManager.isKeyDown(BoardKey.oem3)}"),
+              Text("oem4: ${InputManager.isKeyDown(BoardKey.oem4)}"),
+              Text("oem5: ${InputManager.isKeyDown(BoardKey.oem5)}"),
+              Text("oem6: ${InputManager.isKeyDown(BoardKey.oem6)}"),
+              Text("oem7: ${InputManager.isKeyDown(BoardKey.oem7)}"),
             ],
           ),
         );
