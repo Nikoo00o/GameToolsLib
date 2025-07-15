@@ -38,6 +38,9 @@ base class FixedConfig {
   /// Min and max values for a long random delay
   Point<int> get longDelayMS => const Point<int>(80, 150);
 
+  /// Delay in milliseconds for the default value for [SpamIdentifier.delay]
+  int get logPeriodicSpamDelayMS => longDelayMS.y;
+
   /// Reference to the current instance of this
   static FixedConfig get fixedConfig => GameToolsConfig.baseConfig.fixed;
 }

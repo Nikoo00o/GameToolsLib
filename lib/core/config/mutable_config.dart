@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/logger/log_level.dart';
+import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/data/game/game_window.dart';
 import 'package:game_tools_lib/domain/entities/model.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
@@ -48,11 +50,13 @@ base class MutableConfig {
   );
 
   /// Used for both [alwaysMatchGameWindowNamesEqual] and [debugPrintGameWindowNames] callbacks to update native code.
+  /// Also waits [FixedConfig.tinyDelayMS] maximum afterwards!
   static Future<void> _updateGameWindowConfigValues(_) async {
     GameWindow.updateConfigVariables(
       alwaysMatchEqual: await mutableConfig.alwaysMatchGameWindowNamesEqual.valueNotNull(),
       printWindowNames: await mutableConfig.debugPrintGameWindowNames.valueNotNull(),
     );
+    await Utils.delayMS(FixedConfig.fixedConfig.tinyDelayMS.y);
   }
 
   /// You can override this to return references to those config options you want to be able to modify in the UI!

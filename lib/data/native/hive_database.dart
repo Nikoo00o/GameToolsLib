@@ -50,11 +50,11 @@ final class HiveDatabase {
     await deleteAllHiveDatabases();
     final List<String> files = await FileUtils.getFilesInDirectory(basePath);
     for (final String path in files) {
-      final File file = File(path);
-      if (file.existsSync()) {
-        Logger.info("deleting file ${file.path}");
-        await file.delete();
+      bool exists = await FileUtils.deleteFileAsync(path);
+      if (exists) {
+        Logger.info("deleted file $path");
       } else {
+        exists = await FileUtils.deleteDirectory(path);
         final Directory dir = Directory(path);
         if (dir.existsSync()) {
           Logger.info("deleting folder ${dir.path}");

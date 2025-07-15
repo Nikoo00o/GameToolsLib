@@ -37,6 +37,12 @@ final class KeyNotFoundException extends BaseException {
   const KeyNotFoundException({required super.message, super.messageParams});
 }
 
+/// Keycode for a key was not found
+final class ImageException extends BaseException {
+  const ImageException({required super.message, super.messageParams});
+}
+
+
 /// An exception only important for testing
 final class TestException extends BaseException {
   const TestException({required super.message, super.messageParams});

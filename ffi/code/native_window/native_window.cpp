@@ -186,12 +186,12 @@ EXPORT bool initWindow(int windowID, const char *windowName, bool alwaysMatchEqu
 {
     if ( windowID < 0 || windowID > 99 )
     {
+        _printWindowNames = printWindowNames;
+        _alwaysMatchEqual = alwaysMatchEqual;
         return false;
     }
     _windows[windowID].name = windowName;
     _windows[windowID].handle = 0;
-    _printWindowNames = printWindowNames;
-    _alwaysMatchEqual = alwaysMatchEqual;
     return true;
 }
 
@@ -216,8 +216,7 @@ EXPORT bool setWindowFocus(int windowID)
     HWND handle = _getWindowHandle(windowID);
     if ( handle != 0 )
     {
-        SetForegroundWindow(handle);
-        return true;
+        return SetForegroundWindow(handle);
     }
     return false;
 }
@@ -286,8 +285,6 @@ EXPORT unsigned char *getFullWindow(int windowID)
     RECT bounds = getWindowBounds(windowID);
     POINT pos{bounds.left, bounds.top};
     POINT size{bounds.right - bounds.left, bounds.bottom - bounds.top};
-    ClientToScreen(handle, &pos);
-    ClientToScreen(handle, &size);
     return _getImage(pos.x, pos.y, size.x, size.y);
 }
 
@@ -301,7 +298,6 @@ EXPORT unsigned char *getImageOfWindow(int windowID, int x, int y, int width, in
     POINT pos{x, y};
     POINT size{width, height};
     ClientToScreen(handle, &pos);
-    ClientToScreen(handle, &size);
     return _getImage(pos.x, pos.y, size.x, size.y);
 }
 

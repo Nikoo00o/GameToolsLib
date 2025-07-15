@@ -1,23 +1,21 @@
 import 'dart:ffi';
-import 'dart:io' show Platform;
 import 'dart:math' show Point;
 import 'dart:ui' show Color;
 import 'package:ffi/ffi.dart';
-import 'package:flutter/services.dart' show LogicalKeyboardKey, kWindowsToLogicalKey;
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:game_tools_lib/core/config/mutable_config.dart';
+import 'package:game_tools_lib/core/enums/input_enums.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
-import 'package:game_tools_lib/core/utils/Bounds.dart';
-import 'package:game_tools_lib/data/game/game_window.dart' show GameWindow, InputManager;
+import 'package:game_tools_lib/core/utils/bounds.dart';
+import 'package:game_tools_lib/data/game/game_window.dart' show GameWindow;
 import 'package:game_tools_lib/data/native/ffi_loader.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:opencv_dart/opencv.dart' as cv;
 
-part 'package:game_tools_lib/core/enums/input_enums.dart';
-
 /// Simple integer to detect dll library mismatches. Has to be incremented when native code is modified!
 /// Also Modify the version in native_window.h
-const int _nativeCodeVersion = 5;
+const int _nativeCodeVersion = 6;
 
 /// First local conversions of classes/structs from c code that are used in the functions below
 final class _Rect extends Struct {
@@ -194,6 +192,10 @@ final class NativeWindow {
     required bool alwaysMatchEqual,
     required bool printWindowNames,
   }) {
+    Logger.verbose(
+      "Init Native window windowID: $windowID, windowName: $windowName, "
+      "alwaysMatchEqual:$alwaysMatchEqual, printWindowNames:$printWindowNames",
+    );
     return _initWindow.call(windowID, windowName.toNativeUtf8(), alwaysMatchEqual, printWindowNames);
   }
 
@@ -246,30 +248,52 @@ final class NativeWindow {
   }
 
   /// image displaying the whole main display
-  NativeImage getFullMainDisplay() {
+  Future<NativeImage> getFullMainDisplay() async {
     final int width = getMainDisplayWidth();
     final int height = getMainDisplayHeight();
     final Pointer<UnsignedChar> data = _getFullMainDisplay.call();
-    return NativeImage.native(width: width, height: height, data: data);
+    return NativeImage.nativeAsync(width: width, height: height, data: data);
   }
 
   /// image displaying the whole window
-  NativeImage? getFullWindow(int windowID) {
+  Future<NativeImage?> getFullWindow(int windowID) async {
     final Bounds<int>? bounds = getWindowBounds(windowID);
     final Pointer<UnsignedChar> data = _getFullWindow.call(windowID);
     if (bounds == null || data.address == 0) {
       return null;
     }
-    return NativeImage.native(width: bounds.width, height: bounds.height, data: data);
+    return NativeImage.nativeAsync(
+      width: bounds.width,
+      height: bounds.height,
+      data: data,
+      logXPos: 0,
+      logYPos: 0,
+    );
   }
 
-  /// sub image relative to top left corner of the window
-  NativeImage? getImageOfWindow(int windowID, int x, int y, int width, int height) {
+  /// Returns a Sub image relative to top left corner of the window.
+  /// Per default [removeAlpha] is true to remove the alpha channel, because its not used for comparison. The other
+  /// methods of getting images also remove the alpha channel!
+  Future<NativeImage?> getImageOfWindow(
+    int windowID,
+    int x,
+    int y,
+    int width,
+    int height, {
+    bool removeAlpha = true,
+  }) async {
     final Pointer<UnsignedChar> data = _getImageOfWindow.call(windowID, x, y, width, height);
     if (data.address == 0) {
       return null;
     }
-    return NativeImage.native(width: width, height: height, data: data);
+    return NativeImage.nativeAsync(
+      width: width,
+      height: height,
+      data: data,
+      logXPos: x,
+      logYPos: y,
+      removeAlpha: removeAlpha,
+    );
   }
 
   /// relative to top left corner of window, alpha is always 255
@@ -318,14 +342,14 @@ final class NativeWindow {
 
   /// Sends a mouse event to interact with the mouse buttons
   void sendMouseEvent(MouseEvent mouseEvent) {
-    _sendMouseEvent.call(mouseEvent._convertToPlatformCode());
+    _sendMouseEvent.call(mouseEvent.convertToPlatformCode());
   }
 
   /// Sends a key event to interact with the keyboard keys.
   /// [keyUp]=true will send a key release event and otherwise a key pressed down event is send.
   /// [keyCode] represents the virtual keycode of the key
   void sendKeyEvent({required bool keyUp, required LogicalKeyboardKey keyCode}) {
-    _sendKeyEvent.call(keyUp, keyCode._convertToPlatformCode());
+    _sendKeyEvent.call(keyUp, keyCode.convertToPlatformCode());
   }
 
   /// Same as sendKeyEvent, but with multiple key events at the same time
@@ -333,7 +357,7 @@ final class NativeWindow {
     final int amountOfKeys = keyCodes.length;
     final Pointer<UnsignedShort> pointer = calloc<UnsignedShort>(amountOfKeys + 1);
     for (int index = 0; index < amountOfKeys; index++) {
-      pointer[index] = keyCodes[index]._convertToPlatformCode();
+      pointer[index] = keyCodes[index].convertToPlatformCode();
     }
     _sendKeyEvents.call(keyUp, pointer, amountOfKeys);
     calloc.free(pointer);
@@ -341,18 +365,18 @@ final class NativeWindow {
 
   /// Returns if the virtual keycode is currently pressed down
   bool isKeyDown(LogicalKeyboardKey keyCode) {
-    return _isKeyDown.call(keyCode._convertToPlatformCode());
+    return _isKeyDown.call(keyCode.convertToPlatformCode());
   }
 
   /// Returns if virtual mouse key code is currently down(also works correctly if left and right mouse buttons are
   /// swapped).
   bool isMouseDown(MouseKey keyCode) {
-    return _isKeyDown.call(keyCode._convertToPlatformCode());
+    return _isKeyDown.call(keyCode.convertToPlatformCode());
   }
 
   /// Returns true if a key like caps lock, etc is toggled on. (also uses virtual key codes)
   bool isKeyToggled(LogicalKeyboardKey keyCode) {
-    return _isKeyToggled.call(keyCode._convertToPlatformCode());
+    return _isKeyToggled.call(keyCode.convertToPlatformCode());
   }
 
   /// Only used for logging and also as the first use to load the opencv library in [GameToolsLib.initGameToolsLib]!

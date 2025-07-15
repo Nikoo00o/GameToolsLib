@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
-import "package:path/path.dart";
+import "package:path/path.dart" as p;
 
 abstract final class FileUtils {
   /// Returns the absolute full file path for a local relative file path inside of the parent directory of the script
-  /// (server, or client root application).
+  /// (like for example inside of a \"res\" folder, or \"assets\" folder).
   ///
   /// Important: the working directory (accessed with [workingDirectory]) might be different depending on how the
   /// script was run!!!!
@@ -13,12 +13,12 @@ abstract final class FileUtils {
   ///
   static String getLocalFilePath(String localPath) {
     if (_isCompiled == false) {
-      return canonicalize("$workingDirectory${Platform.pathSeparator}$localPath");
+      return absolutePath(combinePath(<String>[workingDirectory, localPath]));
     }
-    return canonicalize("${dirname(Platform.script.toFilePath())}${Platform.pathSeparator}$localPath");
+    return absolutePath(combinePath(<String>[p.dirname(Platform.script.toFilePath()), localPath]));
   }
 
-  /// combines the [parts] with [Platform.pathSeparator] in between them, but not at the start and end!
+  /// Combines the [parts] with [Platform.pathSeparator] in between them, but not at the start and end!
   static String combinePath(List<String> parts) {
     final StringBuffer output = StringBuffer("");
     for (int i = 0; i < parts.length; ++i) {
@@ -30,7 +30,19 @@ abstract final class FileUtils {
     return output.toString();
   }
 
-  static bool get _isCompiled => basename(Platform.resolvedExecutable) == basename(Platform.script.path);
+  /// Returns the absolute system file path to the local [relativePath].
+  /// Also canonicalizes paths (for example on windows no capitalization)
+  static String absolutePath(String relativePath) => p.canonicalize(relativePath);
+
+  /// Same as [absolutePath], but with a [file].
+  /// Also canonicalizes paths (for example on windows no capitalization)
+  static String absolutePathF(File file) => p.canonicalize(file.absolute.path);
+
+  /// Same as [absolutePath], but with a list of [parts] (see [combinePath].
+  /// Also canonicalizes paths (for example on windows no capitalization)
+  static String absolutePathP(List<String> parts) => p.canonicalize(combinePath(parts));
+
+  static bool get _isCompiled => p.basename(Platform.resolvedExecutable) == p.basename(Platform.script.path);
 
   /// Returns the path to the working directory from where the script was executed
   static String get workingDirectory => Directory.current.path;
@@ -82,7 +94,7 @@ abstract final class FileUtils {
     await file.writeAsBytes(bytes, flush: true);
   }
 
-  /// returns if the file was deleted
+  /// Returns true if the file was deleted (so false if it does not exist at [path])
   static bool deleteFile(String path) {
     final File file = File(path);
     if (file.existsSync()) {
@@ -92,7 +104,7 @@ abstract final class FileUtils {
     return false;
   }
 
-  /// returns if the file was deleted
+  /// Returns true if the file was deleted (so false if it does not exist at [path])
   static Future<bool> deleteFileAsync(String path) async {
     final File file = File(path);
     if (await file.exists()) {
@@ -170,14 +182,28 @@ abstract final class FileUtils {
     }
   }
 
-  /// Deletes the directory with the path
+  /// Returns true if the directory at the [path] was deleted and otherwise false if it does not exist
   ///
   /// If the [path] points to a File, then the parent directory is deleted
-  static void deleteDirectory(String path) {
+  static bool deleteDirectory(String path) {
     final Directory directory = getDirectoryForPath(path);
     if (directory.existsSync()) {
       directory.deleteSync(recursive: true);
+      return true;
     }
+    return false;
+  }
+
+  /// Returns true if the directory at the [path] was deleted and otherwise false if it does not exist
+  ///
+  /// If the [path] points to a File, then the parent directory is deleted
+  static Future<bool> deleteDirectoryAsync(String path) async {
+    final Directory directory = getDirectoryForPath(path);
+    if (await directory.exists()) {
+      await directory.delete(recursive: true);
+      return true;
+    }
+    return false;
   }
 
   /// Returns a list of files of either the directory at [path], or the parent directory if [path] is a file.
@@ -207,7 +233,7 @@ abstract final class FileUtils {
     if (path.isEmpty) {
       return "";
     }
-    return extension(path);
+    return p.extension(path);
   }
 
   /// Returns the file name (test.txt) from a file path
@@ -215,6 +241,10 @@ abstract final class FileUtils {
     if (path.isEmpty) {
       return "";
     }
-    return basename(path);
+    return p.basename(path);
   }
+
+  /// Returns a new path to the parent directory of [path].
+  /// If there is no parent directory, then this returns "."
+  static String parentPath(String path) => p.dirname(path);
 }

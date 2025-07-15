@@ -31,7 +31,7 @@ void main() {
 
 Future<bool> _initGameToolsLib() async {
   final bool result = await GameToolsLib.initGameToolsLib(
-    config: BaseGameToolsConfig(),
+    config: ExampleGameToolsConfig(),
     isCalledFromTesting: true,
     gameWindows: GameToolsLib.createDefaultWindowForInit("Not_Found"),
   );

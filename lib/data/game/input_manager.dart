@@ -13,7 +13,7 @@ abstract final class InputManager {
   /// Affects both [getWindowMousePos] and [displayMousePos].
   /// Prefer to use [moveMouseInWindow] instead.
   static void setDisplayMousePos(int x, int y) {
-    Logger.verbose("Set display mouse pos at ($x, $y)");
+    Logger.spam("Set display mouse pos at (", x, ", ", y, ")");
     _nativeWindow.setDisplayMousePos(x, y);
   }
 
@@ -62,7 +62,7 @@ abstract final class InputManager {
     if (_nativeWindow.setWindowMousePos(window._windowID, x, y) == false) {
       throw WindowClosedException(message: "Cant set mouse to pos in window: $x, $y");
     }
-    Logger.verbose("Set mouse pos into window ${window.name} at ($x, $y)");
+    Logger.spam("Set mouse pos into window ", window.name, " at (", x, ", ", y, ")");
   }
 
   /// Sets the mouse to [point] relative to the top left corner of the window in natural slower way instead of just
@@ -74,7 +74,7 @@ abstract final class InputManager {
   /// [maxStepSize] on how far the pos should be moved at a time.The default value for [minMaxStepDelayInMS]
   /// is [FixedConfig.tinyDelayMS].
   ///
-  /// May throw a [WindowClosedException] if the window was not open.
+  /// May throw a [WindowClosedException] if the window was not open. You can also use [GameWindow.moveMouse] instead!
   /// Affects both [getWindowMousePos] and [displayMousePos]
   ///
   /// Important: uses mouse position relative to top left window border, but [GameWindow.getWindowBounds] would also
@@ -119,7 +119,7 @@ abstract final class InputManager {
       _nativeWindow.moveMouse(addToX, addToY);
       currPos = getWindowMousePosNonNull(window);
       if (addToX == 0 && addToY == 0) {
-        Logger.verbose("Moved mouse in window ${window.name} from $startPos to $currPos");
+        Logger.spam("Moved mouse in window ", window.name, " from ", startPos, " to ", currPos);
         break;
       }
       await Utils.delay(NumUtils.getRandomDuration(minMaxStepDelayInMS));
@@ -137,7 +137,7 @@ abstract final class InputManager {
 
   /// Scrolls by this amount of scroll wheel clicks into one direction (can be negative for reverse)
   static void scrollMouse(int scrollClickAmount) {
-    Logger.verbose("Scrolled mouse $scrollClickAmount times");
+    Logger.spam("Scrolled mouse ", scrollClickAmount, " times");
     _nativeWindow.scrollMouse(scrollClickAmount);
   }
 
@@ -162,7 +162,7 @@ abstract final class InputManager {
     mouseDown(key);
     await Utils.delay(duration);
     mouseUp(key);
-    Logger.spam("Clicked mouse $key");
+    Logger.spam("Clicked mouse ", key);
   }
 
   /// Clicks the left mouse button down and up.
@@ -204,11 +204,11 @@ abstract final class InputManager {
       await Utils.delay(duration);
       keyUp(keyCodes.first);
     } else {
-      sendRawKeyEvents(keyUp: true, keyCodes: keyCodes);
-      await Utils.delay(duration);
       sendRawKeyEvents(keyUp: false, keyCodes: keyCodes);
+      await Utils.delay(duration);
+      sendRawKeyEvents(keyUp: true, keyCodes: keyCodes);
     }
-    Logger.spam("Pressed key $key");
+    Logger.spam("Pressed key ", key);
   }
 
   /// Returns if the virtual keycode is currently pressed down and optionally also its modifier keys
@@ -216,18 +216,18 @@ abstract final class InputManager {
     if (!_nativeWindow.isKeyDown(key.logicalKey)) {
       return false;
     }
-    for (final LogicalKeyboardKey keyCode in key.activeModifierNoLocks) {
+    for (final LogicalKeyboardKey keyCode in key._activeModifierNoLocks) {
       if (!_nativeWindow.isKeyDown(keyCode)) {
         return false;
       }
     }
-    for (final LogicalKeyboardKey keyCode in key.inactiveModifierNoLocks) {
+    for (final LogicalKeyboardKey keyCode in key._inactiveModifierNoLocks) {
       if (_nativeWindow.isKeyDown(keyCode)) {
         return false;
       }
     }
     if (key.withShift != null) {
-      final List<LogicalKeyboardKey> keys = key.anyShift;
+      final List<LogicalKeyboardKey> keys = key._anyShift;
       bool shiftDown = _nativeWindow.isKeyDown(keys.first);
       if (_nativeWindow.isKeyToggled(keys.last)) {
         shiftDown = true;
@@ -243,7 +243,7 @@ abstract final class InputManager {
       }
     }
     if (key.withFN != null) {
-      final List<LogicalKeyboardKey> keys = key.anyFN;
+      final List<LogicalKeyboardKey> keys = key._anyFN;
       bool fnDown = _nativeWindow.isKeyDown(keys.first);
       if (_nativeWindow.isKeyToggled(keys.last)) {
         fnDown = true;
@@ -265,56 +265,107 @@ abstract final class InputManager {
   /// swapped).
   static bool isMouseDown(MouseKey mouseButton) => _nativeWindow.isMouseDown(mouseButton);
 
-  /// Stores [data] in the clipboard (may be empty)
-  static Future<void> setClipboard(String data) async {
-    await Clipboard.setData(ClipboardData(text: data));
-    Logger.verbose("Set clipboard data length: ${data.length}");
+  /// Stores [data] in the clipboard (may be empty).
+  /// [delayBeforeAndAfter] will be awaited first and x2 after and is [FixedConfig.mediumDelayMS] if null. It
+  /// will also be awaited again 5 times if a [PlatformException] is thrown during clipboard access (if that try
+  /// fails, then the exception is rethrown!)
+  static Future<void> setClipboard(String data, {Point<int>? delayBeforeAndAfter}) async {
+    final Duration duration = NumUtils.getRandomDuration(
+      delayBeforeAndAfter,
+      defaultIfNull: FixedConfig.fixedConfig.mediumDelayMS,
+    );
+    try {
+      await Utils.delay(duration);
+      await Clipboard.setData(ClipboardData(text: data));
+    } catch (_) {
+      Logger.spam("could not get clipboard, trying again...");
+      await Utils.delay(duration * 5);
+      await Clipboard.setData(ClipboardData(text: data));
+    }
+    Logger.spam("Set clipboard data length ", data.length);
+    await Utils.delay(duration);
   }
 
   /// Returns the data currently stored in the clipboard (may be empty)
-  static Future<String> getClipboard() async {
-    final ClipboardData? data = await Clipboard.getData("text/plain");
+  /// [delayBeforeAndAfter] will be awaited first and after and is [FixedConfig.mediumDelayMS] if null. It will also
+  /// be awaited again 5 times if a [PlatformException] is thrown during clipboard access (if that try fails, then
+  /// the exception is rethrown!).
+  ///
+  /// Currently this can only return text and no image, or binary data from the clipboard!
+  static Future<String> getClipboard({Point<int>? delayBeforeAndAfter}) async {
+    final Duration duration = NumUtils.getRandomDuration(
+      delayBeforeAndAfter,
+      defaultIfNull: FixedConfig.fixedConfig.mediumDelayMS,
+    );
+    late final ClipboardData? data;
+    try {
+      await Utils.delay(duration);
+      data = await Clipboard.getData("text/plain");
+    } catch (_) {
+      Logger.spam("could not get clipboard, trying again...");
+      await Utils.delay(duration * 5);
+      data = await Clipboard.getData("text/plain");
+    }
     final String text = data?.text ?? "";
-    Logger.verbose("Got clipboard data length: ${text.length}");
+    Logger.spam("Got clipboard data length: ", text.length);
+    await Utils.delay(duration);
     return text;
   }
 
   /// Uses CTRL+C to copy something selected into the clipboard.
-  /// The [delayBeforeAndAfter] will be awaited first, middle and after and is [FixedConfig.shortDelayMS] if null.
+  /// The [delayBeforeAndAfter] will be awaited first, middle and after and is [FixedConfig.mediumDelayMS] if
+  /// null.
   static Future<void> fillClipboard({Point<int>? delayBeforeAndAfter}) async {
-    final Duration duration = NumUtils.getRandomDuration(delayBeforeAndAfter);
-    await setClipboard("");
-    await keyPress(BoardKey.ctrlC, delayBeforeAndBetweenInMS: delayBeforeAndAfter);
-    Logger.verbose("Got clipboard from selection");
+    final Duration duration = NumUtils.getRandomDuration(
+      delayBeforeAndAfter,
+      defaultIfNull: FixedConfig.fixedConfig.mediumDelayMS,
+    );
+    await Utils.delay(duration);
+    await keyPress(BoardKey.ctrlC); // additional 2 smaller delays
+    Logger.spam("Got clipboard from selection");
     await Utils.delay(duration);
   }
 
   /// Uses CTRL+V to paste the clipboard into something selected.
-  /// The [delayBeforeAndAfter] will be awaited first, middle and after and is [FixedConfig.shortDelayMS] if null.
+  /// The [delayBeforeAndAfter] will be awaited first, middle and after and is [FixedConfig.mediumDelayMS] if
+  /// null.
   static Future<void> pasteClipboard({Point<int>? delayBeforeAndAfter}) async {
-    final Duration duration = NumUtils.getRandomDuration(delayBeforeAndAfter);
-    await keyPress(BoardKey.ctrlV, delayBeforeAndBetweenInMS: delayBeforeAndAfter);
-    Logger.verbose("Pasted clipboard into selection");
+    final Duration duration = NumUtils.getRandomDuration(
+      delayBeforeAndAfter,
+      defaultIfNull: FixedConfig.fixedConfig.mediumDelayMS,
+    );
+    await Utils.delay(duration);
+    await keyPress(BoardKey.ctrlV); // additional 2 smaller delays
+    Logger.spam("Pasted clipboard into selection");
     await Utils.delay(duration);
   }
 
-  /// Tries to fill the clipboard with data of either some selected text, or something at the position of the mouse
-  /// cursor and returns the read data!
-  /// The [delayBeforeAndAfter] will be awaited first, middle and after and is [FixedConfig.shortDelayMS] if null.
+  /// Tries to fill the clipboard with data of either some selected text with CTRL+C, or something at the position of
+  /// the mouse cursor and returns the read data!
+  /// The [delayBeforeAndAfter] will be awaited 9 times and is [FixedConfig.mediumDelayMS] if null.
   /// This uses [fillClipboard], but preserves the initial clipboard data of the user!
-  static Future<String> getSelectedData({Point<int>? delayBeforeAndAfter}) async {
+  /// If [selectFirst] is true, then this will first select the data with CTRL+A with additional 4 awaits!
+  ///
+  /// Currently this can only restore your old clipboard text (and no image, or binary data!)
+  static Future<String> getSelectedData({Point<int>? delayBeforeAndAfter, bool selectFirst = false}) async {
+    if (selectFirst) {
+      await keyPress(BoardKey.ctrlA, delayBeforeAndBetweenInMS: delayBeforeAndAfter);
+      await Utils.delay(NumUtils.getRandomDuration(delayBeforeAndAfter));
+    }
     final String oldData = await getClipboard();
     await fillClipboard(delayBeforeAndAfter: delayBeforeAndAfter);
     final String newData = await getClipboard();
     await setClipboard(oldData);
-    Logger.spam("Return selected data: $newData\nand preserved old data: $oldData");
+    Logger.spam("Return selected data: ", newData, "\nAnd preserved old data: ", oldData);
     return newData;
   }
 
-  /// Tries to paste [data] into some selected text field, or something at the position of the mouse cursor.
+  /// Tries to paste [data] into some selected text field with CTRL+V, or something at the position of the mouse cursor.
   /// For example used in [sendChatMessage].
-  /// The [delayBeforeAndAfter] will be awaited first, middle and after and is [FixedConfig.shortDelayMS] if null.
+  /// The [delayBeforeAndAfter] will be awaited 9 times and is [FixedConfig.mediumDelayMS] if null.
   /// This uses [pasteClipboard], but preserves the initial clipboard data of the user!
+  ///
+  /// Currently this can only restore your old clipboard text (and no image, or binary data!)
   static Future<void> pasteDataIntoSelected(String data, {Point<int>? delayBeforeAndAfter}) async {
     if (data.isEmpty) {
       Logger.warn("Pasting empty data into something selected");
@@ -323,16 +374,18 @@ abstract final class InputManager {
     await setClipboard(data);
     await pasteClipboard(delayBeforeAndAfter: delayBeforeAndAfter);
     await setClipboard(oldData);
-    Logger.spam("Pasted data into selection: $data\nand preserved old data: $oldData");
+    Logger.spam("Pasted data into selection: ", data, "\nand preserved old data: ", oldData);
   }
 
   /// Tries to open a default chat window with [LogicalKeyboardKey.enter] to then use [pasteDataIntoSelected] to put
   /// the [text] into it and pressing enter again to send the chat message.
-  /// There will be in total 7 await calls for the [delay]
+  /// There will be in total 11 await calls for the [delay] which is [FixedConfig.mediumDelayMS] if null.
+  ///
+  /// Currently this can only restore your old clipboard text (and no image, or binary data!)
   static Future<void> sendChatMessage(String text, {Point<int>? delay}) async {
-    Logger.spam("Sending chat message...: $text");
-    await keyPress(BoardKey.enter);
+    Logger.verbose("Sending chat message...: $text");
+    await keyPress(BoardKey.enter); // additional 2 smaller delays
     await pasteDataIntoSelected(text, delayBeforeAndAfter: delay);
-    await keyPress(BoardKey.enter);
+    await keyPress(BoardKey.enter); // additional 2 smaller delays
   }
 }

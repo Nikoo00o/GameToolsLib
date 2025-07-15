@@ -1,17 +1,21 @@
 import 'dart:math' show Point, min, max;
 import 'dart:ui' show Color;
 
-import 'package:flutter/services.dart' show Clipboard, ClipboardData, LogicalKeyboardKey;
+import 'package:flutter/services.dart' show Clipboard, ClipboardData, LogicalKeyboardKey, PlatformException;
 import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
+import 'package:game_tools_lib/core/enums/input_enums.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
-import 'package:game_tools_lib/core/utils/Bounds.dart';
+import 'package:game_tools_lib/core/utils/bounds.dart';
 import 'package:game_tools_lib/core/utils/utils.dart' show Utils;
 import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/data/native/native_window.dart';
+import 'package:game_tools_lib/domain/entities/model.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 
 part 'package:game_tools_lib/data/game/input_manager.dart';
+
+part 'package:game_tools_lib/core/enums/board_key.dart';
 
 /// This offers static methods like [GameWindow.mainDisplayWidth] to interact with the full native screen/display, but
 /// also member methods to interact with the specific window names [name] like [getWindowBounds], or [getImageOfWindow]
@@ -79,9 +83,11 @@ final class GameWindow {
   /// Changes the name of this window and also initializes it again by calling [_init] to find a different window!
   /// Of course this will also unset the window handle and it has to be searched again (which is done automatically
   /// in the other functions). This should never throw a [WindowClosedException] at this point in theory.
-  void rename(String newName) {
+  /// Also waits [FixedConfig.tinyDelayMS] maximum afterwards!
+  Future<void> rename(String newName) async {
     _name = newName;
     _init();
+    await Utils.delayMS(FixedConfig.fixedConfig.tinyDelayMS.y);
   }
 
   /// Searches the window handle for the [_windowID] (or [name])
@@ -95,12 +101,15 @@ final class GameWindow {
   }
 
   /// Changes focus (sets the window to the foreground).
-  /// May throw a [WindowClosedException] if the window was not open.
-  void setWindowFocus() {
+  /// May throw a [WindowClosedException] if the window was not open or if you don't have the correct permissions to
+  /// interact with the window.
+  /// Also waits [FixedConfig.tinyDelayMS] maximum afterwards!
+  Future<void> setWindowFocus() async {
     final bool success = _nativeWindow.setWindowFocus(_windowID);
     if (success == false) {
-      throw WindowClosedException(message: "Cant set window focus");
+      throw WindowClosedException(message: "Cant set window focus: $_windowID:");
     }
+    await Utils.delayMS(FixedConfig.fixedConfig.tinyDelayMS.y);
   }
 
   /// The window's top left corner is ([Bounds.x], [Bounds.y]) and then it expands to ([Bounds.width], [Bounds.height]).
@@ -112,7 +121,7 @@ final class GameWindow {
   Bounds<int> getWindowBounds() {
     final Bounds<int>? bounds = _nativeWindow.getWindowBounds(_windowID);
     if (bounds == null) {
-      throw WindowClosedException(message: "Cant get window bounds");
+      throw WindowClosedException(message: "Cant get window bounds: $_windowID:");
     }
     return bounds;
   }
@@ -131,16 +140,16 @@ final class GameWindow {
   ///
   /// Important: uses mouse position relative to top left window border, but [GameWindow.getWindowBounds] would also
   /// include a top window border in its height which is not included here!
-  NativeImage getImageOfWindow(int x, int y, int width, int height) {
-    final NativeImage? image = _nativeWindow.getImageOfWindow(_windowID, x, y, width, height);
+  Future<NativeImage> getImageOfWindow(int x, int y, int width, int height) async {
+    final NativeImage? image = await _nativeWindow.getImageOfWindow(_windowID, x, y, width, height);
     if (image == null) {
-      throw WindowClosedException(message: "Cant get image of window $x, $y, $width, $height");
+      throw WindowClosedException(message: "Cant get image of window $_windowID: $x, $y, $width, $height");
     }
     return image;
   }
 
   /// Same as [getImageOfWindow], but with [Bounds]
-  NativeImage getImageOfWindowB(Bounds<int> b) => getImageOfWindow(b.x, b.y, b.width, b.height);
+  Future<NativeImage> getImageOfWindowB(Bounds<int> b) async => getImageOfWindow(b.x, b.y, b.width, b.height);
 
   /// Returns the color of the pixel at [x], [y] relative to the top left corner of the window.
   /// May throw a [WindowClosedException] if the window was not open.
@@ -151,7 +160,7 @@ final class GameWindow {
   Color? getPixelOfWindow(int x, int y) {
     final Color? color = _nativeWindow.getPixelOfWindow(_windowID, x, y);
     if (color == null) {
-      throw WindowClosedException(message: "Cant get pixel of window $x, $y");
+      throw WindowClosedException(message: "Cant get pixel of window $_windowID: $x, $y");
     }
     if (isWithinWindow(Point<int>(x, y)) == false) {
       return null;
@@ -168,7 +177,7 @@ final class GameWindow {
   /// Uses [getWindowBounds] to get height/width and could return false positives to the bottom right of the window!
   bool isWithinWindow(Point<int> point) {
     final Bounds<int> bounds = getWindowBounds();
-    if (point.x < 0 || point.y < 0 || point.x > bounds.width || point.y > bounds.height) {
+    if (point.x < 0 || point.y < 0 || point.x >= bounds.width || point.y >= bounds.height) {
       return false;
     }
     return true;
@@ -213,16 +222,16 @@ final class GameWindow {
   void closeWindow() {
     final bool success = _nativeWindow.closeWindow(_windowID);
     if (success == false) {
-      throw WindowClosedException(message: "Cant close window");
+      throw WindowClosedException(message: "Cant close window: $_windowID:");
     }
   }
 
-  /// Image of the whole full window.
+  /// Image of the whole full window (as a future!).
   /// May throw a [WindowClosedException] if the window was not open
-  NativeImage get windowFullImage {
-    final NativeImage? image = _nativeWindow.getFullWindow(_windowID);
+  Future<NativeImage> get windowFullImage async {
+    final NativeImage? image = await _nativeWindow.getFullWindow(_windowID);
     if (image == null) {
-      throw WindowClosedException(message: "Cant get full image of window");
+      throw WindowClosedException(message: "Cant get full image of window: $_windowID:");
     }
     return image;
   }
@@ -242,7 +251,7 @@ final class GameWindow {
   static int get mainDisplayHeight => _nativeWindow.getMainDisplayHeight();
 
   /// Image of the full main display screen
-  static NativeImage get mainDisplayFullImage => _nativeWindow.getFullMainDisplay();
+  static Future<NativeImage> get mainDisplayFullImage => _nativeWindow.getFullMainDisplay();
 
   /// This needs to be called when one of each config variables changes to update the native code:
   /// [alwaysMatchEqual] controls how the window names will be matched ([false] = the window title only has to

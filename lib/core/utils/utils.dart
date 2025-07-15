@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show Color;
 
 import 'package:game_tools_lib/core/utils/file_utils.dart';
 import 'package:game_tools_lib/core/utils/list_utils.dart';
@@ -76,4 +77,31 @@ abstract final class Utils {
 
   /// Just shorter syntax than Future<void>.delayed
   static Future<void> delay(Duration delay) async => Future<void>.delayed(delay);
+
+  /// Just shorter syntax for [delay] if [milliseconds] should be used directly and no duration
+  static Future<void> delayMS(int milliseconds) async => Future<void>.delayed(Duration(milliseconds: milliseconds));
+
+  /// Returns if [color1] and [color2] are equal
+  static bool colorEquals(Color? color1, Color? color2) {
+    if (color1 == color2) {
+      return true; // same reference (or both null)
+    }
+    if (color1 == null || color2 == null) {
+      return false;
+    }
+    return color1.r.isEqual(color2.r) &&
+        color1.g.isEqual(color2.g) &&
+        color1.b.isEqual(color2.b) &&
+        color1.a.isEqual(color2.a);
+  }
+
+  /// Returns if [S] is a subtype of [T] (has to be used in generic methods, because the "is" operator does not work on
+  /// template types! Use it with your generic type as [S] and then test against different parent types with [T].
+  static bool isSubtype<S, T>() => <S>[] is List<T>;
+}
+
+/// Helper methods for [Color] to compare equality
+extension ColorExtension on Color {
+  /// Returns if this is equal to [other] by using [Utils.colorEquals]
+  bool equals(Color? other) => Utils.colorEquals(this, other);
 }

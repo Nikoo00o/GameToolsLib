@@ -11,7 +11,7 @@ final class HiveDatabaseMock extends HiveDatabase {
   /// the last time a file was written to / deleted
   DateTime lastFileChange = DateTime.now();
 
-  static const String FLUTTER_TEST_PATH = "Flutter_Tests";
+  static const String FLUTTER_TEST_PATH = "FLUTTER_TESTS_MOCK";
 
   @visibleForTesting
   /// If [true], then [_init] throws a [FileNotFoundException]

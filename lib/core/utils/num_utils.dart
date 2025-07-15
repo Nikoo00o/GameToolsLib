@@ -16,9 +16,14 @@ abstract final class NumUtils {
   static const double _epsilon = 0.0001;
 
   /// Not crypto secure random inclusive from [incFrom] to [incTo]
-  static int getRandomNumber(int incFrom, int incTo) => incFrom + _random.nextInt(incTo + 1 - incFrom);
+  static int getRandomNumber(int incFrom, int incTo) {
+    if (incFrom == incTo) {
+      return incFrom;
+    }
+    return incFrom + _random.nextInt(incTo + 1 - incFrom);
+  }
 
-  /// Same as [getRandomNumber], but with [Point]
+  /// Same as [getRandomNumber], but with [Point] where [Point.x] is the min number and [Point.y] the max
   static int getRandomNumberP(Point<int> incFromTo) => getRandomNumber(incFromTo.x, incFromTo.y);
 
   /// Crypto secure random inclusive from [incFrom] to [incTo]
@@ -28,7 +33,7 @@ abstract final class NumUtils {
   /// The values for [percentChance] should range from 0.00 to 1.00 (for 0 to 100 percent where 0.5 would be 50%)
   static bool getRandomPercent(double percentChance) => getRandomNumber(0, 99) < percentChance * 100.0;
 
-  /// Returns a [Duration] object with a random delay in milliseconds between the values of [delayInMS].
+  /// Returns a [Duration] object with a random delay in milliseconds between the values of [delayInMS] (x=min, y=max).
   /// If that's null, it defaults to [defaultIfNull] and if that is null as well, then it uses [FixedConfig.shortDelayMS]
   static Duration getRandomDuration(Point<int>? delayInMS, {Point<int>? defaultIfNull}) {
     defaultIfNull ??= FixedConfig.fixedConfig.shortDelayMS;

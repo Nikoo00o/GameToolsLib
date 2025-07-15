@@ -27,6 +27,7 @@
   `build/test/game_tools_lib_plugin.dll`
 - You can get the dll by just starting the example project, or any other application in debug mode and then copying 
   the file out of the `example\build\windows\x64\runner\Debug` directory
+  - cmd: `copy .\example\build\windows\x64\runner\Debug\game_tools_lib_plugin.dll .\build\test\`
 - IMPORTANT: the exact name of the lib depends on the platform you are using! 
 - Now for opencv and its `dartcv.dll` (or however its called on your platform), you have to set the environment 
   variable`DARTCV_LIB_PATH` to a path where you have stored an already build copy of the library 
@@ -35,6 +36,11 @@
     avfilter-10, avformat-61, avutil-59, swresample-5, swscale-8)
 - REMEMBER TO update all of those libraries when a new opencv version is released! 
 - AND ALSO copy the game_tools_lib_plugin library again when you modify the native C/C++ code!!! 
+
+#### Native Tests
+
+- The native tests that need to interact with a window are moved into `example/integration_test` to be able to work 
+  and they also open a test window app
 
 ### OpenCV build
 

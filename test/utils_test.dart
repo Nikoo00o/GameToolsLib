@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'dart:math' show Point;
+import 'dart:ui' show Color;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:game_tools_lib/core/utils/bounds.dart';
-import 'package:game_tools_lib/core/utils/list_utils.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 
 void main() {
@@ -22,7 +21,7 @@ void main() {
 }
 
 void _testGeneral() {
-  test("list equality ", () async {
+  test("list equality", () async {
     final List<int> li1 = <int>[1, 2, 3];
     final List<int> li2 = <int>[1, 2, 3];
     final List<int> li3 = <int>[1, 4, 3];
@@ -32,6 +31,15 @@ void _testGeneral() {
     expect(li4.equals(li1), false, reason: "different sizes");
     expect((li1 == li1) == (li1.equals(li1)), true, reason: "same as identity");
     expect(ListUtils.equals(li1, <String>["1", "2"]), false, reason: "no exception with different lists");
+  });
+  test("color equality", () async {
+    final Color c1 = Color.fromARGB(125, 125, 125, 125);
+    final Color c2 = Color.fromARGB(125, 125, 125, 125);
+    final Color c3 = Color.fromARGB(124, 125, 125, 125);
+    final Color c4 = Color.fromARGB(125, 124, 125, 125);
+    expect(c1.equals(c2), true, reason: "same color match");
+    expect(c1.equals(c3), false, reason: "alpha diff");
+    expect(c1.equals(c4), false, reason: "green diff");
   });
   test("periodic execute sync and async correctly", () async {
     int syncCounter = 0;

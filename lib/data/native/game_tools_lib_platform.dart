@@ -49,13 +49,14 @@ sealed class GameToolsLibHelper extends GameToolsLibPlatform {
     try {
       final bool unChanged = await NativeWindow.initNativeWindow(); // first init native window
       if (unChanged == false) {
-        Logger.error("Native C/C++ Part of GameToolsLib changed, lib has to be copied to ${FFILoader.apiPath}");
+        Logger.error("Error, copy new Native C/C++ library file to ${FileUtils.absolutePath(FFILoader.apiPath)}");
         return false;
       }
       for (final GameWindow gameWindow in GameToolsLib.gameWindows) {
-        gameWindow.rename(gameWindow.name); // now init all game windows by calling init on them once
+        // now init all game windows by calling init on them once
+        unawaited(gameWindow.rename(gameWindow.name)); // dont need to await delay in first init
       }
-      Logger.verbose("Native C/C++ Part of GameToolsLib loaded from ${FFILoader.apiPath}");
+      Logger.verbose("Native C/C++ Part of GameToolsLib loaded from ${FileUtils.absolutePath(FFILoader.apiPath)}");
 
       // next opencv
       const String opencvVar = "DARTCV_LIB_PATH";
@@ -65,18 +66,15 @@ sealed class GameToolsLibHelper extends GameToolsLibPlatform {
         String exceptionText = ""; // special case for testing to find opencv lib
         if (openCVPath.isEmpty) {
           exceptionText = "Environment var not set";
-        } else if (File(openCVPath).existsSync() == false) {
+        } else if (FileUtils.fileExists(openCVPath) == false) {
           exceptionText = "OpenCV Lib $openCVPath does not exist";
         }
         if (exceptionText.isNotEmpty) {
-          final String examplePath = FileUtils.combinePath(<String>[
-            File(FFILoader.apiPath).absolute.parent.path,
-            _openCvName,
-          ]);
           final String msg =
               "$exceptionText. You have to set the $opencvVar environment variable to a place where you put "
-              "the OpenCV library, for example $examplePath and copy it the same "
-              "way as you did with the ${FileUtils.getFileName(FFILoader.apiPath)}\n"
+              "the OpenCV library, for example "
+              "${FileUtils.absolutePathP(<String>[FileUtils.parentPath(FFILoader.apiPath), _openCvName])} "
+              "and copy it the same way as you did with the ${FileUtils.getFileName(FFILoader.apiPath)}\n"
               "But you also have to copy all lib dependencies required by OpenCV there ($_openCvDeps)";
           final TestException exception = TestException(message: msg);
           Logger.error("Init Native Code Error:", exception, StackTrace.current);
@@ -100,7 +98,7 @@ sealed class GameToolsLibHelper extends GameToolsLibPlatform {
       } else {
         // not testing
         if (openCVPath.isNotEmpty) {
-          if (File(openCVPath).existsSync() == false) {
+          if (FileUtils.fileExists(openCVPath) == false) {
             Logger.error(
               "You have the OpenCV environment variable $opencvVar set to $openCVPath But no $_openCvName "
               "lib file exists there",
@@ -152,7 +150,7 @@ sealed class GameToolsLibHelper extends GameToolsLibPlatform {
   @visibleForTesting
   static void testResetInitialized() => _initialized = false;
 
-  /// Initializes the library with the [_ExampleGameToolsConfig] and also uses it similar to a default call to
+  /// Initializes the library with the [ExampleGameToolsConfig] and also uses it similar to a default call to
   /// [GameToolsLib.initGameToolsLib] with a few changes. Optional [windowName] can also be set.
   /// [isCalledFromTesting] should only be set to true in tests to use mock classes instead of the default ones (so
   /// nothing is saved to local storage and is instead kept in memory. and other lib paths are used).
@@ -160,15 +158,15 @@ sealed class GameToolsLibHelper extends GameToolsLibPlatform {
   /// Important: this is only an example for testing and should not be used in production code!
   static Future<bool> useExampleConfig({bool isCalledFromTesting = false, String windowName = "Not_Found"}) async {
     final bool init = await GameToolsLib.initGameToolsLib(
-      config: _ExampleGameToolsConfig(),
+      config: ExampleGameToolsConfig(),
       isCalledFromTesting: isCalledFromTesting,
       gameWindows: GameToolsLib.createDefaultWindowForInit(windowName),
     ); // first init game tools lib with sub config type
     if (init == false) {
       return false;
     }
-    final _ExampleFixedConfig fixedConfig = GameToolsLib.config<_ExampleGameToolsConfig>().fixed; // using sub types
-    final _ExampleMutableConfig mutableConfig = GameToolsLib.config<_ExampleGameToolsConfig>().mutable;
+    final ExampleFixedConfig fixedConfig = GameToolsLib.config<ExampleGameToolsConfig>().fixed; // using sub types
+    final ExampleMutableConfig mutableConfig = GameToolsLib.config<ExampleGameToolsConfig>().mutable;
     final BaseGameToolsConfig baseAccess = GameToolsLib.baseConfig; // using base type
     final ExampleModel newValue = await mutableConfig.somethingNew.valueNotNull();
     return !fixedConfig.logIntoStorage && newValue.someData == 5 && !baseAccess.fixed.logIntoStorage;
