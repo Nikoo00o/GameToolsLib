@@ -71,17 +71,16 @@ String get _testFolder => FileUtils.combinePath(<String>[FixedConfig.fixedConfig
 
 String _testFile(String fileName) => FileUtils.combinePath(<String>[_testFolder, fileName]);
 
-Future<void> main() async {
-  final bool init = await GameToolsLibHelper.useExampleConfig(isCalledFromTesting: true, windowName: "Snipping Tool");
+Future<void> _memoryLeakTest() async {
   Logger.info("STARTING");
   await Future<void>.delayed(Duration(seconds: 15));
   Logger.info("STARTING");
   for (int i = 0; i < 200; ++i) {
     await Future<void>.delayed(Duration(milliseconds: 10));
-    final NativeImage full = NativeImage.readSync(path: _testFile("full_crop.png"), removeAlpha: false);
+    final NativeImage full = NativeImage.readSync(path: _testFile("full_crop.png"));
     final NativeImage part1 = await full.getSubImage(48, 47, 5, 3);
-    final NativeImage win = await GameToolsLib.mainGameWindow.windowFullImage;
-    final NativeImage subIm = await GameToolsLib.mainGameWindow.getImageOfWindow(5, 5, 1600, 800);// remove alpha false
+    final NativeImage win = await GameToolsLib.mainGameWindow.getFullImage();
+    final NativeImage subIm = await GameToolsLib.mainGameWindow.getImage(5, 5, 1600, 800); // remove alpha false
     final NativeImage part2 = await subIm.getSubImage(48, 47, 5, 3);
     //full.cleanupMemory(null);
     //part1.cleanupMemory(null);
@@ -93,6 +92,10 @@ Future<void> main() async {
   await Future<void>.delayed(Duration(seconds: 15));
   Logger.info("DONE");
   await Future<void>.delayed(Duration(seconds: 15));
+}
+
+Future<void> main() async {
+  final bool init = await GameToolsLibHelper.useExampleConfig(isCalledFromTesting: true, windowName: "Snipping Tool");
 
   runApp(
     MaterialApp(

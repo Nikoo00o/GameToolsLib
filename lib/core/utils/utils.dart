@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui' show Color;
 
+import 'package:game_tools_lib/core/enums/native_image_type.dart';
 import 'package:game_tools_lib/core/utils/file_utils.dart';
 import 'package:game_tools_lib/core/utils/list_utils.dart';
 import 'package:game_tools_lib/core/utils/num_utils.dart';
@@ -81,18 +82,22 @@ abstract final class Utils {
   /// Just shorter syntax for [delay] if [milliseconds] should be used directly and no duration
   static Future<void> delayMS(int milliseconds) async => Future<void>.delayed(Duration(milliseconds: milliseconds));
 
-  /// Returns if [color1] and [color2] are equal
-  static bool colorEquals(Color? color1, Color? color2) {
+  /// Returns if [color1] and [color2] are equal.
+  /// The default for [skipAlpha] is true, so that alpha will not be compared.
+  /// Per default this still returns true if the pixel has a difference of 1 (see [pixelValueThreshold])
+  static bool colorEquals(Color? color1, Color? color2, {bool skipAlpha = true, int pixelValueThreshold = 1}) {
     if (color1 == color2) {
       return true; // same reference (or both null)
     }
     if (color1 == null || color2 == null) {
       return false;
     }
-    return color1.r.isEqual(color2.r) &&
-        color1.g.isEqual(color2.g) &&
-        color1.b.isEqual(color2.b) &&
-        color1.a.isEqual(color2.a);
+    const double pixelMultiplier = 1.0 / 255.0;
+    double change = color1.r.diff(color2.r) + color1.g.diff(color2.g) + color1.b.diff(color2.b);
+    if (skipAlpha == false) {
+      change += color1.a.diff(color2.a);
+    }
+    return change.isLessOrEqualThan(pixelMultiplier * pixelValueThreshold);
   }
 
   /// Returns if [S] is a subtype of [T] (has to be used in generic methods, because the "is" operator does not work on
@@ -100,8 +105,41 @@ abstract final class Utils {
   static bool isSubtype<S, T>() => <S>[] is List<T>;
 }
 
-/// Helper methods for [Color] to compare equality
+/// Helper methods for [Color] to compare equality (also has different getters for different color representations)
 extension ColorExtension on Color {
-  /// Returns if this is equal to [other] by using [Utils.colorEquals]
-  bool equals(Color? other) => Utils.colorEquals(this, other);
+  /// Returns if this is equal to [other] by using [Utils.colorEquals].
+  /// The default for [skipAlpha] is true, so that alpha will not be compared.
+  /// Per default this still returns true if the pixel has a difference of 1 (see [pixelValueThreshold])
+  bool equals(Color? other, {bool skipAlpha = true, int pixelValueThreshold = 1}) =>
+      Utils.colorEquals(this, other, skipAlpha: skipAlpha, pixelValueThreshold: pixelValueThreshold);
+
+  /// String representation of this color with rgba values!
+  String get rgb => "Color(r=$red, g=$green, b=$blue, a=$alpha)";
+
+  /// First 8 bits blue value as 0 to 255
+  int get blue => (b * 255.0).round() & 0xff;
+
+  /// Next 8 bits after [blue] for green value as 0 to 255
+  int get green => (g * 255.0).round() & 0xff;
+
+  /// Next 8 bits after [green] for red value as 0 to 255
+  int get red => (r * 255.0).round() & 0xff;
+
+  /// Next 8 bits after [red] for alpha value as 0 to 255
+  int get alpha => (a * 255.0).round() & 0xff;
+
+  /// If only the lowest bit is set to store a grayscale image values (every r/g/b would have the same value)!
+  /// Used for example with [NativeImageType.GRAY]. Same as [blue]
+  int get gray => blue;
+
+  /// Different color access hsv (also 0 to 255), same as [blue]. This is the color type as an angle on color wheel
+  int get h => blue;
+
+  /// Different color access hsv (also 0 to 255), same as [green]. This is the saturation representing the intensity
+  /// of the color (0 is grayscale and 255 is pure color)
+  int get s => green;
+
+  /// Different color access hsv (also 0 to 255), same as [red]. This is the brightness of the color (0 is black and
+  /// 255 is brightest color)
+  int get v => red;
 }

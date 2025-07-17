@@ -5,6 +5,7 @@ import 'package:ffi/ffi.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/enums/input_enums.dart';
+import 'package:game_tools_lib/core/enums/native_image_type.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/utils/bounds.dart';
 import 'package:game_tools_lib/data/game/game_window.dart' show GameWindow;
@@ -247,16 +248,18 @@ final class NativeWindow {
     _cleanupMemory.call(data);
   }
 
-  /// image displaying the whole main display
-  Future<NativeImage> getFullMainDisplay() async {
+  /// Returns an Image displaying the whole main display
+  /// For [imageType], look at [NativeImageType] docs!
+  Future<NativeImage> getFullMainDisplay(NativeImageType imageType) async {
     final int width = getMainDisplayWidth();
     final int height = getMainDisplayHeight();
     final Pointer<UnsignedChar> data = _getFullMainDisplay.call();
-    return NativeImage.nativeAsync(width: width, height: height, data: data);
+    return NativeImage.nativeAsync(width: width, height: height, data: data, targetType: imageType);
   }
 
-  /// image displaying the whole window
-  Future<NativeImage?> getFullWindow(int windowID) async {
+  /// Returns an image displaying the whole window
+  /// For [imageType], look at [NativeImageType] docs!
+  Future<NativeImage?> getFullWindow(int windowID, NativeImageType imageType) async {
     final Bounds<int>? bounds = getWindowBounds(windowID);
     final Pointer<UnsignedChar> data = _getFullWindow.call(windowID);
     if (bounds == null || data.address == 0) {
@@ -268,20 +271,20 @@ final class NativeWindow {
       data: data,
       logXPos: 0,
       logYPos: 0,
+      targetType: imageType,
     );
   }
 
   /// Returns a Sub image relative to top left corner of the window.
-  /// Per default [removeAlpha] is true to remove the alpha channel, because its not used for comparison. The other
-  /// methods of getting images also remove the alpha channel!
+  /// For [imageType], look at [NativeImageType] docs!
   Future<NativeImage?> getImageOfWindow(
     int windowID,
     int x,
     int y,
     int width,
-    int height, {
-    bool removeAlpha = true,
-  }) async {
+    int height,
+    NativeImageType imageType,
+  ) async {
     final Pointer<UnsignedChar> data = _getImageOfWindow.call(windowID, x, y, width, height);
     if (data.address == 0) {
       return null;
@@ -292,7 +295,7 @@ final class NativeWindow {
       data: data,
       logXPos: x,
       logYPos: y,
-      removeAlpha: removeAlpha,
+      targetType: imageType,
     );
   }
 

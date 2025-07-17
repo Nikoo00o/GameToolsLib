@@ -114,12 +114,25 @@ abstract final class FileUtils {
     return false;
   }
 
-  static bool fileExists(String path) => File(path).existsSync();
+  static bool fileExists(String? path) {
+    if (path?.isEmpty ?? true) {
+      return false;
+    }
+    return File(path!).existsSync();
+  }
 
-  static bool dirExists(String path) => Directory(path).existsSync();
+  static bool dirExists(String? path) {
+    if (path?.isEmpty ?? true) {
+      return false;
+    }
+    return Directory(path!).existsSync();
+  }
 
-  static Future<bool> fileExistsAsync(String path) async {
-    final File file = File(path);
+  static Future<bool> fileExistsAsync(String? path) async {
+    if (path?.isEmpty ?? true) {
+      return false;
+    }
+    final File file = File(path!);
     return file.exists();
   }
 

@@ -1,3 +1,5 @@
+import 'package:game_tools_lib/data/native/native_image.dart';
+
 /// The base Exception class which holds a message to display
 abstract base class BaseException implements Exception {
   /// Error Description
@@ -37,11 +39,10 @@ final class KeyNotFoundException extends BaseException {
   const KeyNotFoundException({required super.message, super.messageParams});
 }
 
-/// Keycode for a key was not found
+/// Different use cases for [NativeImage]
 final class ImageException extends BaseException {
   const ImageException({required super.message, super.messageParams});
 }
-
 
 /// An exception only important for testing
 final class TestException extends BaseException {

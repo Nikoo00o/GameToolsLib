@@ -1,41 +1,83 @@
+import 'dart:async';
+import 'dart:io';
 import 'dart:math' show Point;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
+import 'package:game_tools_lib/core/enums/native_image_type.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
+import 'package:game_tools_lib/core/logger/custom_logger.dart';
+import 'package:game_tools_lib/core/logger/log_level.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/data/game/game_window.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:opencv_dart/opencv.dart' as cv;
 import 'helper/test_widgets.dart';
 
 /// Set this to true to also test input and focus (needs to be started from cmd/terminal and also moves your mouse)
 bool enableInputTests = false;
 
+/// Some logs may not be printed in tests if an expect fails, because the print was not flushed to the console yet!
 void main() {
   final IntegrationTestWidgetsFlutterBinding binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.fullyLive;
   binding.shouldPropagateDevicePointerEvents = true; // otherwise we could not interact with the test app
   WidgetsFlutterBinding.ensureInitialized();
-  setUp(() async {
-    // init needs to be done in each testWidgets call by calling [_initWindowAndLib]
-  });
-
-  tearDown(() async {
-    await GameToolsLib.close(); // cleanup static references
-    await Utils.delay(Duration(milliseconds: 20)); // get last log out of test
-  });
-
-  group("Native Code Integration Tests: ", () {
-    group("Base Window Tests: ", _testBaseWindow);
-    group("Image Tests: ", _testImages);
+  _testBaseOpenCv();
+  // dont run tests asynchronous, but rather after another here, because they have to interact!
+  testWidgets("Native Code Integration Tests (has to be all in one, see internal logs): ", (WidgetTester tester) async {
+    _tester = tester;
+    await _initOnlyWindow(tester, TestColouredBoxes()); // init only once the app ui
+    await _group("Base Window Tests", _testBaseWindow);
+    await _group("Image Tests", _testImages);
     if (enableInputTests) {
-      group("Input Tests: ", _testInput);
+      await _group("Input Tests", _testInput);
+    }
+    for (final (String log, Object? e, StackTrace? s) in fails) {
+      await StartupLogger().log(log, LogLevel.ERROR, e, s);
+    }
+    _completer.complete(fails.length);
+  });
+  test("Running other Tests...", () async {
+    final int failCount = await _completer.future; // finish when the tests are done
+    if (failCount == 0) {
+      await StartupLogger().log("All tests completed successfully!!!", LogLevel.INFO, null, null);
+      await Logger.waitForLoggingToBeDone();
+    } else {
+      await Logger.waitForLoggingToBeDone();
+      throw TestFailure("Some tests failed! See above!");
     }
   });
+}
+
+Completer<int> _completer = Completer<int>();
+late String _currentGroup;
+late WidgetTester _tester;
+int testCounter = 1;
+List<(String, Object?, StackTrace?)> fails = <(String, Object?, StackTrace?)>[];
+
+/// for each individual test, will init and cleanup!
+Future<void> _test(String name, Future<void> Function(WidgetTester tester) callback) async {
+  await StartupLogger().log("Running test ${testCounter++} $name...", LogLevel.INFO, null, null);
+  try {
+    await _initOnlyLib(_testAppName); // every test should init lib
+    await callback.call(_tester);
+    await GameToolsLib.close();
+  } catch (e, s) {
+    fails.add(("Failed $_currentGroup -- $name: ", e, s));
+  }
+  await Future<void>.delayed(const Duration(milliseconds: 35));
+}
+
+Future<void> _group(String name, Future<void> Function() test) async {
+  _currentGroup = name;
+  await StartupLogger().log("Test Group $name: ", LogLevel.INFO, null, null);
+  await test.call();
 }
 
 const String _testAppName = "game_tools_lib_example";
@@ -52,14 +94,9 @@ String get _testFolder => FileUtils.combinePath(<String>[FixedConfig.fixedConfig
 
 String _testFile(String fileName) => FileUtils.combinePath(<String>[_testFolder, fileName]);
 
-Future<void> _initWindowAndLib(WidgetTester tester, Widget home) async {
-  await _initOnlyWindow(tester, home);
-  await _initOnlyLib(_testAppName);
-}
-
 Future<void> _initOnlyWindow(WidgetTester tester, Widget home, [String title = _testAppName]) async {
   await tester.pumpWidget(TestApp(title: title, child: home));
-  await tester.pumpAndSettle(const Duration(milliseconds: 20));
+  await tester.pumpAndSettle(const Duration(milliseconds: 30));
   final Size size = tester.view.physicalSize;
   _windowWidth = size.width.toInt();
   _windowHeight = size.height.toInt();
@@ -74,15 +111,22 @@ Future<void> _initOnlyLib([
     isCalledFromTesting: true,
     gameWindows: GameToolsLib.createDefaultWindowForInit(searchName)..addAll(moreWindows),
   );
-  await Utils.delay(Duration(milliseconds: 20)); // small delays until window is open
+  await Utils.delay(Duration(milliseconds: 50)); // small delays until window is open
   if (result == false) {
     throw TestException(message: "default test init game tools lib failed");
   }
 }
 
-void _testBaseWindow() {
-  testWidgets("window finding and default settings", (WidgetTester tester) async {
-    await _initWindowAndLib(tester, TestColouredBoxes());
+void _testBaseOpenCv() {
+  test("external testing raw opencv functions", () async {
+    final cv.Mat mat = cv.Mat.empty();
+    expect(mat.channels, 1, reason: "empty mat channel 1");
+    expect(mat.clone().isEmpty, true, reason: "clone still empty");
+  });
+}
+
+Future<void> _testBaseWindow() async {
+  await _test("window finding and default settings", (WidgetTester tester) async {
     expect(_window.isWindowOpen(), true, reason: "window should be open");
     final Bounds<int> bounds = _window.getWindowBounds();
     expect(bounds.width, _width, reason: "window should have correct width");
@@ -104,10 +148,9 @@ void _testBaseWindow() {
     await MutableConfig.mutableConfig.alwaysMatchGameWindowNamesEqual.setValue(true);
     expect(_window.isWindowOpen(), false, reason: "but not anymore when checking for equal");
   });
-  testWidgets("color and pos test", (WidgetTester tester) async {
-    await _initWindowAndLib(tester, TestColouredBoxes());
+  await _test("color and pos test", (WidgetTester tester) async {
     Logger.warn("this test can fail if you un focus the window");
-    expect(_window.getPixelOfWindow(0, 0)?.equals(Colors.blue), true, reason: "top left blue");
+    expect(_window.getPixelOfWindow(0, 0)?.equals(Colors.blue), true, reason: "top left blue (blue light filter on?)");
     expect(_window.getPixelOfWindow(99, 99)?.equals(Colors.blue), true, reason: "max size still blue");
     expect(_window.getPixelOfWindow(100, 100)?.equals(Colors.white), true, reason: "outer white");
     expect(_window.getPixelOfWindow(1163, 580)?.equals(Colors.white), true, reason: "before bot right white");
@@ -123,27 +166,154 @@ void _testBaseWindow() {
   });
 }
 
-void _testImages() {
-  testWidgets("testing raw image functions", (WidgetTester tester) async {
-    await _initOnlyLib();
+Future<void> _testImages() async {
+  await _test("raw image exception test", (WidgetTester tester) async {
+    final NativeImage img = await NativeImage.readAsync(path: _testFile("full_crop.png"));
+    expect(() async {
+      await NativeImage.readAsync(path: _testFile("_NOT_EXISTING.png")); // wrong img path
+    }, throwsA(predicate((Object e) => e is ImageException)));
+    expect(() async {
+      img.cleanupMemory(img.getRawData()); // cleanup with current data
+    }, throwsA(predicate((Object e) => e is ImageException)));
+    final NativeImage clone = await img.clone();
+    expect(identical(clone, img), false, reason: "clone not identical");
+    expect(clone, img, reason: "clone equal");
+    img.cleanupMemory(null);
+    img.cleanupMemory(null);
+    expect(img.getRawData(), null, reason: "cleanup call be called with null multiple times");
+    expect(() async {
+      await img.clone(); // clone with null
+    }, throwsA(predicate((Object e) => e is ImageException)));
+    expect(() async {
+      await img.scale(1.5, 2.5); // scale with null
+    }, throwsA(predicate((Object e) => e is ImageException)));
+    expect(() async {
+      await img.getSubImage(0, 0, 1, 1); // subimg with null
+    }, throwsA(predicate((Object e) => e is ImageException)));
+    await img.resize(10, 10); // resize is fine, but does nothing
+    expect(img.width == 0 && img.height == 0, true, reason: "still 0 size");
+  });
+  await _test("testing raw image functions", (WidgetTester tester) async {
+    final int cleanups = NativeImage.cleanupCounter;
     final NativeImage full = NativeImage.readSync(path: _testFile("full_crop.png"));
     final NativeImage correct = NativeImage.readSync(path: _testFile("correct_crop.png"));
     final NativeImage wrong = NativeImage.readSync(path: _testFile("wrong_crop.png"));
+    final NativeImage corAlpha = NativeImage.readSync(
+      path: _testFile("correct_crop_alpha.png"),
+      type: NativeImageType.RGBA,
+    );
+    final NativeImage corAlpha2 = NativeImage.readSync(
+      path: _testFile("correct_crop_alpha_2.png"),
+      type: NativeImageType.RGBA,
+    );
+    expect(NativeImage.cleanupCounter, cleanups, reason: "read should not change type");
+    final NativeImage correctWA = NativeImage.readSync(path: _testFile("correct_crop.png"), type: NativeImageType.RGBA);
+    expect(NativeImage.cleanupCounter, cleanups + 1, reason: "but explicit type change should!");
+    final NativeImage fullGray = NativeImage.readSync(path: _testFile("full_crop.png"), type: NativeImageType.GRAY);
+    expect(NativeImage.cleanupCounter, cleanups + 1, reason: "but not for gray!");
     final NativeImage part = await full.getSubImage(48, 47, 5, 3);
+    expect(correct.colorAtPixel(0, 0)?.equals(Colors.yellow), true, reason: "correct pixel from file");
+    expect(correct.colorAtPixel(1, 1)?.equals(Colors.red), true, reason: "correct pixel2 from file");
+    expect(TestMockNativeImageWrapper(full).native, null, reason: "file has no native data");
+    expect(full.type, NativeImageType.RGB, reason: "rgb image");
+    expect(part.width == 5 && part.height == 3, true, reason: "sub img correct sizes");
     expect(part == correct, true, reason: "img comp true");
     expect(part == wrong, false, reason: "img comp false");
-    expect(part.equals(wrong, pixelRGBThreshold: 150, maxAmountOfPixelsNotEqual: 0), false, reason: "too low rgb");
-    expect(part.equals(wrong, pixelRGBThreshold: 151, maxAmountOfPixelsNotEqual: 0), true, reason: "rgb skip");
-    expect(part.equals(wrong, pixelRGBThreshold: 0, maxAmountOfPixelsNotEqual: 1), true, reason: "skip 1 pixel");
-    // todo: test resize and scale
+    expect(part.equals(wrong, pixelValueThreshold: 150, maxAmountOfPixelsNotEqual: 0), false, reason: "too low rgb");
+    expect(part.equals(wrong, pixelValueThreshold: 151, maxAmountOfPixelsNotEqual: 0), true, reason: "rgb skip");
+    expect(part.equals(wrong, pixelValueThreshold: 0, maxAmountOfPixelsNotEqual: 1), true, reason: "skip 1 pixel");
+
+    expect(corAlpha.type, NativeImageType.RGBA, reason: "rgba image");
+    expect(corAlpha2.type, NativeImageType.RGBA, reason: "rgba image");
+    expect(corAlpha.colorAtPixel(2, 1)?.alpha, 152, reason: "alpha value in alpha");
+    expect(corAlpha.colorAtPixel(0, 0)?.equals(Colors.yellow), true, reason: "correct pixel from alpha file");
+    expect(corAlpha.colorAtPixel(0, 2)?.equals(Colors.red), true, reason: "correct pixel2 from alpha file");
+    expect(corAlpha == correct, true, reason: "default still true");
+    expect(corAlpha2 == correct, true, reason: "default still true");
+    expect(corAlpha2 == corAlpha, false, reason: "alpha alpha false");
+    expect(corAlpha2.equals(corAlpha, pixelValueThreshold: 200, maxAmountOfPixelsNotEqual: 0), true, reason: "value");
+    expect(corAlpha2.equals(corAlpha, pixelValueThreshold: 0, maxAmountOfPixelsNotEqual: 2), true, reason: "pixel");
+    expect(corAlpha2.equals(corAlpha, pixelValueThreshold: 50, maxAmountOfPixelsNotEqual: 0), false, reason: "value");
+    expect(corAlpha2.equals(corAlpha, pixelValueThreshold: 0, maxAmountOfPixelsNotEqual: 1), false, reason: "value");
+    expect(corAlpha2.equals(corAlpha, ignoreAlpha: true), true, reason: "compare with skip alpha also true");
+    expect(correctWA.type, NativeImageType.RGBA, reason: "changed rgba image");
+    expect(correctWA == correct, true, reason: "changed alpha image should still be same");
+
+    final NativeImage scaled1 = await correct.clone();
+    final NativeImage scaled2 = await correct.clone();
+    await scaled1.resize(10, 6);
+    await scaled2.scale(2.0, 2.0);
+    expect(scaled1.width == 10 && scaled1.height == 6, true, reason: "correct dim for scale");
+    expect(scaled1 == scaled2, true, reason: "scaled match");
+    expect(scaled1.colorAtPixel(7, 2)?.equals(Color.fromARGB(255, 249, 141, 56)), true, reason: "scaled col");
+    final NativeImage gray = await full.clone();
+    gray.changeTypeSync(NativeImageType.GRAY);
+    expect(gray.type == NativeImageType.GRAY && fullGray.type == gray.type, true, reason: "gray types");
+    expect(gray.colorAtPixel(50, 50)?.gray, 118, reason: "gray col");
+    expect(gray == fullGray, true, reason: "default equal matches gray");
+    expect(gray.equals(fullGray, pixelValueThreshold: 0), false, reason: "with not 1 pxl offset its not equal tho!");
   });
-  testWidgets("getting images from window and comparing pixel", (WidgetTester tester) async {
-    await _initWindowAndLib(tester, TestColouredBoxes());
+  await _test("testing special image type hsv", (WidgetTester tester) async {
+    final int cleanups = NativeImage.cleanupCounter;
+    final NativeImage hsv = NativeImage.readSync(path: _testFile("correct_crop_alpha.png"), type: NativeImageType.HSV);
+    expect(NativeImage.cleanupCounter, cleanups + 1, reason: "hsv read inc counter");
+    expect(hsv.type, NativeImageType.HSV, reason: "correct hsv type");
+    final NativeImage rgb = await hsv.clone();
+    final NativeImage rgba = await hsv.clone();
+    rgb.changeTypeSync(NativeImageType.RGB);
+    expect(() async {
+      rgba.changeTypeSync(NativeImageType.RGBA); // can not change to rgba
+    }, throwsA(predicate((Object e) => e is ImageException)));
+    rgba
+      ..changeTypeSync(NativeImageType.RGB)
+      ..changeTypeSync(NativeImageType.RGBA); // two way conversion
+    expect(rgb.type, NativeImageType.RGB, reason: "correct conversion to rgb");
+    expect(rgba.type, NativeImageType.RGBA, reason: "correct conversion to rgba");
+
+    Color? hsvC = hsv.colorAtPixel(2, 1);
+    expect(hsvC?.h == 2 && hsvC?.s == 199 && hsvC?.v == 244, true, reason: "hsv correct color");
+    expect(rgb.colorAtPixel(1, 1)?.equals(Colors.red), true, reason: "correct color in rgb");
+    expect(rgb.colorAtPixel(1, 1)?.equals(Colors.red), true, reason: "correct color in rgb");
+    expect(rgba.colorAtPixel(2, 1)?.alpha, 255, reason: "alpha after conversion should be max");
+    expect(rgb == rgba, true, reason: "conversions should be equal");
+    final NativeImage hsv2 = await rgb.clone();
+    hsv2.changeTypeSync(NativeImageType.HSV);
+    expect(hsv2.type, NativeImageType.HSV, reason: "back to hsv");
+    expect(hsv == hsv2, true, reason: "back to default should still be equal");
+    rgba.changeTypeSync(NativeImageType.HSV);
+    expect(rgba.type, NativeImageType.HSV, reason: "but should convert rgba back to hsv");
+    hsvC = rgba.colorAtPixel(2, 1);
+    expect(hsvC?.h == 2 && hsvC?.s == 199 && hsvC?.v == 244, true, reason: "converted should still have correct hsv");
+    final NativeImage gray = NativeImage.readSync(path: _testFile("full_crop.png"), type: NativeImageType.GRAY);
+    expect(() async {
+      gray.changeTypeSync(NativeImageType.HSV); // also cant convert from gray to hsv
+    }, throwsA(predicate((Object e) => e is ImageException)));
+    expect(() async {
+      hsv.changeTypeSync(NativeImageType.GRAY); // and cant convert from hsv to gray
+    }, throwsA(predicate((Object e) => e is ImageException)));
+  });
+  await _test("testing image compare functions", (WidgetTester tester) async {
+    final NativeImage img1 = NativeImage.readSync(path: _testFile("apple1.png"));
+    final NativeImage img2 = NativeImage.readSync(path: _testFile("apple2.png"));
+    final double histComp = await img1.pixelSimilarity(img2, comparePixelOverall: true);
+    final double pixComp = await img1.pixelSimilarity(img2, comparePixelOverall: false);
+    expect(histComp.isEqual(0.94073455), true, reason: "hist comp shows 94% similarity");
+    expect(pixComp.isEqual(0.26637687), true, reason: "per pixel comp only shows 26%");
+  });
+  await _test("getting images from window and comparing pixel", (WidgetTester tester) async {
     Logger.warn("this test can fail if you un focus the window");
     final Bounds<int> bounds = _window.getWindowBounds();
-    final NativeImage fullWin = await _window.windowFullImage;
-    final NativeImage cropMiddle = await _window.getImageOfWindow(582, 290, 100, 100);
-    final NativeImage display = await GameWindow.mainDisplayFullImage;
+    final int cleanups = NativeImage.cleanupCounter; // other tests could change this static val
+    final NativeImage cropMiddle = await _window.getImage(582, 290, 100, 100);
+    final NativeImage display = await GameWindow.getDisplayImage();
+    expect(NativeImage.cleanupCounter, cleanups, reason: "cleanup still 0(can fail cause of other tests)");
+    final NativeImage fullWin = await _window.getFullImage(NativeImageType.RGB);
+    expect(NativeImage.cleanupCounter, cleanups + 1, reason: "cleanup still 0(can fail cause of other tests)");
+    expect(cropMiddle.type, NativeImageType.RGBA, reason: "default rgba");
+    expect(fullWin.type, NativeImageType.RGB, reason: "explicit rgb type");
+    expect(TestMockNativeImageWrapper(cropMiddle).native, isNotNull, reason: "rgba has native data");
+    expect(TestMockNativeImageWrapper(fullWin).native, null, reason: "rgb has no native data");
+
     expect(fullWin.width == 1280 && fullWin.height == 720, true, reason: "correct window dimensions");
     expect(cropMiddle.colorAtPixel(-1, -1), null, reason: "pixel null");
     expect(cropMiddle.colorAtPixel(100, 100), null, reason: "pixel also null");
@@ -172,17 +342,16 @@ void _testImages() {
     final NativeImage part = await cropMiddle.getSubImage(48, 47, 5, 3);
     expect(part == NativeImage.readSync(path: _testFile("correct_crop.png")), true, reason: "sub image comp equals");
     expect(part == NativeImage.readSync(path: _testFile("wrong_crop.png")), false, reason: "wrong not equal");
-    // todo: also resize and scale here
   });
 }
 
-void _testInput() {
-  testWidgets("focus test (only working with Command Prompt) and interact tests(moving your mouse around / using "
+Future<void> _testInput() async {
+  await _test("focus test (only working with Command Prompt) and interact tests(moving your mouse around / using "
       "clipboard and keyboard keys, etc!)\nIMPORTANT: DON'T use your mouse and keyboard during this test and keep the"
       " terminal in focus!!!", (
     WidgetTester tester,
   ) async {
-    await _initOnlyWindow(tester, TestColouredBoxes());
+    await GameToolsLib.close();
     final GameWindow second = GameWindow(name: "Command Prompt");
     await _initOnlyLib("game_tools", <GameWindow>[second]);
     Logger.warn("this test can fail if you un focus the window");

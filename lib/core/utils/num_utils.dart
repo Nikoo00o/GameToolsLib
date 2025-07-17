@@ -13,7 +13,7 @@ abstract final class NumUtils {
   static Random get _secureRandom => _instanceSecureRandom ??= Random.secure();
 
   /// Used to compare doubles
-  static const double _epsilon = 0.0001;
+  static const double epsilon = 0.0001;
 
   /// Not crypto secure random inclusive from [incFrom] to [incTo]
   static int getRandomNumber(int incFrom, int incTo) {
@@ -48,7 +48,7 @@ abstract final class NumUtils {
       if (T == int) {
         return Point<T>(abs.x <= 1 ? 1 as T : abs.x, abs.y <= 1 ? 1 as T : abs.y);
       } else {
-        return Point<T>(abs.x <= _epsilon ? _epsilon as T : abs.x, abs.y <= _epsilon ? _epsilon as T : abs.y);
+        return Point<T>(abs.x <= epsilon ? epsilon as T : abs.x, abs.y <= epsilon ? epsilon as T : abs.y);
       }
     }
     return abs;
@@ -73,7 +73,7 @@ abstract final class NumUtils {
     final T smaller = p.x < p.y ? p.x : p.y;
     if (T == int && smaller < 0) {
       return Point<T>(0 as T, 0 as T);
-    } else if (smaller < _epsilon) {
+    } else if (smaller < epsilon) {
       return Point<T>(0.0 as T, 0.0 as T);
     }
     if (smaller < minValue) {
@@ -105,26 +105,31 @@ abstract final class NumUtils {
 /// use [NumUtils._epsilon]). Some utils are also in
 extension DoubleExtension on double {
   /// if the [abs] difference between [other] and this is smaller than [epsilon]
-  bool isEqual(double other, {double epsilon = NumUtils._epsilon}) => (this - other).abs() < epsilon;
+  bool isEqual(double other, {double epsilon = NumUtils.epsilon}) => (this - other).abs() < epsilon;
 
-  bool isZero({double epsilon = NumUtils._epsilon}) => isEqual(0.0, epsilon: epsilon);
+  bool isZero({double epsilon = NumUtils.epsilon}) => isEqual(0.0, epsilon: epsilon);
 
-  bool isLessThan(double more, {double epsilon = NumUtils._epsilon}) => this + epsilon < more;
+  bool isLessThan(double more, {double epsilon = NumUtils.epsilon}) => this + epsilon < more;
 
-  bool isMoreThan(double less, {double epsilon = NumUtils._epsilon}) => this - epsilon > less;
+  bool isMoreThan(double less, {double epsilon = NumUtils.epsilon}) => this - epsilon > less;
 
-  bool isLessOrEqualThan(double moreOrEqual, {double epsilon = NumUtils._epsilon}) => !isMoreThan(moreOrEqual);
+  bool isLessOrEqualThan(double moreOrEqual, {double epsilon = NumUtils.epsilon}) => !isMoreThan(moreOrEqual);
 
-  bool isMoreOrEqualThan(double lessOrEqual, {double epsilon = NumUtils._epsilon}) => !isLessThan(lessOrEqual);
+  bool isMoreOrEqualThan(double lessOrEqual, {double epsilon = NumUtils.epsilon}) => !isLessThan(lessOrEqual);
 
   /// 10.00 would return false, 10.10 would return true
-  bool hasDecimalPoints({double epsilon = NumUtils._epsilon}) => (this - floor().toDouble()) > epsilon;
+  bool hasDecimalPoints({double epsilon = NumUtils.epsilon}) => (this - floor().toDouble()) > epsilon;
+
+  /// Absolute non negative difference / distance between [other] and this
+  double diff(double other) => (other - this).abs();
 }
 
 /// Helper methods for [int] which return modified values.
 extension IntExtension on int {
   /// Returns this scaled by [scaleFactor]
   int scale(double scaleFactor) => (this * scaleFactor).round();
+  /// Absolute non negative difference / distance between [other] and this
+  int diff(int other) => (other - this).abs();
 }
 
 /// Helper methods for [Point] which return modified values like [abs], [scale], [move], or [toIntPoint].

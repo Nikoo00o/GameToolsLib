@@ -98,14 +98,15 @@ final class GameToolsLib extends GameToolsLibHelper {
   /// Should only be used for testing, because it resets all static references and stops the GameToolsLib
   static Future<void> close() async {
     GameToolsConfig._instance = null;
-    Logger._instance = null;
     if (HiveDatabase._instance != null) {
       await database.closeHiveDatabases();
       HiveDatabase._instance = null;
     } else {
+      // logger might not be initialized yet. also dont clean up logger itself!
       await StartupLogger().log("HiveDatabase was null while closing GameToolsLib", LogLevel.WARN, null, null);
     }
     NativeWindow.clearNativeWindowInstance();
+    await Logger.waitForLoggingToBeDone(); // print last logs
     GameToolsLibHelper._initialized = false; // cleanup done
   }
 

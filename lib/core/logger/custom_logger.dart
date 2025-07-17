@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/logger/log_level.dart';
 import 'package:game_tools_lib/core/logger/log_message.dart';
 import 'package:game_tools_lib/core/utils/file_utils.dart';
@@ -10,14 +9,12 @@ import 'package:intl/intl.dart' show DateFormat;
 base class CustomLogger extends Logger {
   CustomLogger();
 
-  static FixedConfig get fixedConfig => GameToolsLib.config().fixed;
-
   /// Can be overridden in the subclass to log the final log message string into the console in different ways.
   ///
   /// The default is just a call to [debugPrint]
   @override
   void logToConsole(String logMessage) {
-    if (fixedConfig.logIntoConsole) {
+    if (Logger.fixedConfig?.logIntoConsole ?? false) {
       debugPrint(logMessage);
     }
   }
@@ -25,7 +22,7 @@ base class CustomLogger extends Logger {
   /// Can be overridden in the subclass for different logging widgets
   @override
   void logToUi(LogMessage logMessage) {
-    if (fixedConfig.logIntoUI) {
+    if (Logger.fixedConfig?.logIntoUI ?? false) {
       // todo: implement
     }
   }
@@ -38,10 +35,10 @@ base class CustomLogger extends Logger {
   /// The default is just a call to do nothing
   @override
   Future<void> logToStorage(LogMessage logMessage) async {
-    if (fixedConfig.logIntoStorage) {
+    if (Logger.fixedConfig?.logIntoStorage ?? false) {
       try {
         final String date = DateFormat("yyyy-MM-dd").format(DateTime.now());
-        final String path = FileUtils.combinePath(<String>[fixedConfig.logFolder, "$date.txt"]);
+        final String path = FileUtils.combinePath(<String>[Logger.fixedConfig!.logFolder, "$date.txt"]);
         await FileUtils.addToFileAsync(path, logMessage.toString());
         final String delimiter = String.fromCharCodes(List<int>.generate(100, (int index) => "-".codeUnits.first));
         await FileUtils.addToFileAsync(path, "\n$delimiter\n");
@@ -68,5 +65,5 @@ final class StartupLogger extends Logger {
   Future<void> logToStorage(LogMessage logMessage) async {}
 
   @override
-  LogLevel get logLevel => LogLevel.VERBOSE;
+  LogLevel get logLevel => LogLevel.SPAM;
 }

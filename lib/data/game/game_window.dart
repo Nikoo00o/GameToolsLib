@@ -5,6 +5,7 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData, LogicalKey
 import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/enums/input_enums.dart';
+import 'package:game_tools_lib/core/enums/native_image_type.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/utils/bounds.dart';
 import 'package:game_tools_lib/core/utils/utils.dart' show Utils;
@@ -18,7 +19,7 @@ part 'package:game_tools_lib/data/game/input_manager.dart';
 part 'package:game_tools_lib/core/enums/board_key.dart';
 
 /// This offers static methods like [GameWindow.mainDisplayWidth] to interact with the full native screen/display, but
-/// also member methods to interact with the specific window names [name] like [getWindowBounds], or [getImageOfWindow]
+/// also member methods to interact with the specific window names [name] like [getWindowBounds], or [getImage]
 /// which can be accessed with for example [GameToolsLib.mainGameWindow], or the list of windows!
 /// You can have multiple instances of this, but you can also change the [name] by calling [rename] to find a
 /// different window. Remember that objects of this only work if they have been passed to the
@@ -116,7 +117,7 @@ final class GameWindow {
   /// May throw a [WindowClosedException] if the window was not open.
   ///
   /// Important: the [getWindowBounds] would also include a top window border in its height while all other methods
-  /// like [getImageOfWindow], [windowMousePos], [getPixelOfWindow] ignore those borders and
+  /// like [getImage], [windowMousePos], [getPixelOfWindow] ignore those borders and
   /// only access space inside of the window!
   Bounds<int> getWindowBounds() {
     final Bounds<int>? bounds = _nativeWindow.getWindowBounds(_windowID);
@@ -140,16 +141,41 @@ final class GameWindow {
   ///
   /// Important: uses mouse position relative to top left window border, but [GameWindow.getWindowBounds] would also
   /// include a top window border in its height which is not included here!
-  Future<NativeImage> getImageOfWindow(int x, int y, int width, int height) async {
-    final NativeImage? image = await _nativeWindow.getImageOfWindow(_windowID, x, y, width, height);
+  ///
+  /// Default for [type] is [NativeImageType.RGBA] to make no copy (see docs of the type for more).
+  Future<NativeImage> getImage(
+    int x,
+    int y,
+    int width,
+    int height, [
+    NativeImageType type = NativeImageType.RGBA,
+  ]) async {
+    final NativeImage? image = await _nativeWindow.getImageOfWindow(_windowID, x, y, width, height, type);
     if (image == null) {
       throw WindowClosedException(message: "Cant get image of window $_windowID: $x, $y, $width, $height");
     }
     return image;
   }
 
-  /// Same as [getImageOfWindow], but with [Bounds]
-  Future<NativeImage> getImageOfWindowB(Bounds<int> b) async => getImageOfWindow(b.x, b.y, b.width, b.height);
+  /// Same as [getImage], but with [Bounds]
+  Future<NativeImage> getImageB(Bounds<int> b, [NativeImageType type = NativeImageType.RGBA]) async =>
+      getImage(b.x, b.y, b.width, b.height, type);
+
+  /// Image of the whole full window (as a future!).
+  /// May throw a [WindowClosedException] if the window was not open.
+  /// Default for [type] is [NativeImageType.RGBA] to make no copy (see docs of the type for more).
+  Future<NativeImage> getFullImage([NativeImageType type = NativeImageType.RGBA]) async {
+    final NativeImage? image = await _nativeWindow.getFullWindow(_windowID, type);
+    if (image == null) {
+      throw WindowClosedException(message: "Cant get full image of window: $_windowID:");
+    }
+    return image;
+  }
+
+  /// Returns the full main display screen as an image.
+  /// Default for [type] is [NativeImageType.RGBA] to make no copy (see docs of the type for more).
+  static Future<NativeImage> getDisplayImage([NativeImageType type = NativeImageType.RGBA]) =>
+      _nativeWindow.getFullMainDisplay(type);
 
   /// Returns the color of the pixel at [x], [y] relative to the top left corner of the window.
   /// May throw a [WindowClosedException] if the window was not open.
@@ -157,6 +183,8 @@ final class GameWindow {
   ///
   /// Important: uses mouse position relative to top left window border, but [GameWindow.getWindowBounds] would also
   /// include a top window border in its height which is not included here!
+  ///
+  /// To see rgb values from 0 to 255 as a string from color, use [Color.rgb].
   Color? getPixelOfWindow(int x, int y) {
     final Color? color = _nativeWindow.getPixelOfWindow(_windowID, x, y);
     if (color == null) {
@@ -226,16 +254,6 @@ final class GameWindow {
     }
   }
 
-  /// Image of the whole full window (as a future!).
-  /// May throw a [WindowClosedException] if the window was not open
-  Future<NativeImage> get windowFullImage async {
-    final NativeImage? image = await _nativeWindow.getFullWindow(_windowID);
-    if (image == null) {
-      throw WindowClosedException(message: "Cant get full image of window: $_windowID:");
-    }
-    return image;
-  }
-
   /// Returns the mouse position relative to the top left corner of the window.
   /// May throw a [WindowClosedException] if the window was not open.
   /// Returns [null] if the cursor is currently outside of the window (see [isWithinWindow])!
@@ -249,9 +267,6 @@ final class GameWindow {
 
   /// Full size of the whole screen
   static int get mainDisplayHeight => _nativeWindow.getMainDisplayHeight();
-
-  /// Image of the full main display screen
-  static Future<NativeImage> get mainDisplayFullImage => _nativeWindow.getFullMainDisplay();
 
   /// This needs to be called when one of each config variables changes to update the native code:
   /// [alwaysMatchEqual] controls how the window names will be matched ([false] = the window title only has to

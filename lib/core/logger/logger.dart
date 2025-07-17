@@ -20,13 +20,21 @@ abstract base class Logger {
 
   static final Lock _lock = Lock();
 
+  @protected
+  /// Nullable static getter used internally to return the config instance
+  static FixedConfig? get fixedConfig => GameToolsConfig._instance?.fixed;
+
+  /// Nullable static getter used internally to return the config instance
+  @protected
+  static MutableConfig? get mutableConfig => GameToolsConfig._instance?.mutable;
+
   /// Converted from [SpamIdentifier] and contains the next time this is allowed to log
   static final Map<int, DateTime> _spamIdentifier = <int, DateTime>{};
 
   /// The current [LogLevel] of the logger. All logs with a higher value than this will be ignored and only the more
   /// important logs with a lower [LogLevel] will be printed and stored!
-  /// Set it to [LogLevel.VERBOSE] to log everything!
-  LogLevel get logLevel => GameToolsLib.config().mutable.logLevel.cachedValue() ?? LogLevel.VERBOSE;
+  /// Set it to [LogLevel.SPAM] to log everything (default if no config is set)!
+  LogLevel get logLevel => mutableConfig?.logLevel.cachedValue() ?? LogLevel.SPAM;
 
   /// Only set during tests to prevent logging to storage and ui
   bool _isTesting = false;
@@ -95,7 +103,7 @@ abstract base class Logger {
     Object? p6,
     Object? p7,
   ]) {
-    assert(_instance != null, "logger not initialised");
+    // no assert here, because it can be called from finalizer and logger might not be initialized yet?!
     if (_instance?.canLog(LogLevel.SPAM) ?? false) {
       final DateTime now = DateTime.now();
       final DateTime? nextTime = _spamIdentifier[identifier.identifier];
@@ -136,12 +144,20 @@ abstract base class Logger {
   /// The default is just a call to do nothing
   Future<void> logToStorage(LogMessage logMessage);
 
+  /// Per default awaits [debugPrintDone] and the internal [_lock] (should be called at the end of the program when
+  /// shutting down!
+  ///
+  static Future<void> waitForLoggingToBeDone() async {
+    await debugPrintDone;
+    await _lock.synchronized(() {});
+  }
+
   /// The main log method that is called by the static log methods. will log to console, storage, etc...
   Future<void> log(String? message, LogLevel level, Object? error, StackTrace? stackTrace) async {
     if (canLog(level) == false) {
       return;
     }
-    await _log(
+    return _log(
       LogMessage(
         message: message,
         level: level,

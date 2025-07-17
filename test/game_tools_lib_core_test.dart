@@ -1,76 +1,91 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
+import 'package:game_tools_lib/core/logger/custom_logger.dart';
 import 'package:game_tools_lib/core/logger/log_level.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/data/game/game_window.dart';
 import 'package:game_tools_lib/domain/entities/model.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 
+/// Some logs may not be printed in tests if an expect fails, because the print was not flushed to the console yet!
 void main() {
-  setUp(() async {
-    // default init call for testing
-    final bool init = await _initGameToolsLib();
-    await Utils.delay(Duration(milliseconds: 5)); // get last log out of test
-    if (init == false) {
-      throw TestException(message: "default test init game tools lib failed");
-    }
-  });
-
-  tearDown(() async {
-    await GameToolsLib.close(); // cleanup static references
-    await Utils.delay(Duration(milliseconds: 5)); // get last log out of test
-  });
-
   group("GameToolsLib Core Tests: ", () {
+    setUp(() async {
+      // default init call for testing
+      final bool init = await _initGameToolsLib();
+      await Utils.delay(Duration(milliseconds: 5)); // get last log out of test
+      if (init == false) {
+        throw TestException(message: "default test init game tools lib failed");
+      }
+    });
+
+    tearDown(() async {
+      await GameToolsLib.close(); // cleanup static references
+      await Utils.delay(Duration(milliseconds: 5)); // get last log out of test
+    });
     group("Initialization Tests: ", _testInit);
   });
 }
 
-Future<bool> _initGameToolsLib() async {
-  final bool result = await GameToolsLib.initGameToolsLib(
-    config: ExampleGameToolsConfig(),
-    isCalledFromTesting: true,
-    gameWindows: GameToolsLib.createDefaultWindowForInit("Not_Found"),
-  );
-  return result;
+Future<void> _test(String name, Future<void> Function() callback) async {
+  test(name, () async {
+    try {
+      await callback.call();
+    } catch (e, s) {
+      await StartupLogger().log("Failed $name", LogLevel.ERROR, e, s);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      rethrow;
+    }
+  });
 }
 
+Future<bool> _initGameToolsLib() async =>
+    GameToolsLibHelper.useExampleConfig(isCalledFromTesting: true, windowName: "Not_Found");
+
 void _testInit() {
-  test("initialize game tools lib with base config", () async {
+  _test("initialize game tools lib with default example config", () async {
     await GameToolsLib.close();
     final bool success = await _initGameToolsLib();
     expect(success, true);
-    expect(GameToolsLib.baseConfig.fixed.logIntoStorage, true, reason: "log into storage is true");
+    expect(GameToolsLib.baseConfig.fixed.logIntoStorage, false, reason: "log into storage is false");
     expect(await GameToolsLib.baseConfig.mutable.logLevel.getValue(), LogLevel.SPAM, reason: "log level is spam");
     expect(GameToolsLib.database.basePath, HiveDatabaseMock.FLUTTER_TEST_PATH, reason: "database path is testing");
+    expect(GameToolsLib.baseConfig.mutable.logLevel.key, "Example Log Level", reason: "key is changed");
+    expect(GameToolsLib.baseConfig.fixed.logPeriodicSpamDelayMS, 0, reason: "periodic spam delay always");
   });
-  test("initialize game tools lib with example config", () async {
+  _test("initialize game tools lib with default base config", () async {
     await GameToolsLib.close();
-    final bool success = await GameToolsLibHelper.useExampleConfig(isCalledFromTesting: true);
+    final bool success = await GameToolsLib.initGameToolsLib(
+      config: GameToolsConfig<FixedConfig, MutableConfig>(),
+      isCalledFromTesting: true,
+      gameWindows: GameToolsLib.createDefaultWindowForInit("Not_Found"),
+    );
     expect(success, true);
-    expect(GameToolsLib.baseConfig.fixed.logIntoStorage, false, reason: "log into storage is false");
-    expect(await GameToolsLib.baseConfig.mutable.logLevel.getValue(), LogLevel.VERBOSE, reason: "log level is verbose");
+    expect(GameToolsLib.baseConfig.fixed.logIntoStorage, true, reason: "log into storage is true");
+    expect(await GameToolsLib.baseConfig.mutable.logLevel.getValue(), LogLevel.SPAM, reason: "log level is spam");
+    expect(GameToolsLib.baseConfig.fixed.logPeriodicSpamDelayMS, 150, reason: "periodic spam delay is max long delay");
   });
-  test("simulating database error in init should return false", () async {
+  _test("simulating database error in init should return false", () async {
     await GameToolsLib.close();
     HiveDatabaseMock.throwExceptionInInit = true;
     expect(await _initGameToolsLib(), false);
     HiveDatabaseMock.throwExceptionInInit = false;
   });
-  test("user initializing game tools lib twice should just return true", () async {
+  _test("user initializing game tools lib twice should just return true", () async {
     final bool success = await _initGameToolsLib();
     expect(success, true);
   });
-  test("user initializing game tools lib while there is already a config", () async {
+  _test("user initializing game tools lib while there is already a config", () async {
     GameToolsLibHelper.testResetInitialized();
     expect(() async {
       await _initGameToolsLib();
     }, throwsA(predicate((Object e) => e is ConfigException)));
   });
-  test("user initializing game tools lib with empty window list should throw an exception", () async {
+  _test("user initializing game tools lib with empty window list should throw an exception", () async {
     await GameToolsLib.close();
     expect(() async {
       await GameToolsLib.initGameToolsLib(
@@ -80,7 +95,7 @@ void _testInit() {
       );
     }, throwsA(predicate((Object e) => e is ConfigException)));
   });
-  test("initialize game tools lib with multiple game windows should still work", () async {
+  _test("initialize game tools lib with multiple game windows should still work", () async {
     await GameToolsLib.close();
     final bool success = await GameToolsLib.initGameToolsLib(
       config: BaseGameToolsConfig(),
@@ -94,7 +109,7 @@ void _testInit() {
     expect(GameToolsLib.mainGameWindow.name, "first", reason: "first name should be correct");
     expect(GameToolsLib.gameWindows.elementAt(1).name, "second", reason: "second name should be correct");
   });
-  test("testing database cache", () async {
+  _test("testing database cache", () async {
     LogLevelConfigOption logLevel = LogLevelConfigOption(key: "logLevel", defaultValue: LogLevel.VERBOSE);
     expect(logLevel.cachedValue(), LogLevel.VERBOSE, reason: "cache is initially set to default");
     await logLevel.setValue(LogLevel.INFO);
@@ -112,7 +127,7 @@ void _testInit() {
     expect(await logLevel.getValue(), null, reason: "but normal get correctly returns null");
   });
 
-  test("testing database get/set", () async {
+  _test("testing database get/set", () async {
     LogLevelConfigOption logLevel = LogLevelConfigOption(key: "logLevel", defaultValue: LogLevel.VERBOSE);
     expect(await logLevel.getValue(), LogLevel.VERBOSE, reason: "return default with null");
     await logLevel.setValue(LogLevel.INFO);
@@ -130,7 +145,7 @@ void _testInit() {
     expect(await logLevel.getValue(), null, reason: "still return null after set and delete");
   });
 
-  test("testing config update callback", () async {
+  _test("testing config update callback", () async {
     bool called = false;
     LogLevelConfigOption logLevel = LogLevelConfigOption(
       key: "logLevel",
@@ -173,7 +188,7 @@ void _testInit() {
       "{\"JSON_SOME_DATA\":10,\"JSON_MODIFIABLE_DATA\":[{\"JSON_SOME_DATA\":20,\"JSON_MODIFIABLE_DATA\":"
       "[{\"JSON_SOME_DATA\":null,\"JSON_MODIFIABLE_DATA\":[]}]}]}";
 
-  test("testing database with complex model", () async {
+  _test("testing database with complex model", () async {
     expect(jsonEncode(someModel), modelJson, reason: "model should be correct json text");
     expect(
       ExampleModel.fromJson(jsonDecode(modelJson) as Map<String, dynamic>),

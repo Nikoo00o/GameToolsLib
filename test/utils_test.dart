@@ -2,26 +2,41 @@ import 'dart:convert';
 import 'dart:math' show Point;
 import 'dart:ui' show Color;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:game_tools_lib/core/logger/custom_logger.dart';
+import 'package:game_tools_lib/core/logger/log_level.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 
+/// Some logs may not be printed in tests if an expect fails, because the print was not flushed to the console yet!
 void main() {
-  setUp(() async {
-    // no startup needed here
-  });
-
-  tearDown(() async {
-    // no cleanup needed here
-  });
-
   group("GameToolsLib Utils Tests: ", () {
+    setUp(() async {
+      // no startup needed here
+    });
+
+    tearDown(() async {
+      // no cleanup needed here
+    });
     group("General Utils Tests: ", _testGeneral);
     group("Num Utils Tests: ", _testNum);
   });
 }
 
+Future<void> _test(String name, Future<void> Function() callback) async {
+  test(name, () async {
+    try {
+      await callback.call();
+    } catch (e, s) {
+      await StartupLogger().log("Failed $name", LogLevel.ERROR, e, s);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      rethrow;
+    }
+  });
+}
+
 void _testGeneral() {
-  test("list equality", () async {
+  _test("list equality", () async {
     final List<int> li1 = <int>[1, 2, 3];
     final List<int> li2 = <int>[1, 2, 3];
     final List<int> li3 = <int>[1, 4, 3];
@@ -32,16 +47,20 @@ void _testGeneral() {
     expect((li1 == li1) == (li1.equals(li1)), true, reason: "same as identity");
     expect(ListUtils.equals(li1, <String>["1", "2"]), false, reason: "no exception with different lists");
   });
-  test("color equality", () async {
+  _test("color equality", () async {
     final Color c1 = Color.fromARGB(125, 125, 125, 125);
     final Color c2 = Color.fromARGB(125, 125, 125, 125);
-    final Color c3 = Color.fromARGB(124, 125, 125, 125);
-    final Color c4 = Color.fromARGB(125, 124, 125, 125);
-    expect(c1.equals(c2), true, reason: "same color match");
-    expect(c1.equals(c3), false, reason: "alpha diff");
-    expect(c1.equals(c4), false, reason: "green diff");
+    final Color c3 = Color.fromARGB(123, 125, 125, 125);
+    final Color c4 = Color.fromARGB(125, 123, 125, 125);
+    final Color c5 = Color.fromARGB(125, 126, 125, 125);
+    expect(c1.equals(c2, skipAlpha: false), true, reason: "same color match");
+    expect(c1.equals(c3, skipAlpha: false), false, reason: "alpha diff");
+    expect(c1.equals(c3), true, reason: "alpha ignored");
+    expect(c1.equals(c4, skipAlpha: false), false, reason: "green diff");
+    expect(c1.equals(c5), true, reason: "not enough diff");
+    expect(c1.equals(c5, pixelValueThreshold: 0), false, reason: "now diff is enough");
   });
-  test("periodic execute sync and async correctly", () async {
+  _test("periodic execute sync and async correctly", () async {
     int syncCounter = 0;
     int asyncCounter = 0;
     void syncCallback() {
@@ -61,7 +80,7 @@ void _testGeneral() {
     expect(syncCounter, 4, reason: "sync counter should be half");
     expect(asyncCounter, 4, reason: "async counter should be half");
   });
-  test("periodic execute only count once with delays", () async {
+  _test("periodic execute only count once with delays", () async {
     const Duration delay = Duration(milliseconds: 50);
     int counter = 0;
     Future<void> callback() async {
@@ -73,7 +92,7 @@ void _testGeneral() {
     }
     expect(counter, -1, reason: "sync counter only counted once");
   });
-  test("periodic execute all times with no delay", () async {
+  _test("periodic execute all times with no delay", () async {
     int counter = 0;
     Future<void> callback() async {
       counter -= 1;
@@ -85,7 +104,7 @@ void _testGeneral() {
     expect(counter, -25, reason: "sync counter only counted once");
   });
 
-  test("periodic execute error with unnamed lambda function", () async {
+  _test("periodic execute error with unnamed lambda function", () async {
     int counter = 0;
     expect(() async {
       for (int i = 0; i < 11000; ++i) {
@@ -94,7 +113,7 @@ void _testGeneral() {
     }, throwsAssertionError);
   });
 
-  test("bounds ", () async {
+  _test("bounds ", () async {
     final Bounds<int> b1 = Bounds<int>(x: 3, y: 5, width: 13, height: 15);
     final Bounds<double> b2 = Bounds<double>.sides(left: 3.0, top: 5.0, right: 16.0, bottom: 20.0);
     expect(b1 == b2, true, reason: "different constructors and types should match!");
@@ -134,7 +153,7 @@ void _testGeneral() {
 }
 
 void _testNum() {
-  test("primitive extensions", () async {
+  _test("primitive extensions", () async {
     expect(2.scale(2.6), 5, reason: "int scale");
     expect(1.0.isEqual(1.000001), true, reason: "double equal");
     expect(1.0.isEqual(1.1), false, reason: "double not equal");
@@ -144,7 +163,7 @@ void _testNum() {
     expect(1.02.isMoreThan(1.01), true, reason: "double more");
     expect(1.0000001.isLessThan(1.0000009) || 1.0000009.isMoreThan(1.0000001), false, reason: "not less and not more");
   });
-  test("point functions ", () async {
+  _test("point functions ", () async {
     expect(Point<int>(1, -1).equals(Point<int>(1, -1)), true, reason: "int comp");
     expect(Point<double>(1.01, -1.01).equals(Point<double>(1.01, -1.01)), true, reason: "double comp");
     expect(Point<double>(3.2, 4.2).equals(Point<int>(3, 4)), false, reason: "double int comp");
@@ -157,7 +176,7 @@ void _testNum() {
     expect(Point<double>(4.0, 5.0).raiseTo(6.0), Point<double>(6.0, 7.5), reason: "double raise");
     expect(Point<double>(39, 78).normalize().equals(Point<double>(0.4472135, 0.8944271)), true, reason: "normalize");
   });
-  test("random functions", () async {
+  _test("random functions", () async {
     bool was1 = false;
     bool was2 = false;
     bool was3 = false;
