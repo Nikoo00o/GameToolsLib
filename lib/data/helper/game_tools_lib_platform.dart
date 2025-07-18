@@ -1,13 +1,13 @@
 part of 'package:game_tools_lib/game_tools_lib.dart';
 
 /// Helper Methods For GameToolsLib
-sealed class GameToolsLibHelper extends GameToolsLibPlatform {
+sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
   /// controls the status
   static bool _initialized = false;
 
   /// Used in [GameToolsLib.initGameToolsLib] at the start to init the config
   static void _initConfigAndLogger(
-    GameToolsConfig<FixedConfig, MutableConfig> config,
+    GameToolsConfigBaseType config,
     CustomLogger? logger, {
     required bool isCalledFromTesting,
   }) {
@@ -145,31 +145,6 @@ sealed class GameToolsLibHelper extends GameToolsLibPlatform {
         null,
       );
     }
-  }
-
-  @visibleForTesting
-  static void testResetInitialized() => _initialized = false;
-
-  /// Initializes the library with the [ExampleGameToolsConfig] and also uses it similar to a default call to
-  /// [GameToolsLib.initGameToolsLib] with a few changes. Optional [windowName] can also be set.
-  /// [isCalledFromTesting] should only be set to true in tests to use mock classes instead of the default ones (so
-  /// nothing is saved to local storage and is instead kept in memory. and other lib paths are used).
-  ///
-  /// Important: this is only an example for testing and should not be used in production code!
-  static Future<bool> useExampleConfig({bool isCalledFromTesting = false, String windowName = "Not_Found"}) async {
-    final bool init = await GameToolsLib.initGameToolsLib(
-      config: ExampleGameToolsConfig(),
-      isCalledFromTesting: isCalledFromTesting,
-      gameWindows: GameToolsLib.createDefaultWindowForInit(windowName),
-    ); // first init game tools lib with sub config type
-    if (init == false) {
-      return false;
-    }
-    final ExampleFixedConfig fixedConfig = GameToolsLib.config<ExampleGameToolsConfig>().fixed; // using sub types
-    final ExampleMutableConfig mutableConfig = GameToolsLib.config<ExampleGameToolsConfig>().mutable;
-    final BaseGameToolsConfig baseAccess = GameToolsLib.baseConfig; // using base type
-    final ExampleModel newValue = await mutableConfig.somethingNew.valueNotNull();
-    return !fixedConfig.logIntoStorage && newValue.someData == 5 && !baseAccess.fixed.logIntoStorage;
   }
 }
 

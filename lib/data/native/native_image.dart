@@ -5,7 +5,7 @@ import 'package:game_tools_lib/core/enums/native_image_type.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/utils/Bounds.dart';
 import 'package:game_tools_lib/core/utils/file_utils.dart';
-import 'package:game_tools_lib/data/game/game_window.dart';
+import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/data/native/native_window.dart' show NativeWindow;
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:opencv_dart/opencv.dart' as cv;

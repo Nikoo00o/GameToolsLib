@@ -14,7 +14,7 @@ import 'package:game_tools_lib/data/native/native_window.dart';
 import 'package:game_tools_lib/domain/entities/model.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 
-part 'package:game_tools_lib/data/game/input_manager.dart';
+part 'package:game_tools_lib/domain/game/input_manager.dart';
 
 part 'package:game_tools_lib/core/enums/board_key.dart';
 

@@ -14,12 +14,12 @@ base class GameToolsConfig<FixedConfigType extends FixedConfig, MutableConfigTyp
   /// Returns the mutable part of this config where all values are stored inside of a local file
   MutableConfigType get mutable => MutableConfig() as MutableConfigType;
 
-  static GameToolsConfig<FixedConfig, MutableConfig>? _instance;
+  static GameToolsConfigBaseType? _instance;
 
   /// Returns the the [GameToolsConfig._instance] if already set, otherwise throws a [ConfigException]
-  static T config<T extends GameToolsConfig<FixedConfig, MutableConfig>>() {
+  static T config<T extends GameToolsConfigBaseType>() {
     if (_instance == null) {
-      throw ConfigException(message: "GameToolsConfig.initConfig was not called yet");
+      throw ConfigException(message: "GameToolsConfig was not initialized yet!");
     } else if (_instance is T) {
       return _instance as T;
     } else {
@@ -27,12 +27,12 @@ base class GameToolsConfig<FixedConfigType extends FixedConfig, MutableConfigTyp
     }
   }
 
-  /// The [config] as base [BaseGameToolsConfig]
-  static BaseGameToolsConfig get baseConfig => config<BaseGameToolsConfig>();
+  /// The [config] as base [GameToolsConfigBaseType]
+  static GameToolsConfigBaseType get baseConfig => config<GameToolsConfigBaseType>();
 }
 
 /// Base Type
-typedef BaseGameToolsConfig = GameToolsConfig<FixedConfig, MutableConfig>;
+typedef GameToolsConfigBaseType = GameToolsConfig<FixedConfig, MutableConfig>;
 
 /// Overrides an existing member [logIntoStorage] to return [false] instead of [true]
 final class ExampleFixedConfig extends FixedConfig {
@@ -68,7 +68,7 @@ final class ExampleMutableConfig extends MutableConfig {
 }
 
 /// Example on how to override [GameToolsConfig]. Returns newly created objects of the custom config types
-/// Look at [GameToolsLibHelper.useExampleConfig] for usage
+/// Look at [GameToolsLib.useExampleConfig] for usage
 final class ExampleGameToolsConfig extends GameToolsConfig<ExampleFixedConfig, ExampleMutableConfig> {
   /// Returns the fixed part of this config where all values are stored inside of the dart classes
   @override

@@ -1,4 +1,4 @@
-part of 'package:game_tools_lib/data/game/game_window.dart';
+part of 'package:game_tools_lib/domain/game/game_window.dart';
 
 /// Used for [InputManager] to identify the different keyboard keys including special modifier.
 /// Can be used to either press a key, or check if a key is pressed.

@@ -41,6 +41,10 @@ base class FixedConfig {
   /// Delay in milliseconds for the default value for [SpamIdentifier.delay]
   int get logPeriodicSpamDelayMS => longDelayMS.y;
 
-  /// Reference to the current instance of this
+  /// How many times per second key events/etc are processed in the internal game tools lib loop and also how often
+  /// [GameManager.onUpdate] is called!
+  int get updatesPerSecond => 60;
+
+  /// Direct reference to the current instance of this
   static FixedConfig get fixedConfig => GameToolsConfig.baseConfig.fixed;
 }

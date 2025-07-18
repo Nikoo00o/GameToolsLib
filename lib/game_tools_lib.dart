@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
@@ -11,11 +13,11 @@ import 'package:game_tools_lib/core/logger/log_color.dart';
 import 'package:game_tools_lib/core/logger/log_level.dart';
 import 'package:game_tools_lib/core/logger/log_message.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
-import 'package:game_tools_lib/data/game/game_window.dart';
 import 'package:game_tools_lib/data/native/ffi_loader.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/data/native/native_window.dart' show NativeWindow;
 import 'package:game_tools_lib/domain/entities/model.dart';
+import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:hive/hive.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:synchronized/synchronized.dart';
@@ -24,24 +26,35 @@ part 'package:game_tools_lib/core/config/game_tools_config.dart';
 
 part 'package:game_tools_lib/core/logger/logger.dart';
 
-part 'package:game_tools_lib/data/native/game_tools_lib_platform.dart';
+part 'package:game_tools_lib/data/helper/game_tools_lib_platform.dart';
 
 part 'package:game_tools_lib/data/native/hive_database.dart';
 
 part 'package:game_tools_lib/data/native/hive_database_mock.dart';
 
+part 'package:game_tools_lib/domain/game/game_manager.dart';
+
+part 'package:game_tools_lib/data/helper/game_tools_lib_event_loop.dart';
+
 /// This is the main class of the game tools lib and you should call [initGameToolsLib] at the beginning of your
-/// program! The following contains some information on how to use the library:
+/// program, then [runLoop] to start the internal update event loop and [close] at the end of it!
+/// The following contains some information on how to use the library:
+///
+/// Your main interaction point will be the [GameManager] accessed in [gameManager], or [gm] with events to listen to
+/// and getters for all instances of the following.
+///
+/// To Interact with the input like mouse and keyboard events, look at [InputManager] (only static access).
 ///
 /// For Logging use static methods [Logger.error], [Logger.warn], [Logger.info], [Logger.debug], [Logger.verbose].
-/// Config Values should be saved in a subclass of [GameToolsConfig] and can be used with [config].
-/// For other file, or data storage, use [HiveDatabase] with [database]
+/// For other file, or data storage, use [HiveDatabase] with [database].
+///
+/// Config Values should be saved in a subclass of [GameToolsConfig] and can be used with the correct type in [config].
+/// But you can also access this in [gameManager].
 ///
 /// To Interact with the game window with its bounds and status and also images (see [NativeImage]), look at
-/// [GameWindow] with [mainGameWindow]
+/// [GameWindow] with [mainGameWindow], or [gameWindows] (but you can also access this in [gameManager]).
 ///
-/// To Interact with the input like mouse and keyboard events, look at [InputManager] (only static access)
-final class GameToolsLib extends GameToolsLibHelper {
+final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop {
   /// Sets the [GameToolsConfig.config] at the beginning of the program to your subclass instance [config].
   ///
   /// This should be called by the user. Multiple calls will just return true. Read [GameToolsLib] Documentation!
@@ -56,21 +69,24 @@ final class GameToolsLib extends GameToolsLibHelper {
   /// This may not be empty. To use only one default window, use [createDefaultWindowForInit].
   /// If you only know the [GameWindow.name] later, then you can use [GameWindow.rename] at any point!
   ///
-  /// You can optionally also override more base classes with your custom sub classes:
-  /// [logger],
+  /// You can optionally also use your own logger subclass and override the logging methods for [logger],
   ///
   /// For unknown dynamic errors, this just returns [false], but for known avoidable config errors, this can also
   /// throw a [ConfigException] (for example if you manually set a config instance before calling this, or if
   /// [gameWindows] is empty)
   ///
-  /// For unsupported platforms this also throws an [UnimplementedError]
-  static Future<bool> initGameToolsLib({
-    required GameToolsConfig<FixedConfig, MutableConfig> config,
+  /// You have to call [runLoop] afterwards with your ui (or none) to start the internal event loop of this!
+  ///
+  /// For unsupported platforms this also throws an [UnimplementedError]. Remember to also call [close] at the end of
+  /// your program!
+  static Future<bool> initGameToolsLib<CF extends GameToolsConfigBaseType, GM extends GameManagerBaseType>({
+    required CF config,
+    required GM gameManager,
     CustomLogger? logger,
     bool isCalledFromTesting = false,
     required List<GameWindow> gameWindows,
   }) async {
-    if (GameToolsLibHelper._initialized) {
+    if (_GameToolsLibHelper._initialized) {
       return true; // first check if already called
     }
     if (Platform.isWindows == false) {
@@ -79,25 +95,43 @@ final class GameToolsLib extends GameToolsLibHelper {
     if (gameWindows.isEmpty) {
       throw ConfigException(message: "initGameToolsLib called with empty gameWindows list");
     } else {
-      _gameWindows = gameWindows;
+      _gameWindows = gameWindows; // static instance variables that need to be assigned
+      GameManager._instance = gameManager;
     }
     // then set config and logger
-    GameToolsLibHelper._initConfigAndLogger(config, logger, isCalledFromTesting: isCalledFromTesting);
+    _GameToolsLibHelper._initConfigAndLogger(config, logger, isCalledFromTesting: isCalledFromTesting);
     // then init data base
-    if (await GameToolsLibHelper._initDatabase(isCalledFromTesting: isCalledFromTesting) == false) {
+    if (await _GameToolsLibHelper._initDatabase(isCalledFromTesting: isCalledFromTesting) == false) {
       return false;
     }
     // then init native code
-    if (await GameToolsLibHelper._initNativeCode(isCalledFromTesting: isCalledFromTesting) == false) {
+    if (await _GameToolsLibHelper._initNativeCode(isCalledFromTesting: isCalledFromTesting) == false) {
       return false;
     }
-
-    return GameToolsLibHelper._initialized = true; // done
+    _GameToolsLibHelper._initialized = true;
+    return true; // done (onInit and then start loop at the end)
   }
 
-  /// Should only be used for testing, because it resets all static references and stops the GameToolsLib
+  /// Remember to call [initGameToolsLib] before to initialize this, otherwise a [ConfigException] will be thrown!
+  ///
+  /// This will block until [close] is called (by stopping the lib)
+  ///
+  /// [app] can also be null if you don't want any user interface (otherwise it is used with [runApp])
+  static Future<void> runLoop({required Widget? app}) async {
+    if (_GameToolsLibHelper._initialized == false) {
+      throw ConfigException(message: "initGameToolsLib was not called before runLoop");
+    }
+    await GameManager._instance!.onStart();
+    if (app != null) {
+      runApp(app);
+    }
+    unawaited(_GameToolsLibEventLoop._startLoop(baseConfig.fixed.updatesPerSecond)); // don't await the loop
+  }
+
+  /// Should be called at the end of your program (and otherwise is used for testing to cleanup all data)
   static Future<void> close() async {
-    GameToolsConfig._instance = null;
+    await _GameToolsLibEventLoop._stopLoop(); // wait for loop to stop
+    await GameManager._instance?.onStop();
     if (HiveDatabase._instance != null) {
       await database.closeHiveDatabases();
       HiveDatabase._instance = null;
@@ -106,39 +140,74 @@ final class GameToolsLib extends GameToolsLibHelper {
       await StartupLogger().log("HiveDatabase was null while closing GameToolsLib", LogLevel.WARN, null, null);
     }
     NativeWindow.clearNativeWindowInstance();
+    GameToolsConfig._instance = null;
+    GameManager._instance = null;
     await Logger.waitForLoggingToBeDone(); // print last logs
-    GameToolsLibHelper._initialized = false; // cleanup done
+    _GameToolsLibHelper._initialized = false; // cleanup done
   }
 
   /// Will be called automatically and Registers this class as the default instance of [GameToolsLibPlatform].
   /// Otherwise only prints an info after a while that the user should initialize the library if he did not do it.
-  /// See [GameToolsLibHelper._showStartupWarning]
+  /// See [_GameToolsLibHelper._showStartupWarning]
   static void registerWith() {
     GameToolsLibPlatform.instance = GameToolsLib._();
-    unawaited(GameToolsLibHelper._showStartupWarning());
+    unawaited(_GameToolsLibHelper._showStartupWarning());
+  }
+
+  @visibleForTesting
+  /// Only used in testing to reset flags
+  static void testResetInitialized() => _GameToolsLibHelper._initialized = false;
+
+  /// Initializes the library with the [ExampleGameToolsConfig] and also uses it similar to a default call to
+  /// [GameToolsLib.initGameToolsLib] with a few changes. Optional [windowName] can also be set.
+  /// [isCalledFromTesting] should only be set to true in tests to use mock classes instead of the default ones (so
+  /// nothing is saved to local storage and is instead kept in memory. and other lib paths are used).
+  ///
+  /// Important: this is only an example for testing and should not be used in production code!
+  static Future<bool> useExampleConfig({bool isCalledFromTesting = false, String windowName = "Not_Found"}) async {
+    final bool init = await GameToolsLib.initGameToolsLib(
+      config: ExampleGameToolsConfig(),
+      gameManager: ExampleGameManager(),
+      isCalledFromTesting: isCalledFromTesting,
+      gameWindows: GameToolsLib.createDefaultWindowForInit(windowName),
+    ); // first init game tools lib with sub config type
+    if (init == false) {
+      return false;
+    }
+    final ExampleFixedConfig fixedConfig = GameToolsLib.config<ExampleGameToolsConfig>().fixed; // using sub types
+    final ExampleMutableConfig mutableConfig = GameToolsLib.config<ExampleGameToolsConfig>().mutable;
+    final GameToolsConfigBaseType baseAccess = GameToolsLib.baseConfig; // using base type
+    final ExampleModel newValue = await mutableConfig.somethingNew.valueNotNull();
+    return !fixedConfig.logIntoStorage && newValue.someData == 5 && !baseAccess.fixed.logIntoStorage;
   }
 
   GameToolsLib._();
 
+  /// Returns your subclass of type [T] extending [GameManager]. You can also use the global method [gm] instead.
+  static T gameManager<T extends GameManagerBaseType>() => GameManager.gameManager<T>();
+
   /// Creates one [GameWindow] object with [windowName] to use in [initGameToolsLib]
   static List<GameWindow> createDefaultWindowForInit(String windowName) => <GameWindow>[GameWindow(name: windowName)];
-
-  /// internal list
-  static List<GameWindow>? _gameWindows;
-
-  /// Reference to the config after [initGameToolsLib] was successful
-  static T config<T extends GameToolsConfig<FixedConfig, MutableConfig>>() => GameToolsConfig.config<T>();
-
-  /// The [config] as base [BaseGameToolsConfig]
-  static BaseGameToolsConfig get baseConfig => config<BaseGameToolsConfig>();
-
-  /// the database for storage
-  static HiveDatabase get database => HiveDatabase.database;
-
-  /// The first and main game window to use. Only able to access after [initGameToolsLib]
-  static GameWindow get mainGameWindow => _gameWindows!.first;
 
   /// Returns the list of game windows as non modifiable list. Only able to access after [initGameToolsLib].
   /// Of course the individual game window objects can be modified!
   static UnmodifiableListView<GameWindow> get gameWindows => UnmodifiableListView<GameWindow>(_gameWindows!);
+
+  /// internal list
+  static List<GameWindow>? _gameWindows;
+
+  /// The first and main game window to use. Only able to access after [initGameToolsLib]
+  static GameWindow get mainGameWindow => _gameWindows!.first;
+
+  /// Reference to the config after [initGameToolsLib] was successful
+  static T config<T extends GameToolsConfigBaseType>() => GameToolsConfig.config<T>();
+
+  /// The [config] as base [GameToolsConfigBaseType]
+  static GameToolsConfigBaseType get baseConfig => config<GameToolsConfigBaseType>();
+
+  /// the database for storage
+  static HiveDatabase get database => HiveDatabase.database;
 }
+
+/// Returns your subclass of type [T] extending [GameManager] from [GameToolsLib.gameManager]
+T gm<T extends GameManagerBaseType>() => GameToolsLib.gameManager<T>();

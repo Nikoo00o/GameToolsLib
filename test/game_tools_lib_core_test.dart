@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -7,48 +8,68 @@ import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/logger/custom_logger.dart';
 import 'package:game_tools_lib/core/logger/log_level.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
-import 'package:game_tools_lib/data/game/game_window.dart';
+import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/domain/entities/model.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 
-/// Some logs may not be printed in tests if an expect fails, because the print was not flushed to the console yet!
+import 'helper/test_game_manager.dart';
+
 void main() {
-  group("GameToolsLib Core Tests: ", () {
-    setUp(() async {
-      // default init call for testing
+  // dont run tests asynchronous, but rather after another here, because they have to interact!
+  test("GameToolsLib Core Tests: ", () async {
+    await _group("Initialization Tests", _testInit);
+    for (final (String log, Object? e, StackTrace? s) in fails) {
+      await StartupLogger().log(log, LogLevel.ERROR, e, s);
+    }
+    _completer.complete(fails.length);
+  });
+  test("Running other Tests...", () async {
+    final int failCount = await _completer.future; // finish when the tests are done
+    if (failCount == 0) {
+      await StartupLogger().log("All tests completed successfully!!!", LogLevel.INFO, null, null);
+      await Logger.waitForLoggingToBeDone();
+    } else {
+      await Logger.waitForLoggingToBeDone();
+      throw TestFailure("Some tests failed! See above!");
+    }
+  });
+}
+
+Completer<int> _completer = Completer<int>();
+late String _currentGroup;
+int testCounter = 1;
+List<(String, Object?, StackTrace?)> fails = <(String, Object?, StackTrace?)>[];
+
+/// for each individual test, will init and cleanup!
+Future<void> _test(String name, Future<void> Function() callback, {bool initLib = true}) async {
+  await StartupLogger().log("Running test ${testCounter++} $name...", LogLevel.INFO, null, null);
+  try {
+    if (initLib) {
       final bool init = await _initGameToolsLib();
       await Utils.delay(Duration(milliseconds: 5)); // get last log out of test
       if (init == false) {
         throw TestException(message: "default test init game tools lib failed");
       }
-    });
-
-    tearDown(() async {
-      await GameToolsLib.close(); // cleanup static references
-      await Utils.delay(Duration(milliseconds: 5)); // get last log out of test
-    });
-    group("Initialization Tests: ", _testInit);
-  });
+    }
+    await callback.call();
+    await GameToolsLib.close();
+  } catch (e, s) {
+    fails.add(("Failed $_currentGroup -- $name: ", e, s));
+  }
+  await Future<void>.delayed(const Duration(milliseconds: 35));
 }
 
-Future<void> _test(String name, Future<void> Function() callback) async {
-  test(name, () async {
-    try {
-      await callback.call();
-    } catch (e, s) {
-      await StartupLogger().log("Failed $name", LogLevel.ERROR, e, s);
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      rethrow;
-    }
-  });
+Future<void> _group(String name, Future<void> Function() test) async {
+  _currentGroup = name;
+  await StartupLogger().log("Test Group $name: ", LogLevel.INFO, null, null);
+  await test.call();
 }
 
 Future<bool> _initGameToolsLib() async =>
-    GameToolsLibHelper.useExampleConfig(isCalledFromTesting: true, windowName: "Not_Found");
+    GameToolsLib.useExampleConfig(isCalledFromTesting: true, windowName: "Not_Found");
 
-void _testInit() {
-  _test("initialize game tools lib with default example config", () async {
-    await GameToolsLib.close();
+Future<void> _testInit() async {
+  await _test("initialize game tools lib with default example config", () async {
     final bool success = await _initGameToolsLib();
     expect(success, true);
     expect(GameToolsLib.baseConfig.fixed.logIntoStorage, false, reason: "log into storage is false");
@@ -56,11 +77,11 @@ void _testInit() {
     expect(GameToolsLib.database.basePath, HiveDatabaseMock.FLUTTER_TEST_PATH, reason: "database path is testing");
     expect(GameToolsLib.baseConfig.mutable.logLevel.key, "Example Log Level", reason: "key is changed");
     expect(GameToolsLib.baseConfig.fixed.logPeriodicSpamDelayMS, 0, reason: "periodic spam delay always");
-  });
-  _test("initialize game tools lib with default base config", () async {
-    await GameToolsLib.close();
+  }, initLib: false);
+  await _test("initialize game tools lib with default base config", () async {
     final bool success = await GameToolsLib.initGameToolsLib(
-      config: GameToolsConfig<FixedConfig, MutableConfig>(),
+      config: GameToolsConfigBaseType(),
+      gameManager: TestGameManager(),
       isCalledFromTesting: true,
       gameWindows: GameToolsLib.createDefaultWindowForInit("Not_Found"),
     );
@@ -68,37 +89,36 @@ void _testInit() {
     expect(GameToolsLib.baseConfig.fixed.logIntoStorage, true, reason: "log into storage is true");
     expect(await GameToolsLib.baseConfig.mutable.logLevel.getValue(), LogLevel.SPAM, reason: "log level is spam");
     expect(GameToolsLib.baseConfig.fixed.logPeriodicSpamDelayMS, 150, reason: "periodic spam delay is max long delay");
-  });
-  _test("simulating database error in init should return false", () async {
-    await GameToolsLib.close();
+  }, initLib: false);
+  await _test("simulating database error in init should return false", () async {
     HiveDatabaseMock.throwExceptionInInit = true;
     expect(await _initGameToolsLib(), false);
     HiveDatabaseMock.throwExceptionInInit = false;
-  });
-  _test("user initializing game tools lib twice should just return true", () async {
+  }, initLib: false);
+  await _test("user initializing game tools lib twice should just return true", () async {
     final bool success = await _initGameToolsLib();
     expect(success, true);
   });
-  _test("user initializing game tools lib while there is already a config", () async {
-    GameToolsLibHelper.testResetInitialized();
+  await _test("user initializing game tools lib while there is already a config", () async {
+    GameToolsLib.testResetInitialized();
     expect(() async {
       await _initGameToolsLib();
     }, throwsA(predicate((Object e) => e is ConfigException)));
   });
-  _test("user initializing game tools lib with empty window list should throw an exception", () async {
-    await GameToolsLib.close();
+  await _test("user initializing game tools lib with empty window list should throw an exception", () async {
     expect(() async {
       await GameToolsLib.initGameToolsLib(
-        config: BaseGameToolsConfig(),
+        config: GameToolsConfigBaseType(),
+        gameManager: TestGameManager(),
         isCalledFromTesting: true,
         gameWindows: <GameWindow>[],
       );
     }, throwsA(predicate((Object e) => e is ConfigException)));
-  });
-  _test("initialize game tools lib with multiple game windows should still work", () async {
-    await GameToolsLib.close();
+  }, initLib: false);
+  await _test("initialize game tools lib with multiple game windows should still work", () async {
     final bool success = await GameToolsLib.initGameToolsLib(
-      config: BaseGameToolsConfig(),
+      config: GameToolsConfigBaseType(),
+      gameManager: TestGameManager(),
       isCalledFromTesting: true,
       gameWindows: <GameWindow>[
         GameWindow(name: "first"),
@@ -108,8 +128,8 @@ void _testInit() {
     expect(success, true);
     expect(GameToolsLib.mainGameWindow.name, "first", reason: "first name should be correct");
     expect(GameToolsLib.gameWindows.elementAt(1).name, "second", reason: "second name should be correct");
-  });
-  _test("testing database cache", () async {
+  }, initLib: false);
+  await _test("testing database cache", () async {
     LogLevelConfigOption logLevel = LogLevelConfigOption(key: "logLevel", defaultValue: LogLevel.VERBOSE);
     expect(logLevel.cachedValue(), LogLevel.VERBOSE, reason: "cache is initially set to default");
     await logLevel.setValue(LogLevel.INFO);
@@ -127,7 +147,7 @@ void _testInit() {
     expect(await logLevel.getValue(), null, reason: "but normal get correctly returns null");
   });
 
-  _test("testing database get/set", () async {
+  await _test("testing database get/set", () async {
     LogLevelConfigOption logLevel = LogLevelConfigOption(key: "logLevel", defaultValue: LogLevel.VERBOSE);
     expect(await logLevel.getValue(), LogLevel.VERBOSE, reason: "return default with null");
     await logLevel.setValue(LogLevel.INFO);
@@ -145,7 +165,7 @@ void _testInit() {
     expect(await logLevel.getValue(), null, reason: "still return null after set and delete");
   });
 
-  _test("testing config update callback", () async {
+  await _test("testing config update callback", () async {
     bool called = false;
     LogLevelConfigOption logLevel = LogLevelConfigOption(
       key: "logLevel",
@@ -188,7 +208,7 @@ void _testInit() {
       "{\"JSON_SOME_DATA\":10,\"JSON_MODIFIABLE_DATA\":[{\"JSON_SOME_DATA\":20,\"JSON_MODIFIABLE_DATA\":"
       "[{\"JSON_SOME_DATA\":null,\"JSON_MODIFIABLE_DATA\":[]}]}]}";
 
-  _test("testing database with complex model", () async {
+  await _test("testing database with complex model", () async {
     expect(jsonEncode(someModel), modelJson, reason: "model should be correct json text");
     expect(
       ExampleModel.fromJson(jsonDecode(modelJson) as Map<String, dynamic>),

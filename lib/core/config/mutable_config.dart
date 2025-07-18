@@ -4,7 +4,7 @@ import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/logger/log_level.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
-import 'package:game_tools_lib/data/game/game_window.dart';
+import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/domain/entities/model.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 
@@ -74,6 +74,6 @@ base class MutableConfig {
     alwaysMatchGameWindowNamesEqual,
   ];
 
-  /// Reference to the current instance of this
+  /// Direct reference to the current instance of this
   static MutableConfig get mutableConfig => GameToolsConfig.baseConfig.mutable;
 }

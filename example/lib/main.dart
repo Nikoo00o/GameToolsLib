@@ -4,10 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
-import 'package:game_tools_lib/data/game/game_window.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/data/native/native_window.dart';
 import 'package:game_tools_lib/domain/entities/model.dart';
+import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 
 /// this should be unawaited
@@ -95,7 +95,7 @@ Future<void> _memoryLeakTest() async {
 }
 
 Future<void> main() async {
-  final bool init = await GameToolsLibHelper.useExampleConfig(isCalledFromTesting: true, windowName: "Snipping Tool");
+  final bool init = await GameToolsLib.useExampleConfig(isCalledFromTesting: true, windowName: "Snipping Tool");
 
   runApp(
     MaterialApp(

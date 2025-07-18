@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' show Point;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:game_tools_lib/core/config/fixed_config.dart';
@@ -12,8 +10,8 @@ import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/logger/custom_logger.dart';
 import 'package:game_tools_lib/core/logger/log_level.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
-import 'package:game_tools_lib/data/game/game_window.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
+import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:opencv_dart/opencv.dart' as cv;
@@ -108,6 +106,7 @@ Future<void> _initOnlyLib([
 ]) async {
   final bool result = await GameToolsLib.initGameToolsLib(
     config: ExampleGameToolsConfig(),
+    gameManager: ExampleGameManager(),
     isCalledFromTesting: true,
     gameWindows: GameToolsLib.createDefaultWindowForInit(searchName)..addAll(moreWindows),
   );

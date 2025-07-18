@@ -1,4 +1,4 @@
-part of 'package:game_tools_lib/data/game/game_window.dart';
+part of 'package:game_tools_lib/domain/game/game_window.dart';
 
 /// This offers only static methods like [isKeyDown] to interact with the games input, but some methods
 /// that are relative to a window may require a [GameWindow] or its bounds (see game window methods).

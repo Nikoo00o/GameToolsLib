@@ -2,7 +2,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart' show LogicalKeyboardKey, kWindowsToLogicalKey;
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
-import 'package:game_tools_lib/data/game/game_window.dart';
+import 'package:game_tools_lib/domain/game/game_window.dart';
 
 /// Used for [InputManager] to represent the different states of the mouse buttons
 enum MouseEvent implements Comparable<MouseEvent> {

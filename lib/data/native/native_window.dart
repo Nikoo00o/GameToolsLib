@@ -8,7 +8,7 @@ import 'package:game_tools_lib/core/enums/input_enums.dart';
 import 'package:game_tools_lib/core/enums/native_image_type.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/utils/bounds.dart';
-import 'package:game_tools_lib/data/game/game_window.dart' show GameWindow;
+import 'package:game_tools_lib/domain/game/game_window.dart' show GameWindow;
 import 'package:game_tools_lib/data/native/ffi_loader.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
