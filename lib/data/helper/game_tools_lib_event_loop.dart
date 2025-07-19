@@ -4,26 +4,39 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
   static bool _loopRunning = false;
   static Future<bool>? _loopResult;
+  static final List<GameEvent> _eventQueue = <GameEvent>[];
+  static final List<GameEvent> _instantEvents = <GameEvent>[];
+  static GameState? _currentState;
+  static Future<void>? _managerUpdate;
+  static Future<void>? _eventUpdates;
+  static final SpamIdentifier _eventLog = SpamIdentifier();
 
-  /// is unawaited in [GameToolsLib.runLoop]
+  /// is awaited in [GameToolsLib.runLoop]
   static Future<void> _startLoop(int updatesPerSecond) async {
     if (_loopRunning == false) {
       _loopRunning = true;
       _loopResult = _loopInternal(updatesPerSecond);
       Logger.spam("Started GameToolsLib event loop");
+      await _loopResult;
     } else {
       Logger.warn("Could not start GameToolsLib event loop");
     }
   }
 
-  /// Is awaited in [GameToolsLib.close] to wait for the loop to stop (which was started with [GameToolsLib.runLoop])
+  /// Is awaited in [GameToolsLib.close] to wait for the loop to stop (which was started with [GameToolsLib.runLoop]).
+  /// Also clears the events and calls onStop for them
   static Future<void> _stopLoop() async {
     if (_loopRunning) {
       _loopRunning = false;
       Logger.spam("Stopping GameToolsLib event loop...");
       await _loopResult;
+      await _GameToolsLibEventLoop._runForAllEventsAsync((GameEvent event) async {
+        await event.onStop();
+      });
+      _instantEvents.clear();
+      _eventQueue.clear();
     } else {
-      Logger.warn("Could not stop GameToolsLib event loop");
+      await StartupLogger().log("Could not stop GameToolsLib event loop", LogLevel.WARN, null, null);
     }
   }
 
@@ -45,7 +58,116 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
     return true;
   }
 
-  static Future<void> _loopStep() async {
+  static Future<void> _updateOpen(GameWindow window) async {
+    await GameManager._instance?.onOpenChange(window);
+    await _currentState?.onOpenChange(window);
+    for (int i = 0; i < _instantEvents.length; ++i) {
+      // some might be skipped if added/removed while this is running
+      await _instantEvents[i].onOpenChange(window);
+    }
+    for (int i = 0; i < _eventQueue.length; ++i) {
+      // some might be skipped if added/removed while this is running
+      await _eventQueue[i].onOpenChange(window);
+    }
+  }
 
+  static Future<void> _updateFocus(GameWindow window) async {
+    await GameManager._instance?.onFocusChange(window);
+    await _currentState?.onFocusChange(window);
+    for (int i = 0; i < _instantEvents.length; ++i) {
+      // some might be skipped if added/removed while this is running
+      await _instantEvents[i].onFocusChange(window);
+    }
+    for (int i = 0; i < _eventQueue.length; ++i) {
+      // some might be skipped if added/removed while this is running
+      await _eventQueue[i].onFocusChange(window);
+    }
+  }
+
+  /// This is not awaited
+  static Future<void> _updateManagerAndState() async {
+    try {
+      await GameManager._instance?.onUpdate();
+      await _currentState?.onUpdate();
+    } catch (e, s) {
+      Logger.error("Error Game Tools Lib Updating Manager And State: ", e, s);
+    }
+  }
+
+  /// This is not awaited
+  static Future<void> _updateEvents() async {
+    try {
+      for (int i = 0; i < _eventQueue.length; ++i) {
+        // process events in order by awaiting them. some might be skipped if added/removed while this is running
+        if (await _eventQueue[i]._onLoop()) {
+          --i; // event was removed
+        }
+      }
+    } catch (e, s) {
+      Logger.error("Error Game Tools Lib Updating Events: ", e, s);
+    }
+  }
+
+  static Future<void> _loopStep() async {
+    for (final GameWindow window in GameToolsLib.gameWindows) {
+      if (window.updateOpen()) {
+        await _updateOpen(window);
+      }
+      if (window.updateFocus()) {
+        for (int i = 0; i < _eventQueue.length; ++i) {
+          await _updateFocus(window);
+        }
+      }
+    }
+    _managerUpdate ??= _updateManagerAndState().whenComplete(() => _managerUpdate = null); // not awaited
+    _eventUpdates ??= _updateEvents().whenComplete(() => _eventUpdates = null); // not awaited
+  }
+
+  static void _addEventInternal(GameEvent event) {
+    switch (event.priority) {
+      case GameEventPriority.INSTANT:
+        _instantEvents.add(event);
+        unawaited(event._onLoop()); // execute instant events unawaited directly
+        return;
+      case GameEventPriority.FIRST:
+        if (_eventQueue.contains(event) == false) {
+          _eventQueue.insert(0, event);
+          Logger.spamPeriodic(_eventLog, "added event ", event);
+          return;
+        }
+      case GameEventPriority.LAST:
+        if (_eventQueue.contains(event) == false) {
+          _eventQueue.add(event);
+          Logger.spamPeriodic(_eventLog, "added event ", event);
+          return;
+        }
+    }
+    Logger.warn("Could not add event $event, because it was already contained");
+  }
+
+  static Future<void> _removeEventInternal(GameEvent event) async {
+    if (event.priority == GameEventPriority.INSTANT) {
+      _instantEvents.remove(event);
+    } else {
+      _eventQueue.remove(event);
+    }
+    Logger.spamPeriodic(_eventLog, "calling onStop and removed event ", event);
+    await event.onStop();
+  }
+
+  /// Will be run for all events in the queue, but also all instant events
+  static void _runForAllEvents(void Function(GameEvent) callback) {
+    _instantEvents.forEach(callback);
+    _eventQueue.forEach(callback);
+  }
+
+  /// Will be run for all events in the queue, but also all instant events
+  static Future<void> _runForAllEventsAsync(Future<void> Function(GameEvent) callback) async {
+    for (int i = 0; i < _instantEvents.length; ++i) {
+      await callback(_instantEvents[i]);
+    }
+    for (int i = 0; i < _eventQueue.length; ++i) {
+      await callback(_eventQueue[i]);
+    }
   }
 }

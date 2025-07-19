@@ -26,8 +26,11 @@ part 'package:game_tools_lib/core/enums/board_key.dart';
 /// [GameToolsLib.initGameToolsLib] method as a parameter!
 ///
 /// To interact with the input of the game in more detail, look at [InputManager] with for example
-/// [InputManager.leftClick], [InputManager.keyPress], [InputManager.isKeyDown], [InputManager.isMouseDown]. Here you
-/// can only use the methods: [getPixelOfWindow], [isWithinWindow], [windowMousePos] and [moveMouse]
+/// [InputManager.leftClick], [InputManager.keyPress], [InputManager.isKeyDown], [InputManager.isMouseDown].
+///
+/// Here you can only use the methods: [getPixelOfWindow], [isWithinWindow], [windowMousePos] and [moveMouse] for
+/// inputs and you can also check if the window [isOpen], or [hasFocus] (or if you don't want to wait for the loop,
+/// [updateAndGetOpen] and [updateAndGetFocus]).
 final class GameWindow {
   /// This is set in the constructor only once and used to identify/find the window.
   /// Name Examples: "Path of Exile", "TL", "League of Legends".
@@ -42,6 +45,18 @@ final class GameWindow {
   /// This can be disabled by setting the config variable [MutableConfig.alwaysMatchGameWindowNamesEqual] to true.
   /// You can also [rename] this to search a different window
   String get name => _name;
+
+  bool _isOpen = false;
+
+  /// if this window with the [name] is currently open (initially false).
+  /// To update this, [updateFocus] is used in the event loop.
+  bool get isOpen => _isOpen;
+
+  bool _hasFocus = false;
+
+  /// If the user is tabbed into the [name] window (if the window is in the foreground. initially false).
+  /// To update this, [updateOpen] is used in the event loop.
+  bool get hasFocus => _hasFocus;
 
   /// Used to keep track of multiple windows
   late final int _windowID;
@@ -91,14 +106,32 @@ final class GameWindow {
     await Utils.delayMS(FixedConfig.fixedConfig.tinyDelayMS.y);
   }
 
-  /// Searches the window handle for the [_windowID] (or [name])
-  bool isWindowOpen() {
-    return _nativeWindow.isWindowOpen(_windowID);
+  /// Updates the [isOpen] (needs to search the window handle for it) and returns if the open was different before
+  /// and has changed
+  bool updateOpen() {
+    final bool oldOpen = _isOpen;
+    _isOpen = _nativeWindow.isWindowOpen(_windowID);
+    return oldOpen != _isOpen;
   }
 
-  /// If the user is tabbed into the [name] window (if the window is in the foreground)
-  bool hasWindowFocus() {
-    return _nativeWindow.hasWindowFocus(_windowID);
+  /// Updates the [hasFocus] (needs to search the window handle for it) and returns if the focus was different before
+  /// and has changed
+  bool updateFocus() {
+    final bool oldFocus = _hasFocus;
+    _hasFocus = _nativeWindow.hasWindowFocus(_windowID);
+    return oldFocus != _hasFocus;
+  }
+
+  /// Mainly used for testing, combines [updateOpen] and [isOpen]
+  bool updateAndGetOpen() {
+    updateOpen();
+    return _isOpen;
+  }
+
+  /// Mainly used for testing, combines [updateFocus] and [hasFocus]
+  bool updateAndGetFocus() {
+    updateFocus();
+    return hasFocus;
   }
 
   /// Changes focus (sets the window to the foreground).

@@ -126,7 +126,7 @@ void _testBaseOpenCv() {
 
 Future<void> _testBaseWindow() async {
   await _test("window finding and default settings", (WidgetTester tester) async {
-    expect(_window.isWindowOpen(), true, reason: "window should be open");
+    expect(_window.updateAndGetOpen(), true, reason: "window should be open");
     final Bounds<int> bounds = _window.getWindowBounds();
     expect(bounds.width, _width, reason: "window should have correct width");
     expect(bounds.height, _height, reason: "window should have correct width");
@@ -134,18 +134,18 @@ Future<void> _testBaseWindow() async {
     expect(bounds.y, _y, reason: "window should have correct y");
     await GameToolsLib.close();
     await _initOnlyLib("Game Tools Lib Example");
-    expect(_window.isWindowOpen(), false, reason: "window should not be open with wrong name");
+    expect(_window.updateAndGetOpen(), false, reason: "window should not be open with wrong name");
     await GameToolsLib.close();
     final GameWindow second = GameWindow(name: "invalid");
     await _initOnlyLib("game_tools", <GameWindow>[second]);
-    expect(_window.isWindowOpen(), true, reason: "window should be open with default contains check");
-    expect(second.isWindowOpen(), false, reason: "second window should not be open");
+    expect(_window.updateAndGetOpen(), true, reason: "window should be open with default contains check");
+    expect(second.updateAndGetOpen(), false, reason: "second window should not be open");
     await second.rename("tools");
-    expect(second.isWindowOpen(), true, reason: "after rename second should also be open");
+    expect(second.updateAndGetOpen(), true, reason: "after rename second should also be open");
     await GameToolsLib.close();
     await _initOnlyLib("game_tools");
     await MutableConfig.mutableConfig.alwaysMatchGameWindowNamesEqual.setValue(true);
-    expect(_window.isWindowOpen(), false, reason: "but not anymore when checking for equal");
+    expect(_window.updateAndGetOpen(), false, reason: "but not anymore when checking for equal");
   });
   await _test("color and pos test", (WidgetTester tester) async {
     Logger.warn("this test can fail if you un focus the window");
@@ -360,7 +360,7 @@ Future<void> _testInput() async {
       "and also don't use your mouse and keyboard during the tests and keep the terminal in focus!!!",
     );
     expect(
-      second.isWindowOpen(),
+      second.updateAndGetOpen(),
       true,
       reason:
           "IMPORTANT: you have to start the tests from the command prompt and keep it in focus (don't use mouse)!\n"
@@ -368,9 +368,9 @@ Future<void> _testInput() async {
           "test can find a window called \"Command Prompt\"",
     );
     await second.setWindowFocus();
-    expect(_window.hasWindowFocus(), false, reason: "window should have no focus at first");
+    expect(_window.updateAndGetFocus(), false, reason: "window should have no focus at first");
     await _window.setWindowFocus();
-    expect(_window.hasWindowFocus(), true, reason: "window should have focus after change");
+    expect(_window.updateAndGetFocus(), true, reason: "window should have focus after change");
     await _window.moveMouse(80, 640, xRadius: 0, yRadius: 0);
     expect(_window.windowMousePos, Point<int>(80, 640), reason: "first move mouse should match");
     await InputManager.leftClick();

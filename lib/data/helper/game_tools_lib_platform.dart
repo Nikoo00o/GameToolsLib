@@ -54,7 +54,7 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
       }
       for (final GameWindow gameWindow in GameToolsLib.gameWindows) {
         // now init all game windows by calling init on them once
-        unawaited(gameWindow.rename(gameWindow.name)); // dont need to await delay in first init
+        unawaited(gameWindow.rename(gameWindow.name)); // don't need to await delay in first init
       }
       Logger.verbose("Native C/C++ Part of GameToolsLib loaded from ${FileUtils.absolutePath(FFILoader.apiPath)}");
 

@@ -35,9 +35,7 @@ enum NativeImageType {
   HSV;
 
   @override
-  String toString() {
-    return name;
-  }
+  String toString() => name;
 
   /// Returns the amount of channels this has. this returns the channels directly of the default types (and the
   /// special types will return the same amount of channels as the matching default type)

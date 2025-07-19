@@ -29,7 +29,7 @@ class ExampleApp extends StatelessWidget {
     return StatefulBuilder(
       builder: (BuildContext context, StateSetter setState) {
         _builder ??= _constantRebuilds(setState, 50);
-        final bool windowFound = GameToolsLib.mainGameWindow.isWindowOpen();
+        final bool windowFound = GameToolsLib.mainGameWindow.updateAndGetOpen();
         String windowText = "Initialized $init, window ${GameToolsLib.mainGameWindow.name} found: $windowFound";
         if (windowFound) {
           windowText = "$windowText at Pos ${GameToolsLib.mainGameWindow.getWindowBounds()}";

@@ -1,0 +1,1 @@
+// special case, does not extend base input listener
