@@ -1,11 +1,11 @@
-import 'package:game_tools_lib/core/config/fixed_config.dart';
-import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 
-/// Only used for testing
-final class TestGameManager extends GameManager<GameToolsConfig<FixedConfig, MutableConfig>> {
+/// Only used for testing when the default config is needed and not the example config!
+final class TestGameManager extends GameManager<GameToolsConfigBaseType> {
   static int callCounter = 0;
+
+  TestGameManager() : super(inputListeners: null);
 
   @override
   Future<void> onStart() async => callCounter++;

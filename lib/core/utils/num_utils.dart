@@ -7,7 +7,7 @@ import 'package:game_tools_lib/core/config/fixed_config.dart';
 abstract final class NumUtils {
   static Random? _instanceRandom;
 
-  static Random get _random => _instanceRandom ??= Random(DateTime.now().microsecondsSinceEpoch);
+  static Random get _random => _instanceRandom ??= Random(DateTime.now().millisecondsSinceEpoch);
   static Random? _instanceSecureRandom;
 
   static Random get _secureRandom => _instanceSecureRandom ??= Random.secure();
@@ -61,7 +61,7 @@ abstract final class NumUtils {
     final double newX = p.x / divisor;
     final double newY = p.y / divisor;
     if (T == int) {
-      return Point<T>(newX.toInt() as T, newY.toInt() as T);
+      return Point<T>(newX.round() as T, newY.round() as T);
     } else {
       return Point<T>(newX as T, newY as T);
     }
@@ -79,7 +79,7 @@ abstract final class NumUtils {
     if (smaller < minValue) {
       final double multiplier = minValue / smaller;
       if (T == int) {
-        return Point<T>((p.x * multiplier).toInt() as T, (p.y * multiplier).toInt() as T);
+        return Point<T>((p.x * multiplier).round() as T, (p.y * multiplier).round() as T);
       } else {
         return Point<T>(p.x * multiplier as T, p.y * multiplier as T);
       }
@@ -164,8 +164,8 @@ extension PointExtension<T extends num> on Point<T> {
   /// Returns a modified copy of this with added [addXValue] and [addYValue]
   Point<T> move(T addXValue, T addYValue) => Point<T>(x + addXValue as T, y + addYValue as T);
 
-  /// Any num point copied as int (no decimal points)
-  Point<int> toIntPoint() => Point<int>(x.toInt(), y.toInt());
+  /// Any num point copied as int (no decimal points) rounded.
+  Point<int> toIntPoint() => Point<int>(x.round(), y.round());
 
   /// Any num point copied as double (with decimal points)
   Point<double> toDoublePoint() => Point<double>(x.toDouble(), y.toDouble());

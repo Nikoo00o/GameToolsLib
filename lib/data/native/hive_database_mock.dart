@@ -69,6 +69,21 @@ final class HiveDatabaseMock extends HiveDatabase {
   }
 
   @override
+  Future<void> writeJson({required String localFilePath, required Map<String, dynamic> json}) async {
+    lastFileChange = DateTime.now();
+    files[localFilePath] = utf8.encode(jsonEncode(json));
+  }
+
+  @override
+  Future<Map<String, dynamic>?> readJson({required String localFilePath}) async {
+    if (files[localFilePath] == null) {
+      return null;
+    }
+    final String data = utf8.decode(files[localFilePath]!);
+    return jsonDecode(data) as Map<String, dynamic>?;
+  }
+
+  @override
   Future<bool> deleteFile({required String localFilePath}) async {
     final bool contained = files.containsKey(localFilePath);
     files.remove(localFilePath);

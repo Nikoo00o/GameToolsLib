@@ -1,4 +1,7 @@
-import 'package:game_tools_lib/core/logger/log_level.dart';
+import 'package:game_tools_lib/core/enums/log_level.dart';
+import 'package:game_tools_lib/core/logger/log_color.dart';
+import 'package:game_tools_lib/core/utils/string_utils.dart';
+import 'package:game_tools_lib/game_tools_lib.dart';
 
 final class LogMessage {
   final String? message;
@@ -39,7 +42,7 @@ final class LogMessage {
     }
     if (stackTrace != null) {
       final String stackTraceText = stackTrace!.toString();
-      final List<String> lines = stackTraceText.split("\n");
+      final List<String> lines = StringUtils.splitIntoLines(stackTraceText);
       if (lines.length > stackTraceLines) {
         _write(lines.take(stackTraceLines ~/ 2), buffer);
         _write(lines.sublist(lines.length - stackTraceLines ~/ 2), buffer);
@@ -58,4 +61,7 @@ final class LogMessage {
 
   /// If this log [level] could be logged for the [targetLevel]!
   bool canLog(LogLevel targetLevel) => level.index <= targetLevel.index;
+
+  /// This can return null if the logger instance is null and otherwise it uses [Logger.addColorForConsole]
+  LogColor? getLogColor() => LogLevel.getLogColor(level);
 }

@@ -1,5 +1,6 @@
 import 'dart:io' show Platform;
 
+import 'package:collection/collection.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey, kWindowsToLogicalKey;
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
@@ -29,6 +30,9 @@ enum MouseEvent implements Comparable<MouseEvent> {
 
   @override
   int compareTo(MouseEvent other) => value - other.value;
+
+  @override
+  String toString() => name;
 }
 
 /// Used for [InputManager] to identify the different mouse buttons
@@ -53,6 +57,13 @@ enum MouseKey implements Comparable<MouseKey> {
 
   @override
   int compareTo(MouseKey other) => value - other.value;
+
+  @override
+  String toString() => name;
+
+  static MouseKey? fromString(String? data) {
+    return values.firstWhereOrNull((MouseKey element) => element.name == data);
+  }
 }
 
 /// Used within [BoardKey] for platform mapping.

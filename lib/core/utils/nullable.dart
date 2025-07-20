@@ -8,4 +8,7 @@ class Nullable<T> {
   const Nullable(this._value);
 
   T? get value => _value;
+
+  @override
+  String toString() => "Nullable($value)";
 }

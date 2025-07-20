@@ -1,6 +1,6 @@
 import 'dart:math' show Point;
 import 'package:game_tools_lib/core/utils/num_utils.dart';
-import 'package:game_tools_lib/domain/entities/model.dart';
+import 'package:game_tools_lib/domain/entities/base/model.dart';
 
 export 'package:game_tools_lib/core/utils/num_utils.dart';
 
@@ -49,7 +49,7 @@ final class Bounds<T extends num> implements Model {
   /// Returns [x] + [width], [y] + [height]
   Point<T> get middlePos {
     if (T == int) {
-      return Point<T>((x + width / 2).toInt() as T, (y + height / 2).toInt() as T);
+      return Point<T>((x + width / 2).round() as T, (y + height / 2).round() as T);
     }
     return Point<T>((x + width / 2.0) as T, (y + height / 2.0) as T);
   }

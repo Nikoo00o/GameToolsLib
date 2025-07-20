@@ -4,14 +4,17 @@ part of 'package:game_tools_lib/core/config/mutable_config.dart';
 ///
 /// Values of type [T] may also be [null]
 ///
-/// Use [getValue], [valueNotNull], [setValue], [deleteValue] to interact with the value. You can also use the
-/// [_updateCallback] to get updates after [setValue].
+/// Use [getValue], [valueNotNull], [setValue], [deleteValue] to interact with the value.
+/// You can also use the [_updateCallback] to get updates after [setValue] before the other listeners from the
+/// [ChangeNotifier] will get notified. Remember that you can also manage those listeners manually with [addListener]
+/// and [removeListener]! Remember that on startup at the end of [GameToolsLib.initGameToolsLib] this is also
+/// notified for updates once!
 ///
 /// You can also access the cached value in a sync way with [cachedValue] (But [getValue] needs to be called at least
 /// once before!)
-sealed class _MutableConfigOption<T> {
+sealed class MutableConfigOption<T> with ChangeNotifier {
   /// The key to locate this saved value in the database (must be a unique identifier string).
-  /// You can also use spaces to make the identifier more readable when this is used to build config option ui elements
+  /// But also the identifier label text (or translation key) for the ui (if this config option is editable in ui)
   final String key;
 
   /// Added to the [key] internally in the storage
@@ -21,7 +24,7 @@ sealed class _MutableConfigOption<T> {
   T? _value;
 
   /// Optional update callback that is called after [setValue] to update data references elsewhere
-  final FutureOr<void> Function(T?)? _updateCallback;
+  FutureOr<void> Function(T?)? _updateCallback;
 
   /// Optional default value that will be used if saved data is null (if [setValue] is called with [null], or
   /// [deleteValue] is called, then this will also be set to [null]
@@ -32,9 +35,10 @@ sealed class _MutableConfigOption<T> {
   /// initialized!
   final bool _lazyLoaded;
 
-  /// [updateCallback] Optional update callback that is called after [setValue] to update data references elsewhere.
+  /// [updateCallback] Optional update callback that is called after [setValue] to update data references elsewhere
+  /// and it is also called once at the end of [GameToolsLib.initGameToolsLib] on startup!
   /// [lazyLoaded] For big data this should be [true] to load on demand. Defaults to [false] (all data is kept in memory)
-  _MutableConfigOption({
+  MutableConfigOption({
     required this.key,
     FutureOr<void> Function(T?)? updateCallback,
     this.defaultValue,
@@ -48,8 +52,9 @@ sealed class _MutableConfigOption<T> {
 
   /// Converts and reads the value, or [defaultValue] if data was never set (or deleted with [deleteValue]]
   ///
-  /// Also updates [_value]
-  Future<T?> getValue() async {
+  /// Also updates [_value]. And if [updateListeners] is true, this will also call [_onValueChange] if this loaded
+  /// different new that than the current value (mostly not used)!
+  Future<T?> getValue({bool updateListeners = false}) async {
     if (_value != null) {
       return _value;
     }
@@ -60,7 +65,16 @@ sealed class _MutableConfigOption<T> {
     if (exists == false) {
       return defaultValue; // if it was never set (but also not explicitly set to null), return default
     }
-    return _value ??= _stringToData(await _read()); // update cache
+    final T? newData = _stringToData(await _read());
+    if (updateListeners) {
+      await _onValueChange(newData); // update cache
+    } else {
+      _value = newData;
+      if (newData != _value) {
+        Logger.verbose("First load called for $this");
+      }
+    }
+    return _value;
   }
 
   /// Uses [getValue], but throws a [ConfigException] if the data is null and no [defaultValue] is set
@@ -93,32 +107,49 @@ sealed class _MutableConfigOption<T> {
   }
 
   /// Mostly only used for testing without any other purpose.
-  /// Only sets [_value] and calls [_updateCallback] (unawaited!), but does not call [_write] to storage.
-  /// Remember that this can also throw the exceptions of the [_updateCallback] if its set!
-  /// And if [_updateCallback], then it might not finish after this method returns!
+  /// Only sets [_value] and calls [_onValueChange] (unawaited!), but does not call [_write] to storage.
   void onlyUpdateCachedValue(T? data) {
-    _value = data;
-    _updateCallback?.call(data);
+    unawaited(_onValueChange(data)); // updates cache
   }
 
-  /// Converts and writes the value and calls the [_updateCallback] afterwards. And also updates the [_value].
+  /// Converts and writes the value and calls [_onValueChange] afterwards. And also updates the [_value].
   /// Can also explicitly set the stored [_value] to [null] so that null is returned instead of the [defaultValue].
-  /// Remember that this can also throw the exceptions of the [_updateCallback] if its set!
   Future<void> setValue(T? data) async {
-    _value = data; // update cache
     await _write(_dataToString(data));
-    await _updateCallback?.call(data);
+    await _onValueChange(data); // updates cache
   }
 
   /// Deletes from storage (NOT THE SAME AS SETTING TO NULL).
   /// Also updates [_value]
   Future<void> deleteValue() async {
-    _value = null; // update cache!
-    return GameToolsLib.database.deleteFromHive(
+    await GameToolsLib.database.deleteFromHive(
       key: _transformedKey,
       databaseKey: _dataBase,
     );
+    await _onValueChange(null); // updates cache
   }
+
+  /// This will be called at the end of [onlyUpdateCachedValue], [setValue] and [deleteValue] (and conditionally also
+  /// in [getValue] to first change the [_value] and then if it was different than the old data call
+  /// [_updateCallback] first and [notifyListeners] afterwards to update the listeners when this config option was
+  /// changed.
+  ///
+  /// This is also called once on startup at the end of [GameToolsLib.initGameToolsLib] when all config
+  /// values get loaded!
+  ///
+  /// Remember that this can also throw the exceptions of the [_updateCallback] if its set!
+  Future<void> _onValueChange(T? data) async {
+    final bool changed = _value != data;
+    _value = data; // first change data
+    if (changed) {
+      Logger.debug("$this changed and updated listeners");
+      await _updateCallback?.call(_value);
+      notifyListeners();
+    }
+  }
+
+  @override
+  String toString() => "$runtimeType(key: $key, value: $_value)";
 
   /// Loads from storage
   Future<String?> _read() async {
@@ -160,113 +191,5 @@ sealed class _MutableConfigOption<T> {
       return str as T;
     }
     throw UnimplementedError("Type $T is not supported yet and cannot convert $str");
-  }
-}
-
-/// Wrapper class for the typedefs
-final class _TypeConfigOption<T> extends _MutableConfigOption<T> {
-  _TypeConfigOption({
-    required super.key,
-    super.updateCallback,
-    super.defaultValue,
-    super.lazyLoaded = false,
-  });
-}
-
-/// Used for bool config options
-typedef BoolConfigOption = _TypeConfigOption<bool>;
-
-/// Used for int config options
-typedef IntConfigOption = _TypeConfigOption<int>;
-
-/// Used for double config options
-typedef DoubleConfigOption = _TypeConfigOption<double>;
-
-/// Used for string config options
-typedef StringConfigOption = _TypeConfigOption<String>;
-
-/// Used to store an entity/object implementing the [Model] interface and supporting to/from json conversion!
-///
-/// Important: you need to supply a [_createNewModelInstance] function that creates a new instance of your specific
-/// model subclass [T] with the given json map by calling its [fromJson] factory constructor
-///
-/// As An example look at [createNewExampleModelInstance]
-final class ModelConfigOption<T extends Model> extends _MutableConfigOption<T> {
-  /// function that creates a new instance of [T] by calling its fromJson factory constructor
-  final T Function(Map<String, dynamic> json) _createNewModelInstance;
-
-  /// [updateCallback] Optional update callback that is called after [setValue] to update data references elsewhere.
-  /// [lazyLoaded] For big data this should be [true] to load on demand. Defaults to [false] (all data is kept in memory)
-  /// [createNewModelInstance] function that creates a new instance of [T] by calling its fromJson factory constructor
-  ModelConfigOption({
-    required T Function(Map<String, dynamic> json) createNewModelInstance,
-    required super.key,
-    super.updateCallback,
-    super.defaultValue,
-    super.lazyLoaded,
-  }) : _createNewModelInstance = createNewModelInstance;
-
-  @override
-  String? _dataToString(T? data) {
-    if (data == null) {
-      return null;
-    }
-    return jsonEncode(data.toJson());
-  }
-
-  @override
-  T? _stringToData(String? str) {
-    if (str == null) {
-      return null;
-    }
-    final Map<String, dynamic>? json = jsonDecode(str) as Map<String, dynamic>?;
-    if (json == null) {
-      return null;
-    }
-    return _createNewModelInstance.call(json);
-  }
-
-  /// Example for how [createNewModelInstance] functions should look
-  static ExampleModel createNewExampleModelInstance(Map<String, dynamic> json) => ExampleModel.fromJson(json);
-}
-
-/// Custom Config option where you have the freedom of deciding how to convert a string into your data of type [T] by
-/// using the [_createNewInstance] callback.
-///
-/// For the other way around, [toString] will just be called on your object of type [T]
-final class CustomConfigOption<T> extends _MutableConfigOption<T> {
-  /// function that creates a new instance of [T] (or return null)
-  final T? Function(String? str) _createNewInstance;
-
-  /// [updateCallback] Optional update callback that is called after [setValue] to update data references elsewhere.
-  /// [lazyLoaded] For big data this should be [true] to load on demand. Defaults to [false] (all data is kept in memory)
-  /// [createNewInstance] function that creates a new instance of [T] (or return null)
-  CustomConfigOption({
-    required T? Function(String? str) createNewInstance,
-    required super.key,
-    super.updateCallback,
-    super.defaultValue,
-    super.lazyLoaded,
-  }) : _createNewInstance = createNewInstance;
-
-  @override
-  T? _stringToData(String? str) => _createNewInstance.call(str);
-}
-
-/// Special case: LogLevel as a config option
-final class LogLevelConfigOption extends _MutableConfigOption<LogLevel> {
-  LogLevelConfigOption({
-    required super.key,
-    super.updateCallback,
-    super.defaultValue,
-    super.lazyLoaded,
-  });
-
-  @override
-  LogLevel? _stringToData(String? str) {
-    if (str == null) {
-      return null;
-    }
-    return LogLevel.fromString(str);
   }
 }

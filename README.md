@@ -8,6 +8,20 @@
 
 - IMPORTANT: currently only **windows** is supported and no other platform! 
 
+## Assets
+
+- the pubspec files of the library, but also all applications must have "assets/" under the "-assets" category
+  - and under that you should at least have "assets/images/" and "assets/locales/" 
+- when building the app the assets will be at two locations: "data/flutter_assets/assets/" and 
+  "data/flutter_assets/packages/game_tools_lib/assets"
+
+### Translation files 
+
+- after declaring your supported languages in the config, you have to create a translation file (like "en.json") for 
+  each language and put them into "assets/locales" of your project 
+- the default game tools lib only contains one "en.json" with some basic keys that will be merged with your english 
+  translation file! (you have to manually copy and translate the keys for other languages!!!!)
+
 ## Build
 
 ### Prerequisites 

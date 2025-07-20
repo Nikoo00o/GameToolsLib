@@ -1,8 +1,10 @@
 part of 'package:game_tools_lib/game_tools_lib.dart';
 
-/// Logger subclasses should override [logToConsole] with the preferred way to log into the console.
+/// Logger subclasses should override [logToConsole] with the preferred way to log into the console. But extend from
+/// [CustomLogger] instead of this.
 ///
-/// Before the static methods of the logger are used, the instance needs to be initialised with [initLogger]!
+/// Before the static methods of the logger are used, the instance needs to be initialised with [initLoggerInstance]
+/// which is done automatically!
 ///
 /// Subclasses can also override [logToStorage] if the logs should be stored, or [addColorForConsole] to add different
 /// color strings to the log messages in the console.
@@ -20,13 +22,9 @@ abstract base class Logger {
 
   static final Lock _lock = Lock();
 
+  /// Nullable static getter used internally to return the config
   @protected
-  /// Nullable static getter used internally to return the config instance
-  static FixedConfig? get fixedConfig => GameToolsConfig._instance?.fixed;
-
-  /// Nullable static getter used internally to return the config instance
-  @protected
-  static MutableConfig? get mutableConfig => GameToolsConfig._instance?.mutable;
+  static GameToolsConfigBaseType? get config => GameToolsConfig._instance;
 
   /// Converted from [SpamIdentifier] and contains the next time this is allowed to log
   static final Map<int, DateTime> _spamIdentifier = <int, DateTime>{};
@@ -34,20 +32,25 @@ abstract base class Logger {
   /// The current [LogLevel] of the logger. All logs with a higher value than this will be ignored and only the more
   /// important logs with a lower [LogLevel] will be printed and stored!
   /// Set it to [LogLevel.SPAM] to log everything (default if no config is set)!
-  LogLevel get logLevel => mutableConfig?.logLevel.cachedValue() ?? LogLevel.SPAM;
+  LogLevel get logLevel => config?.mutable.logLevel.cachedValue() ?? LogLevel.SPAM;
 
   /// Only set during tests to prevent logging to storage and ui
   bool _isTesting = false;
 
   Logger();
 
-  /// Has to be called at the start of the main function to enable logging with a subclass of Logger
-  static void _initLogger(Logger instance) {
+  /// Has to be called at the start of the main function to enable logging with a subclass of Logger.
+  ///
+  /// Don't call this manually, this will be called automatically from [GameToolsLib.initGameToolsLib]!
+  static void initLoggerInstance(Logger instance) {
     if (_instance != null) {
       verbose("Overriding old logger instance $_instance with $instance");
     }
     _instance = instance;
   }
+
+  /// The current custom logger instance which also may be null
+  static Logger? get instance => _instance;
 
   /// Does not await the [log] call with its synchronized write to storage if enabled
   static void error(String? message, [Object? error, StackTrace? stackTrace]) {
@@ -185,7 +188,7 @@ abstract base class Logger {
 
   List<String> convertLogMessageToConsole(LogMessage logMessage) {
     final List<String> output = <String>[];
-    final List<String> input = logMessage.toString().split("\n");
+    final List<String> input = StringUtils.splitIntoLines(logMessage.toString());
     for (final String line in input) {
       final StringBuffer buff = StringBuffer();
       buff.write(addColorForConsole(logMessage.level).toString());
@@ -206,6 +209,7 @@ abstract base class Logger {
     return output;
   }
 
+  // ignore: unused_element
   void _padMultipleLines(List<String> output, LogLevel logLevel) {
     for (int i = 1; i < output.length; ++i) {
       final StringBuffer out = StringBuffer();
@@ -244,14 +248,9 @@ abstract base class Logger {
     return color;
   }
 
-  /// returns the matching log color of the log message. returns null if there is no logger instance
-  static LogColor? getLogColorForMessage(LogMessage logMessage) {
-    return _instance?.addColorForConsole(logMessage.level);
-  }
-
   @override
   String toString() {
-    return '$runtimeType{logLevel: $logLevel}';
+    return '$runtimeType(logLevel: $logLevel)';
   }
 
   static void _writeSpam(
@@ -297,4 +296,7 @@ final class SpamIdentifier {
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is SpamIdentifier && identifier == other.identifier;
+
+  @override
+  String toString() => "SpamIdentifier($identifier: $delay)";
 }

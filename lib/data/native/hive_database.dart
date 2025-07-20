@@ -2,9 +2,10 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 
 /// Used to interact with a local database with [writeToHive] and [readFromHive].
 ///
-/// You can also manipulate files with [writeFile], etc.
+/// You can also manipulate files in the [GameToolsConfig.databaseFolder] with [readFile], [writeFile], [renameFile],
+/// [deleteFile], [readJson] and [writeJson] directly!
 ///
-/// Everything here is stored in the [FixedConfig.databaseFolder] and can be deleted with [deleteDatabaseFolder].
+/// Everything here is stored in the [GameToolsConfig.databaseFolder] and can be deleted with [deleteDatabaseFolder].
 final class HiveDatabase {
   /// The database identifier of the hive box that contains the bigger lazy loaded config values.
   /// Those are loaded on demand and not kept in memory
@@ -29,8 +30,8 @@ final class HiveDatabase {
   /// contains the hive boxes which are used with the [database] parameter
   Map<String, BoxBase<dynamic>>? _hiveDatabases;
 
-  /// Returns [FixedConfig.databaseFolder] as the database path
-  String get basePath => GameToolsConfig.baseConfig.fixed.databaseFolder;
+  /// Returns [GameToolsConfig.databaseFolder] as the database path
+  String get basePath => GameToolsConfig.baseConfig.databaseFolder;
 
   /// Must be called at the start of the program to initialize the database!
   /// Also loads the hive boxes [_hiveDatabases]
@@ -45,19 +46,19 @@ final class HiveDatabase {
     }
   }
 
-  /// Deletes the database directory of the program, so everything stored at [FixedConfig.databaseFolder]
+  /// Deletes the database directory of the program, so everything stored at [GameToolsConfig.databaseFolder]
   Future<void> deleteDatabaseFolder() async {
     await deleteAllHiveDatabases();
     final List<String> files = await FileUtils.getFilesInDirectory(basePath);
     for (final String path in files) {
-      bool exists = await FileUtils.deleteFileAsync(path);
+      bool exists = await FileUtils.deleteFile(path);
       if (exists) {
-        Logger.info("deleted file $path");
+        Logger.debug("deleted file $path");
       } else {
         exists = await FileUtils.deleteDirectory(path);
         final Directory dir = Directory(path);
         if (dir.existsSync()) {
-          Logger.info("deleting folder ${dir.path}");
+          Logger.debug("deleting folder ${dir.path}");
           await dir.delete(recursive: true);
         }
       }
@@ -154,31 +155,50 @@ final class HiveDatabase {
     _hiveDatabases = null;
   }
 
+  /// Saves the [bytes] to a file in [localFilePath] relative to [GameToolsConfig.databaseFolder]
   Future<void> writeFile({required String localFilePath, required List<int> bytes}) async {
     return FileUtils.writeFileAsBytes(await _getAbsolutePath(localFilePath), bytes);
   }
 
+  /// Loads the file in [localFilePath] relative to [GameToolsConfig.databaseFolder] as bytes
   Future<Uint8List?> readFile({required String localFilePath}) async {
     return FileUtils.readFileAsBytes(await _getAbsolutePath(localFilePath));
   }
 
-  Future<bool> deleteFile({required String localFilePath}) async {
-    return FileUtils.deleteFileAsync(await _getAbsolutePath(localFilePath));
+  static final JsonEncoder _encoder = JsonEncoder.withIndent("    ");
+
+  /// Same as [writeFile], but with a [json] map instead of bytes!
+  Future<void> writeJson({required String localFilePath, required Map<String, dynamic> json}) async {
+    final String data = _encoder.convert(json);
+    return FileUtils.writeFile(await _getAbsolutePath(localFilePath), data);
   }
 
+  /// Same as [readFile], but returns a json map instead!
+  Future<Map<String, dynamic>?> readJson({required String localFilePath}) async {
+    final String data = await FileUtils.readFile(await _getAbsolutePath(localFilePath));
+    return jsonDecode(data) as Map<String, dynamic>?;
+  }
+
+  /// Deletes the file in [localFilePath] relative to [GameToolsConfig.databaseFolder]
+  Future<bool> deleteFile({required String localFilePath}) async {
+    return FileUtils.deleteFile(await _getAbsolutePath(localFilePath));
+  }
+
+  /// Renames file with paths relative to [GameToolsConfig.databaseFolder]. The path can also only be a name!
   Future<bool> renameFile({required String oldLocalFilePath, required String newLocalFilePath}) async {
     final String oldPath = await _getAbsolutePath(oldLocalFilePath);
-    if (await FileUtils.fileExistsAsync(oldPath) == false) {
+    if (FileUtils.fileExists(oldPath) == false) {
       return false;
     }
-    await FileUtils.moveFileAsync(oldPath, await _getAbsolutePath(newLocalFilePath));
+    await FileUtils.moveFile(oldPath, await _getAbsolutePath(newLocalFilePath));
     return true;
   }
 
+  /// Returns a list of paths to all files inside of the relative [subFolderPath] to [GameToolsConfig.databaseFolder]
   Future<List<String>> getFilePaths({required String subFolderPath}) async =>
       FileUtils.getFilesInDirectory(await _getAbsolutePath(subFolderPath));
 
-  /// This returns [localFilePath] after the [FixedConfig.resourceFolderPath]
+  /// This returns [localFilePath] after the [GameToolsConfig.databaseFolder]
   Future<String> _getAbsolutePath(String localFilePath) async {
     final String basePath = this.basePath;
     if (localFilePath.isEmpty) {

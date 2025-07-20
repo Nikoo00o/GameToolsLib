@@ -1,6 +1,8 @@
 part of 'native_image.dart';
 
-/// Helper class which contains private helper methods and less commonly used methods for [NativeImage]
+/// Helper class which contains private helper methods and less commonly used methods for [NativeImage].
+///
+/// Also provides static helper functions [iterateMat] and [iterateMatI].
 sealed class BaseNativeImage {
   /// Reference to the native opencv mat (the reference will be updated to a copy on most change operations!)
   cv.Mat? _data;
@@ -245,11 +247,11 @@ sealed class BaseNativeImage {
 
   static Color? _pixelToColor(List<num> pixel) {
     if (pixel.length == 3) {
-      return Color.fromARGB(255, pixel[2].toInt(), pixel[1].toInt(), pixel[0].toInt()); // BGR
+      return Color.fromARGB(255, pixel[2].round(), pixel[1].round(), pixel[0].round()); // BGR
     } else if (pixel.length == 4) {
-      return Color.fromARGB(pixel[3].toInt(), pixel[2].toInt(), pixel[1].toInt(), pixel[0].toInt()); // BGRA
+      return Color.fromARGB(pixel[3].round(), pixel[2].round(), pixel[1].round(), pixel[0].round()); // BGRA
     } else if (pixel.length == 1) {
-      return Color(pixel[0].toInt()); //GRAY
+      return Color(pixel[0].round()); //GRAY
     }
     return null;
   }
@@ -260,7 +262,7 @@ sealed class BaseNativeImage {
   /// callback was called with every value.
   /// [T] is the returned type that you want to work with and [MatDataType] is the type stored in the [mat] (depends
   /// on the channel (for example [cv.Vec4b])
-  static T? _iterateMat<T, MatDataType>(cv.Mat mat, T? Function(MatDataType val) callback) {
+  static T? iterateMat<T, MatDataType>(cv.Mat mat, T? Function(MatDataType val) callback) {
     for (int r = 0; r < mat.height; ++r) {
       for (int c = 0; c < mat.width; ++c) {
         final MatDataType val = mat.at<MatDataType>(r, c);
@@ -273,8 +275,8 @@ sealed class BaseNativeImage {
     return null;
   }
 
-  /// Same as [_iterateMat], but with indices. [r] for the row (height, accessed first!) and [c] for the column(width).
-  static T? _iterateMatI<T>(cv.Mat mat, T? Function(int r, int c) callback) {
+  /// Same as [iterateMat], but with indices. [r] for the row (height, accessed first!) and [c] for the column(width).
+  static T? iterateMatI<T>(cv.Mat mat, T? Function(int r, int c) callback) {
     for (int r = 0; r < mat.height; ++r) {
       for (int c = 0; c < mat.width; ++c) {
         final T? ret = callback.call(r, c);

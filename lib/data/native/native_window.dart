@@ -4,15 +4,18 @@ import 'dart:ui' show Color;
 import 'package:ffi/ffi.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:game_tools_lib/core/config/mutable_config.dart';
-import 'package:game_tools_lib/core/enums/input_enums.dart';
+import 'package:game_tools_lib/core/enums/input/input_enums.dart';
 import 'package:game_tools_lib/core/enums/native_image_type.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/utils/bounds.dart';
-import 'package:game_tools_lib/domain/game/game_window.dart' show GameWindow;
 import 'package:game_tools_lib/data/native/ffi_loader.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
+import 'package:game_tools_lib/domain/game/game_window.dart' show GameWindow;
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:opencv_dart/opencv.dart' as cv;
+
+// ignore_for_file: camel_case_types
+// ignore_for_file: avoid_positional_boolean_parameters
 
 /// Simple integer to detect dll library mismatches. Has to be incremented when native code is modified!
 /// Also Modify the version in native_window.h

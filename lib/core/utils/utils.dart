@@ -76,7 +76,7 @@ abstract final class Utils {
     callback.call();
   }
 
-  /// Just shorter syntax than Future<void>.delayed
+  /// Just shorter syntax than [Future<void>].delayed
   static Future<void> delay(Duration delay) async => Future<void>.delayed(delay);
 
   /// Just shorter syntax for [delay] if [milliseconds] should be used directly and no duration
@@ -114,32 +114,32 @@ extension ColorExtension on Color {
       Utils.colorEquals(this, other, skipAlpha: skipAlpha, pixelValueThreshold: pixelValueThreshold);
 
   /// String representation of this color with rgba values!
-  String get rgb => "Color(r=$red, g=$green, b=$blue, a=$alpha)";
+  String get rgb => "Color(r=$redI, g=$greenI, b=$blueI, a=$alphaI)";
 
-  /// First 8 bits blue value as 0 to 255
-  int get blue => (b * 255.0).round() & 0xff;
+  /// First 8 bits blue value as 0 to 255 (the I suffix avoids clashing with default getter)
+  int get blueI => (b * 255.0).round() & 0xff;
 
-  /// Next 8 bits after [blue] for green value as 0 to 255
-  int get green => (g * 255.0).round() & 0xff;
+  /// Next 8 bits after [blueI] for green value as 0 to 255
+  int get greenI => (g * 255.0).round() & 0xff;
 
-  /// Next 8 bits after [green] for red value as 0 to 255
-  int get red => (r * 255.0).round() & 0xff;
+  /// Next 8 bits after [greenI] for red value as 0 to 255
+  int get redI => (r * 255.0).round() & 0xff;
 
-  /// Next 8 bits after [red] for alpha value as 0 to 255
-  int get alpha => (a * 255.0).round() & 0xff;
+  /// Next 8 bits after [redI] for alpha value as 0 to 255
+  int get alphaI => (a * 255.0).round() & 0xff;
 
   /// If only the lowest bit is set to store a grayscale image values (every r/g/b would have the same value)!
-  /// Used for example with [NativeImageType.GRAY]. Same as [blue]
-  int get gray => blue;
+  /// Used for example with [NativeImageType.GRAY]. Same as [blueI]
+  int get gray => blueI;
 
-  /// Different color access hsv (also 0 to 255), same as [blue]. This is the color type as an angle on color wheel
-  int get h => blue;
+  /// Different color access hsv (also 0 to 255), same as [blueI]. This is the color type as an angle on color wheel
+  int get h => blueI;
 
-  /// Different color access hsv (also 0 to 255), same as [green]. This is the saturation representing the intensity
+  /// Different color access hsv (also 0 to 255), same as [greenI]. This is the saturation representing the intensity
   /// of the color (0 is grayscale and 255 is pure color)
-  int get s => green;
+  int get s => greenI;
 
-  /// Different color access hsv (also 0 to 255), same as [red]. This is the brightness of the color (0 is black and
+  /// Different color access hsv (also 0 to 255), same as [redI]. This is the brightness of the color (0 is black and
   /// 255 is brightest color)
-  int get v => red;
+  int get v => redI;
 }

@@ -11,15 +11,22 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
     CustomLogger? logger, {
     required bool isCalledFromTesting,
   }) {
-    if (GameToolsConfig._instance != null) {
-      throw ConfigException(message: "Cant set $config, instance was already set to ${GameToolsConfig._instance}");
-    }
-    GameToolsConfig._instance = config;
-    Logger._initLogger(logger ?? CustomLogger());
+    Logger.initLoggerInstance(logger ?? CustomLogger());
     if (isCalledFromTesting) {
       Logger._instance!._isTesting = true;
       Logger.debug("Setting Logger To Testing mode so it does not write to storage");
     }
+    if (GameToolsConfig._instance != null) {
+      throw ConfigException(message: "Cant set $config, instance was already set to ${GameToolsConfig._instance}");
+    }
+    GameToolsConfig._instance = config;
+    FlutterError.onError = (FlutterErrorDetails details) {
+      Logger.error("Uncaught exception", details.exception, details.stack);
+    };
+    PlatformDispatcher.instance.onError = (Object error, StackTrace trace) {
+      Logger.error("Uncaught exception", error, trace);
+      return true; // also handles the zone errors
+    };
   }
 
   /// This is called from [GameToolsLib.initGameToolsLib] after setting the important base classes to init local storage

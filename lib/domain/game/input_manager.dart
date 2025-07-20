@@ -74,6 +74,8 @@ abstract final class InputManager {
   /// [maxStepSize] on how far the pos should be moved at a time.The default value for [minMaxStepDelayInMS]
   /// is [FixedConfig.tinyDelayMS].
   ///
+  /// Before returning, this also awaits [FixedConfig.shortDelayMS] once at the end!
+  ///
   /// May throw a [WindowClosedException] if the window was not open. You can also use [GameWindow.moveMouse] instead!
   /// Affects both [getWindowMousePos] and [displayMousePos]
   ///
@@ -93,14 +95,15 @@ abstract final class InputManager {
     // if the start point is not in window, then set it to top left corner
     final Point<int> startPos = getWindowMousePosNonNull(window);
     minMaxStepDelayInMS ??= FixedConfig.fixedConfig.tinyDelayMS; // default value for delay
-    Point<int> currPos = startPos;
+    int currX = startPos.x;
+    int currY = startPos.y;
     int targetX = NumUtils.getRandomNumber(point.x - offset.x, point.x + offset.x);
     targetX = targetX < 0 ? 0 : targetX; // only check for negative cords, not checking for out of bounds for bot right
     int targetY = NumUtils.getRandomNumber(point.y - offset.y, point.y + offset.y);
     targetY = targetY < 0 ? 0 : targetY; // only check for negative cords, not checking for out of bounds for bot right
 
     // now calculate general step vector from distance
-    final Point<int> distance = Point<int>(targetX - currPos.x, targetY - currPos.y);
+    final Point<int> distance = Point<int>(targetX - currX, targetY - currY);
     final Point<double> normalized = NumUtils.normalizePoint(
       NumUtils.absPoint(distance.toDoublePoint(), higherThanZero: true),
     );
@@ -114,11 +117,20 @@ abstract final class InputManager {
     while (true) {
       final int randomXStep = distance.x >= 0 ? NumUtils.getRandomNumberP(xStep) : -NumUtils.getRandomNumberP(xStep);
       final int randomYStep = distance.y >= 0 ? NumUtils.getRandomNumberP(yStep) : -NumUtils.getRandomNumberP(yStep);
-      addToX = distance.x >= 0 ? min(targetX - currPos.x, randomXStep) : max(targetX - currPos.x, randomXStep);
-      addToY = distance.y >= 0 ? min(targetY - currPos.y, randomYStep) : max(targetY - currPos.y, randomYStep);
+      addToX = distance.x >= 0 ? min(targetX - currX, randomXStep) : max(targetX - currX, randomXStep);
+      addToY = distance.y >= 0 ? min(targetY - currY, randomYStep) : max(targetY - currY, randomYStep);
       _nativeWindow.moveMouse(addToX, addToY);
-      currPos = getWindowMousePosNonNull(window);
+      currX += addToX;
+      currY += addToY;
       if (addToX == 0 && addToY == 0) {
+        await Utils.delay(NumUtils.getRandomDuration(FixedConfig.fixedConfig.shortDelayMS));
+        final Point<int> currPos = getWindowMousePosNonNull(window);
+        if (currPos.x != currX || currPos.y != currY) {
+          addToX = targetX - currPos.x;
+          addToY = targetY - currPos.y;
+          _nativeWindow.moveMouse(addToX, addToY);
+          Logger.spam("Had to correct last mouse move step by ", addToX, ", ", addToY);
+        }
         Logger.spam("Moved mouse in window ", window.name, " from ", startPos, " to ", currPos);
         break;
       }
@@ -192,23 +204,35 @@ abstract final class InputManager {
   static void sendRawKeyEvents({required bool keyUp, required List<LogicalKeyboardKey> keyCodes}) =>
       _nativeWindow.sendKeyEvents(keyUp: keyUp, keyCodes: keyCodes);
 
-  /// Taps the key [key] up and down and optionally also its modifier keys.
+  /// Taps the key [key] up and down and optionally also its modifier keys and returns true if it was successful.
+  ///
+  /// Otherwise if the [key] was already down, this returns false!
   ///
   /// [delayBeforeAndBetweenInMS] is awaited at the start and middle of this and defaults to [FixedConfig.shortDelayMS]
-  static Future<void> keyPress(BoardKey key, {Point<int>? delayBeforeAndBetweenInMS}) async {
+  static Future<bool> keyPress(BoardKey key, {Point<int>? delayBeforeAndBetweenInMS}) async {
     final Duration duration = NumUtils.getRandomDuration(delayBeforeAndBetweenInMS);
     await Utils.delay(duration);
     final List<LogicalKeyboardKey> keyCodes = key.logicalKeys;
+    if (_nativeWindow.isKeyDown(keyCodes.last)) {
+      Logger.spam("Can't press ", key, " because it was already down!");
+      return false;
+    }
     if (keyCodes.length == 1) {
       keyDown(keyCodes.first);
       await Utils.delay(duration);
       keyUp(keyCodes.first);
     } else {
+      for (int i = 0; i < keyCodes.length - 1; ++i) {
+        if (_nativeWindow.isKeyDown(keyCodes[i])) {
+          keyCodes.removeAt(i--);
+        }
+      }
       sendRawKeyEvents(keyUp: false, keyCodes: keyCodes);
       await Utils.delay(duration);
       sendRawKeyEvents(keyUp: true, keyCodes: keyCodes);
     }
     Logger.spam("Pressed key ", key);
+    return true;
   }
 
   /// Returns if the virtual keycode is currently pressed down and optionally also its modifier keys
@@ -385,7 +409,7 @@ abstract final class InputManager {
   static Future<void> sendChatMessage(String text, {Point<int>? delay}) async {
     Logger.verbose("Sending chat message...: $text");
     await keyPress(BoardKey.enter); // additional 2 smaller delays
-    await pasteDataIntoSelected(text, delayBeforeAndAfter: delay);
+    await pasteDataIntoSelected(text, delayBeforeAndAfter: delay); // 9 medium delays
     await keyPress(BoardKey.enter); // additional 2 smaller delays
   }
 }

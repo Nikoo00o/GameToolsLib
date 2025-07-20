@@ -11,6 +11,24 @@ abstract final class StringUtils {
   /// So the length of the string will be bigger!
   static String getRandomBytesAsBase64String(int length) => base64UrlEncode(ListUtils.getRandomBytes(length));
 
+  /// Tries to split the [input] into a list of strings containing the lines. If input is only one line, or empty,
+  /// then the list will only have input itself as elements!
+  /// Also if a line break is at the start, or at the end, it will count as an extra empty line!
+  static List<String> splitIntoLines(String input) {
+    final bool defaultLineBreak = input.contains("\n");
+    final bool extraLineBreak = input.contains("\r\n");
+    if (defaultLineBreak) {
+      String toSplit = input;
+      if (extraLineBreak) {
+        toSplit = toSplit.replaceAll("\r\n", "\n");
+      }
+      return toSplit.split("\n").toList();
+    } else if (extraLineBreak) {
+      return input.split("\r\n").toList();
+    }
+    return <String>[input];
+  }
+
   /// Returns a pretty string for an [object] with the [propertiesOfObject] which maps String description keys to
   /// the member variables of the object!
   static String toStringPretty(Object object, Map<String, Object?> propertiesOfObject) {
@@ -33,7 +51,7 @@ abstract final class StringUtils {
 
   static void _printInnerObject(StringBuffer buffer, String value) {
     final String valueString = value.substring(1); // remove the line break
-    final List<String> innerLogs = valueString.split("\n");
+    final List<String> innerLogs = splitIntoLines(valueString);
     buffer.writeln(innerLogs.first); // first line should not have spaces added
     for (int i = 1; i < innerLogs.length - 1; ++i) {
       buffer.writeln("  ${innerLogs.elementAt(i)}");
@@ -42,7 +60,7 @@ abstract final class StringUtils {
   }
 
   static void _printInnerList(StringBuffer buffer, String value) {
-    final List<String> lines = value.split("\n");
+    final List<String> lines = splitIntoLines(value);
     buffer.writeln(lines.first);
     if (lines.length == 1) {
       return; // empty lists

@@ -1,4 +1,5 @@
 import 'package:game_tools_lib/data/native/native_image.dart';
+import 'package:game_tools_lib/game_tools_lib.dart';
 
 /// The base Exception class which holds a message to display
 abstract base class BaseException implements Exception {
@@ -13,9 +14,9 @@ abstract base class BaseException implements Exception {
   @override
   String toString() {
     if (messageParams == null || messageParams!.isEmpty) {
-      return "$runtimeType: $message";
+      return "$runtimeType($message)";
     }
-    return "$runtimeType: $message\nException Data:$messageParams";
+    return "$runtimeType($message\nException Data:$messageParams)";
   }
 }
 
@@ -47,4 +48,9 @@ final class ImageException extends BaseException {
 /// An exception only important for testing
 final class TestException extends BaseException {
   const TestException({required super.message, super.messageParams});
+}
+
+/// Different use cases for [GameState]
+final class StateException extends BaseException {
+  const StateException({required super.message, super.messageParams});
 }

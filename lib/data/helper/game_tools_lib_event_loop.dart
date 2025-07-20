@@ -10,13 +10,15 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
   static Future<void>? _managerUpdate;
   static Future<void>? _eventUpdates;
   static final SpamIdentifier _eventLog = SpamIdentifier();
+  // ignore: unused_field
+  static final SpamIdentifier _loopLog = SpamIdentifier();
 
   /// is awaited in [GameToolsLib.runLoop]
   static Future<void> _startLoop(int updatesPerSecond) async {
     if (_loopRunning == false) {
       _loopRunning = true;
-      _loopResult = _loopInternal(updatesPerSecond);
       Logger.spam("Started GameToolsLib event loop");
+      _loopResult = _loopInternal(updatesPerSecond);
       await _loopResult;
     } else {
       Logger.warn("Could not start GameToolsLib event loop");
@@ -36,7 +38,7 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
       _instantEvents.clear();
       _eventQueue.clear();
     } else {
-      await StartupLogger().log("Could not stop GameToolsLib event loop", LogLevel.WARN, null, null);
+      await StartupLogger().log("GameToolsLib event loop wasn't running while closing", LogLevel.WARN, null, null);
     }
   }
 
@@ -53,7 +55,8 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
       final int timeSpent = loopEndTime - loopStartTime;
       final int sleepTime = max(timePerLoopInMs - timeSpent, 1);
       loopStartTime = loopEndTime + sleepTime;
-      await Future<void>.delayed(Duration(milliseconds: sleepTime));
+      // Logger.spamPeriodic(_loopLog, "Loop step at ", loopEndTime, " awaiting ", sleepTime);
+      await Utils.delayMS(sleepTime);
     }
     return true;
   }
@@ -88,7 +91,9 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
   static Future<void> _updateManagerAndState() async {
     try {
       await GameManager._instance?.onUpdate();
+      await Utils.delayMS(1); // needed so that other async tasks may be processed in the meantime
       await _currentState?.onUpdate();
+      await Utils.delayMS(1); // needed so that other async tasks may be processed in the meantime
     } catch (e, s) {
       Logger.error("Error Game Tools Lib Updating Manager And State: ", e, s);
     }
@@ -97,30 +102,55 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
   /// This is not awaited
   static Future<void> _updateEvents() async {
     try {
-      for (int i = 0; i < _eventQueue.length; ++i) {
-        // process events in order by awaiting them. some might be skipped if added/removed while this is running
-        if (await _eventQueue[i]._onLoop()) {
-          --i; // event was removed
+      final int size = _eventQueue.length;
+      if (size >= 3) {
+        for (int i = 0; i < _eventQueue.length; ++i) {
+          // process events in order by awaiting them. some might be skipped if added/removed while this is running
+          if (await _eventQueue[i]._onLoop()) {
+            --i; // event was removed
+          }
+          if (i == size ~/ 2) {
+            await Utils.delayMS(1); // needed so that other async tasks may be processed in the meantime
+          }
+        }
+      } else {
+        for (int i = 0; i < _eventQueue.length; ++i) {
+          if (await _eventQueue[i]._onLoop()) {
+            --i; // same as above, but without delay in between
+          }
         }
       }
+      await Utils.delayMS(1); // needed so that other async tasks may be processed in the meantime
     } catch (e, s) {
       Logger.error("Error Game Tools Lib Updating Events: ", e, s);
     }
   }
 
+  /// this is awaited
+  static Future<void> _updateListeners() async {
+    for (final BaseInputListener<dynamic> listener
+        in GameManager._instance?._inputListeners ?? <BaseInputListener<dynamic>>[]) {
+      await listener._update();
+    }
+    await Utils.delayMS(1);
+    await GameLogWatcher._instance!._fetchNewLines();
+  }
+
   static Future<void> _loopStep() async {
     for (final GameWindow window in GameToolsLib.gameWindows) {
       if (window.updateOpen()) {
+        Logger.verbose("Open status change: $window");
         await _updateOpen(window);
       }
+      await Utils.delayMS(1); // needed so that other async tasks may be processed in the meantime
       if (window.updateFocus()) {
-        for (int i = 0; i < _eventQueue.length; ++i) {
-          await _updateFocus(window);
-        }
+        Logger.verbose("Focus status change: $window");
+        await _updateFocus(window);
       }
     }
     _managerUpdate ??= _updateManagerAndState().whenComplete(() => _managerUpdate = null); // not awaited
     _eventUpdates ??= _updateEvents().whenComplete(() => _eventUpdates = null); // not awaited
+    await _updateListeners(); // is awaited
   }
 
   static void _addEventInternal(GameEvent event) {

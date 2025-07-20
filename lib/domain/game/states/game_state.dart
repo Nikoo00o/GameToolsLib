@@ -12,23 +12,27 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 ///
 /// If you want to compare objects of this, you have to implement custom equality yourself in your sub classes! Per
 /// default it compares if references point to the same object.
+///
+/// For an example look at [ExampleState]. Also look at [ChildGameState] for another option to extend when you have
+/// parent + child states.
 abstract base class GameState {
   /// Internal counter for better logging [_idCounter]
   final int _id;
 
   static int _idCounter = 0;
 
+  /// This logs something, so only use this after [GameToolsLib.initGameToolsLib]!
   GameState() : _id = _idCounter++ {
     Logger.verbose("Created new state $this");
   }
 
-  /// Is called when the focus changes for [window]. This will also be called when it receives focus for the first time!
-  /// Don't use any delays inside of this!
-  Future<void> onFocusChange(GameWindow window) async {}
-
   /// Is called when the open status changes for [window]. This will also be called when it opens for the first time!
   /// Don't use any delays inside of this!
   Future<void> onOpenChange(GameWindow window) async {}
+
+  /// Is called when the focus changes for [window]. This will also be called when it receives focus for the first time!
+  /// Don't use any delays inside of this!
+  Future<void> onFocusChange(GameWindow window) async {}
 
   /// Is called internally when this state becomes active and also receives the previous [oldState] (which would only
   /// be null for the first state which is [GameClosedState] and there this method is not called!).
@@ -55,5 +59,5 @@ abstract base class GameState {
   Future<void> onUpdate();
 
   @override
-  String toString() => "${runtimeType.toString()}($_id)";
+  String toString() => "$runtimeType($_id)";
 }

@@ -1,3 +1,6 @@
+import 'package:game_tools_lib/core/logger/log_color.dart';
+import 'package:game_tools_lib/game_tools_lib.dart';
+
 /// The type of the log entry (a lower level is more important)
 enum LogLevel {
   /// 0
@@ -26,4 +29,7 @@ enum LogLevel {
   factory LogLevel.fromString(String data) {
     return values.firstWhere((LogLevel element) => element.name == data);
   }
+
+  /// This can return null if the logger instance is null and otherwise it uses [Logger.addColorForConsole]
+  static LogColor? getLogColor(LogLevel level)  => Logger.instance?.addColorForConsole(level);
 }

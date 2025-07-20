@@ -4,7 +4,7 @@ part of 'package:game_tools_lib/domain/game/game_window.dart';
 /// Can be used to either press a key, or check if a key is pressed.
 /// Uses [keyCode], [keyName] and [logicalKeys].
 /// Also contains the all used keys as static members like [enter], [n1] for the number 1 key, [a] characters,
-/// etc which should be preferred to be used directly (or with the [copyWith] constructor, because not all
+/// etc which should be preferred to be used directly like an enum (or with the [copyWith] constructor, because not all
 /// [LogicalKeyboardKey]'s are supported!
 final class BoardKey implements Model {
   /// If actual key is down

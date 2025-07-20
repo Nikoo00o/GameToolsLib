@@ -2,6 +2,8 @@ import 'entity.dart';
 
 /// The Model base class that other models implement to override the toJson method.
 ///
+/// This can, but does not have to be used with [Entity]!
+///
 /// The fromJson factory constructor must be provided as well in sub classes, but it can not be provided with an interface!
 abstract interface class Model {
   /// Create JSON Map from model

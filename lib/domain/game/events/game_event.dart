@@ -11,6 +11,9 @@ typedef GameEventStepCallback = Future<(GameEventStatus, Duration)> Function();
 /// You can also override the following: [onStart], [onStop], [onOpenChange], [onFocusChange], [onStateChange] and
 /// [onData] for the data from other events [sendDataToEventsT] + [sendDataToEventsG]!
 ///
+/// As a quicker shortcut outside of overriding, you can also use [checkCorrectState] periodically in your [onStep1]
+/// and then use [getCurrentState] if you need specific subtype data access for your state!
+///
 /// The [priority] can only be set once in the constructor and dictates how and when your event is executed.
 /// The [GameEventGroup]s [_groups] can be set in the constructor, but also be modified afterwards with [addToGroup],
 /// [removeFromGroup] and [isInGroup] and of course you can also use multiple groups in the constructor (chain them
@@ -18,6 +21,8 @@ typedef GameEventStepCallback = Future<(GameEventStatus, Duration)> Function();
 ///
 /// If you want to compare objects of this, you have to implement custom equality yourself in your sub classes! Per
 /// default it compares if references point to the same object.
+///
+/// For an example look at [ExampleEvent]
 abstract base class GameEvent {
   /// The priority of this event, if this is [GameEventPriority.INSTANT], then this will instantly be executed when
   /// adding the event with for example [addEvent] unawaited! Otherwise it will be processed later in the event queue!
@@ -51,13 +56,13 @@ abstract base class GameEvent {
   /// Marks this event as being in the [group] (you can add events to as many groups of [GameEventGroup] as you like!)
   void addToGroup(GameEventGroup group) {
     _groups = _groups | group;
-    Logger.spam("Added $this to group $group");
+    Logger.spam("Added ", this, " to group ", group);
   }
 
   /// Marks this event as no longer being a part of [group]
   void removeFromGroup(GameEventGroup group) {
     _groups = _groups & group.inverted;
-    Logger.spam("Removed $this from group $group");
+    Logger.spam("Removed ", this, " from group ", group);
   }
 
   /// Returns if this event is marked as being in the [group]
@@ -77,13 +82,13 @@ abstract base class GameEvent {
     Logger.spamPeriodic(_stepLog, this, " changed step from ", _currentStep, " to custom ", stepCallback);
   }
 
-  /// Is called when the focus changes for [window]. This will also be called when it receives focus for the first time!
-  /// Don't use any delays inside of this!
-  Future<void> onFocusChange(GameWindow window) async {}
-
   /// Is called when the open status changes for [window]. This will also be called when it opens for the first time!
   /// Don't use any delays inside of this!
   Future<void> onOpenChange(GameWindow window) async {}
+
+  /// Is called when the focus changes for [window]. This will also be called when it receives focus for the first time!
+  /// Don't use any delays inside of this!
+  Future<void> onFocusChange(GameWindow window) async {}
 
   /// Is called internally before this event starts updating with [onStep1] (should not await any delays!)
   Future<void> onStart() async {}
@@ -96,6 +101,56 @@ abstract base class GameEvent {
   /// Don't use any delays inside of this! Important: the first and last state on start and end will always be
   /// [GameClosedState]! Of course you could also instead always check the [GameToolsLib.currentState] in your [onStep1]
   Future<void> onStateChange(GameState oldState, GameState newState) async {}
+
+  /// This is a quick shortcut to check if the [GameToolsLib.mainGameWindow] is open (if [requiresOpen] is true) and
+  /// if it also has focus(if [requiresFocus] is true) and if the [GameToolsLib.currentState] is of type [StateType].
+  ///
+  /// This is an alternative for comparing outside of [onOpenChange], [onFocusChange] and [onStateChange]!
+  ///
+  /// If you don't care about the current state, then just use [GameState] as [StateType].
+  bool checkCorrectState<StateType extends GameState>({bool requiresOpen = true, bool requiresFocus = true}) {
+    final GameWindow window = GameToolsLib.mainGameWindow;
+    if (requiresOpen && window.isOpen == false) {
+      return false;
+    }
+    if (requiresFocus && window.hasFocus == false) {
+      return false;
+    }
+    if (GameToolsLib.currentState is! StateType) {
+      return false;
+    }
+    return true;
+  }
+
+  /// Shortcut that returns the [GameToolsLib.currentState] as [StateType]
+  StateType getCurrentState<StateType>() => GameToolsLib.currentState as StateType;
+
+  /// Synchronously receives [data] from other events sent from [sendDataToEventsT], or [sendDataToEventsG].
+  void onData(dynamic data) {}
+
+  /// Synchronously sends some [data] to all currently active [GameEvent]s that match the [Type] in their [onData]
+  /// callback!
+  void sendDataToEventsT<Type>(dynamic data) {
+    Logger.spam("Sending data from ", this, " to other events...");
+    _GameToolsLibEventLoop._runForAllEvents((GameEvent event) {
+      if (event != this && event is Type) {
+        event.onData(data);
+        Logger.spam(event, " received the data");
+      }
+    });
+  }
+
+  /// Synchronously sends some [data] to all currently active [GameEvent]s that are in the group [group] in their
+  /// [onData] callback!
+  void sendDataToEventsG(GameEventGroup group, dynamic data) {
+    Logger.spam("Sending data from ", this, " to other events...");
+    _GameToolsLibEventLoop._runForAllEvents((GameEvent event) {
+      if (event != this && event.isInGroup(group)) {
+        event.onData(data);
+        Logger.spam(event, " received the data");
+      }
+    });
+  }
 
   /// This is the first part of this [GameEvent] where you do your periodic update work until this event should be done.
   /// This will always be called at the end of the internal game tools lib event loop, but it wont be awaited (it's
@@ -161,33 +216,6 @@ abstract base class GameEvent {
   /// Override in sub class, see documentation for [onStep1]
   Future<(GameEventStatus, Duration)> onStep15() async => (GameEventStatus.DONE, Duration.zero);
 
-  /// Synchronously receives [data] from other events sent from [sendDataToEventsT], or [sendDataToEventsG].
-  void onData(dynamic data) {}
-
-  /// Synchronously sends some [data] to all currently active [GameEvent]s that match the [Type] in their [onData]
-  /// callback!
-  void sendDataToEventsT<Type>(dynamic data) {
-    Logger.spam("Sending data from $this to other events:");
-    _GameToolsLibEventLoop._runForAllEvents((GameEvent event) {
-      if (event != this && event is Type) {
-        event.onData(data);
-        Logger.spam("$event received the data");
-      }
-    });
-  }
-
-  /// Synchronously sends some [data] to all currently active [GameEvent]s that are in the group [group] in their
-  /// [onData] callback!
-  void sendDataToEventsG(GameEventGroup group, dynamic data) {
-    Logger.spam("Sending data from $this to other events:");
-    _GameToolsLibEventLoop._runForAllEvents((GameEvent event) {
-      if (event != this && event.isInGroup(group)) {
-        event.onData(data);
-        Logger.spam("$event received the data");
-      }
-    });
-  }
-
   /// Returns true if this was removed
   Future<bool> _onLoop() async {
     final DateTime now = DateTime.now();
@@ -199,7 +227,7 @@ abstract base class GameEvent {
         Logger.warn("$this should return GameEventStatus.DONE, Duration.zero in onStep1 instead of $result and $delay");
       }
       await remove();
-    } else if (_delayedUntil == null || now.isBefore(_delayedUntil!)) {
+    } else if (_delayedUntil == null || _delayedUntil!.isBefore(now)) {
       if (_currentStep != null) {
         if (!_alreadyCalledStart) {
           _alreadyCalledStart = true;
@@ -214,11 +242,9 @@ abstract base class GameEvent {
         }
         switch (result) {
           case GameEventStatus.SAME_STEP:
-            Logger.spamPeriodic(_stepLog, this, " will stay on the same step");
-            return false; // nothing
+            Logger.spamPeriodic(_stepLog, this, " will stay on the same step"); // nothing else
           case GameEventStatus.DONE:
-            await remove();
-            return true;
+            _currentStep = null; // mark for deletion in next run, so that remove is called below
           case GameEventStatus.PREV_STEP:
             if (await _prevStep()) {
               return true;
@@ -345,5 +371,5 @@ abstract base class GameEvent {
   }
 
   @override
-  String toString() => "${runtimeType.toString()}(p: $priority, g: $_groups)";
+  String toString() => "$runtimeType(p: $priority, g: $_groups)";
 }

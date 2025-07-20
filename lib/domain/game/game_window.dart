@@ -4,19 +4,19 @@ import 'dart:ui' show Color;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData, LogicalKeyboardKey, PlatformException;
 import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
-import 'package:game_tools_lib/core/enums/input_enums.dart';
+import 'package:game_tools_lib/core/enums/input/input_enums.dart';
 import 'package:game_tools_lib/core/enums/native_image_type.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/utils/bounds.dart';
 import 'package:game_tools_lib/core/utils/utils.dart' show Utils;
 import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/data/native/native_window.dart';
-import 'package:game_tools_lib/domain/entities/model.dart';
+import 'package:game_tools_lib/domain/entities/base/model.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 
 part 'package:game_tools_lib/domain/game/input_manager.dart';
 
-part 'package:game_tools_lib/core/enums/board_key.dart';
+part 'package:game_tools_lib/core/enums/input/board_key.dart';
 
 /// This offers static methods like [GameWindow.mainDisplayWidth] to interact with the full native screen/display, but
 /// also member methods to interact with the specific window names [name] like [getWindowBounds], or [getImage]
@@ -82,7 +82,7 @@ final class GameWindow {
   /// lookup the window yet, gets config variables sync).
   /// This Can throw [WindowClosedException] if the [_nativeWindow] instance was not initialized yet! (which is done
   /// automatically in [GameToolsLib.initGameToolsLib]).
-  /// Can also throw [ConfigException] if the config is corrupt. calls [_init]
+  /// Can also throw [ConfigException] if the config is corrupt.
   /// Afterwards all other member methods of this may be called!
   void _init() {
     final bool initResult = _nativeWindow.initWindow(
@@ -90,7 +90,7 @@ final class GameWindow {
       windowName: _name,
       alwaysMatchEqual: MutableConfig.mutableConfig.alwaysMatchGameWindowNamesEqual.cachedValueNotNull(),
       printWindowNames: MutableConfig.mutableConfig.debugPrintGameWindowNames.cachedValueNotNull(),
-    );
+    ); // also logs verbose that its initialized
     if (initResult == false) {
       throw WindowClosedException(message: "could not prepare $_name for native window with id $_windowID");
     }
@@ -101,7 +101,10 @@ final class GameWindow {
   /// in the other functions). This should never throw a [WindowClosedException] at this point in theory.
   /// Also waits [FixedConfig.tinyDelayMS] maximum afterwards!
   Future<void> rename(String newName) async {
-    _name = newName;
+    if (newName != _name) {
+      Logger.verbose("Renaming $this to $newName");
+      _name = newName;
+    }
     _init();
     await Utils.delayMS(FixedConfig.fixedConfig.tinyDelayMS.y);
   }
@@ -300,6 +303,9 @@ final class GameWindow {
 
   /// Full size of the whole screen
   static int get mainDisplayHeight => _nativeWindow.getMainDisplayHeight();
+
+  @override
+  String toString() => "GameWindow(name: $_name, id: $_windowID, open: $_isOpen, focus: $_hasFocus)";
 
   /// This needs to be called when one of each config variables changes to update the native code:
   /// [alwaysMatchEqual] controls how the window names will be matched ([false] = the window title only has to

@@ -1,16 +1,17 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
-import 'package:game_tools_lib/data/native/native_image.dart';
-import 'package:game_tools_lib/data/native/native_window.dart';
-import 'package:game_tools_lib/domain/entities/model.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
+import 'package:game_tools_lib/domain/game/helper/example/example_event.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
+import 'package:game_tools_lib/presentation/base/gt_app.dart';
+import 'package:game_tools_lib/presentation/pages/gt_home.dart';
+import 'package:game_tools_lib/presentation/pages/logs/gt_logs_page.dart';
+import 'package:provider/provider.dart';
 
-/// this should be unawaited
+// todo: create template with either template as prefix or "my" for the different overrides
+
+/// this should be unawaited, used for periodic tests
 Future<void> _constantRebuilds(StateSetter setState, int millisecondDelay) async {
   while (true) {
     await Utils.delay(Duration(milliseconds: millisecondDelay));
@@ -18,23 +19,35 @@ Future<void> _constantRebuilds(StateSetter setState, int millisecondDelay) async
   }
 }
 
-class ExampleApp extends StatelessWidget {
-  Future<void>? _builder;
-  final bool init;
+/// Used for quick tests/debugging on button click
+Future<void> _testSomething() async {}
 
-  ExampleApp({required this.init});
+final class ExampleHome extends GTHome {
+  Future<void>? _builder;
+
+  ExampleHome({
+    super.key,
+    super.backgroundImage,
+    super.backgroundColor,
+    super.pagePadding,
+  });
+
+  bool test(BuildContext context) {
+    final BoolConfigOption loc1 = context.watch<BoolConfigOption>();
+    return loc1.cachedValueNotNull();
+  }
 
   @override
-  Widget build(BuildContext context) {
+  Widget buildBody(BuildContext context) {
+    Logger.info("rebuild example home2");
     return StatefulBuilder(
       builder: (BuildContext context, StateSetter setState) {
-        _builder ??= _constantRebuilds(setState, 50);
+        //_builder ??= _constantRebuilds(setState, 50);
         final bool windowFound = GameToolsLib.mainGameWindow.updateAndGetOpen();
-        String windowText = "Initialized $init, window ${GameToolsLib.mainGameWindow.name} found: $windowFound";
+        String windowText = "window ${GameToolsLib.mainGameWindow.name} found: $windowFound";
         if (windowFound) {
           windowText = "$windowText at Pos ${GameToolsLib.mainGameWindow.getWindowBounds()}";
         }
-
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -48,9 +61,25 @@ class ExampleApp extends StatelessWidget {
               SizedBox(height: 5),
               if (windowFound) Text("Pixel Colour: ${InputManager.getPixelAtCursor(GameToolsLib.mainGameWindow)}"),
               SizedBox(height: 5),
-              ElevatedButton(onPressed: () => GameToolsLib.mainGameWindow.moveMouse(0, 0), child: Text("move mouse")),
+              FilledButton(onPressed: () => GameToolsLib.mainGameWindow.moveMouse(0, 0), child: Text("move mouse")),
               SizedBox(height: 5),
-              ElevatedButton(onPressed: () => InputManager.keyPress(BoardKey.ctrlC), child: Text("copy to clip")),
+              FilledButton.tonal(onPressed: () => InputManager.keyPress(BoardKey.ctrlC), child: Text("copy to clip")),
+              SizedBox(height: 5),
+              OutlinedButton(onPressed: _testSomething, child: Text("Test Something")),
+              ElevatedButton(
+                onPressed: () {
+                  final BoolConfigOption darkTheme = MutableConfig.mutableConfig.useDarkTheme;
+                  darkTheme.setValue(!darkTheme.cachedValueNotNull());
+                },
+                child: Text("Change Dark theme"),
+              ),
+              TextButton(
+                onPressed: () {
+                  final LocaleConfigOption locale = MutableConfig.mutableConfig.currentLocale;
+                  locale.setValue(locale.activeLocale == Locale("de") ? Locale("en") : Locale("de"));
+                },
+                child: Text("Change Locale"),
+              ),
               SizedBox(height: 5),
               Text("oem1: ${InputManager.isKeyDown(BoardKey.oem1)}"),
               Text("oem2: ${InputManager.isKeyDown(BoardKey.oem2)}"),
@@ -59,6 +88,18 @@ class ExampleApp extends StatelessWidget {
               Text("oem5: ${InputManager.isKeyDown(BoardKey.oem5)}"),
               Text("oem6: ${InputManager.isKeyDown(BoardKey.oem6)}"),
               Text("oem7: ${InputManager.isKeyDown(BoardKey.oem7)}"),
+              SizedBox(height: 5),
+              Text("Was run from tests: ${FileUtils.wasRunFromTests}"),
+              SizedBox(height: 5),
+              Text("Translate 1: ${translate(context, "empty.1")}"),
+              SizedBox(height: 5),
+              Text("Translate 2: ${translate(context, "empty.3")}"),
+              TextButton(
+                onPressed: () {
+                  pushPage(context, GTLogsPage());
+                },
+                child: Text("Navigate to logs"),
+              ),
             ],
           ),
         );
@@ -67,41 +108,36 @@ class ExampleApp extends StatelessWidget {
   }
 }
 
-String get _testFolder => FileUtils.combinePath(<String>[FixedConfig.fixedConfig.resourceFolderPath, "test"]);
+String get testFolder => FileUtils.combinePath(<String>[FileUtils.getLocalFilePath("test"), "test_data"]);
 
-String _testFile(String fileName) => FileUtils.combinePath(<String>[_testFolder, fileName]);
-
-Future<void> _memoryLeakTest() async {
-  Logger.info("STARTING");
-  await Future<void>.delayed(Duration(seconds: 15));
-  Logger.info("STARTING");
-  for (int i = 0; i < 200; ++i) {
-    await Future<void>.delayed(Duration(milliseconds: 10));
-    final NativeImage full = NativeImage.readSync(path: _testFile("full_crop.png"));
-    final NativeImage part1 = await full.getSubImage(48, 47, 5, 3);
-    final NativeImage win = await GameToolsLib.mainGameWindow.getFullImage();
-    final NativeImage subIm = await GameToolsLib.mainGameWindow.getImage(5, 5, 1600, 800); // remove alpha false
-    final NativeImage part2 = await subIm.getSubImage(48, 47, 5, 3);
-    //full.cleanupMemory(null);
-    //part1.cleanupMemory(null);
-    //subIm.cleanupMemory(null);
-    //win.cleanupMemory(null);
-    //part2.cleanupMemory(null);
-  }
-  Logger.info("DONE");
-  await Future<void>.delayed(Duration(seconds: 15));
-  Logger.info("DONE");
-  await Future<void>.delayed(Duration(seconds: 15));
-}
+String testFile(String fileName) => FileUtils.combinePath(<String>[testFolder, fileName]);
 
 Future<void> main() async {
-  final bool init = await GameToolsLib.useExampleConfig(isCalledFromTesting: true, windowName: "Snipping Tool");
-
-  runApp(
-    MaterialApp(
-      home: Scaffold(
-        body: ExampleApp(init: init),
-      ),
+  final bool init = await GameToolsLib.useExampleConfig(
+    isCalledFromTesting: FileUtils.wasRunFromTests,
+    windowName: "Snipping Tool",
+  );
+  if (init == false) {
+    return; // todo: show some error ui?
+  }
+  GameToolsLib.gameManager().addInputListener(
+    KeyInputListener(
+      configLabel: "h",
+      createEventCallback: () => ExampleEvent(isInstant: false),
+      alwaysCreateNewEvents: true,
+      defaultKey: BoardKey.h,
     ),
+  );
+  GameToolsLib.gameManager().addInputListener(
+    KeyInputListener(
+      configLabel: "ctrlC",
+      createEventCallback: () => ExampleEvent(isInstant: false),
+      alwaysCreateNewEvents: true,
+      defaultKey: BoardKey.ctrlC,
+    ),
+  );
+
+  await GameToolsLib.runLoop(
+    app: GTApp(startPage: ExampleHome()),
   );
 }

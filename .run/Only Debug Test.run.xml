@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Only Debug Test" type="FlutterTestConfigType" factoryName="Flutter Test">
+    <option name="testName" value="debug test" />
+    <option name="testFile" value="D:\Programmieren\android_studio\workspace\plugins\game_tools_lib\test\utils_test.dart" />
+    <option name="useRegexp" value="false" />
+    <option name="additionalArgs" value="" />
+    <method v="2" />
+  </configuration>
+</component>
