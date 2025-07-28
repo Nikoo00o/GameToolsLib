@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
+import 'package:game_tools_lib/presentation/pages/logs/gt_logs_page.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
 
 // todo: implement and document
-base class GTHome extends GTNavigationPage {
-  const GTHome({
+base class GTHomePage extends GTNavigationPage {
+  const GTHomePage({
     super.key,
     super.backgroundImage,
     super.backgroundColor,
@@ -20,20 +20,13 @@ base class GTHome extends GTNavigationPage {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          ElevatedButton(
-            onPressed: () {
-              final BoolConfigOption darkTheme = MutableConfig.mutableConfig.useDarkTheme;
-              darkTheme.setValue(!darkTheme.cachedValueNotNull());
-            },
-            child: Text("Change Dark theme"),
-          ),
-          SizedBox(height: 5),
+          Text("Edit ui"),
+          Text("switch to overlay"),
           TextButton(
             onPressed: () {
-              final LocaleConfigOption locale = MutableConfig.mutableConfig.currentLocale;
-              locale.setValue(locale.activeLocale == Locale("de") ? Locale("en") : Locale("de"));
+              pushPage(context, GTLogsPage());
             },
-            child: Text("Change Locale"),
+            child: Text("Show App Logs"),
           ),
         ],
       ),
@@ -41,7 +34,7 @@ base class GTHome extends GTNavigationPage {
   }
 
   @override
-  String get pageName => "GTHome";
+  String get pageName => "GTHomePage";
 
   @override
   String get navigationLabel => "page.home.title";

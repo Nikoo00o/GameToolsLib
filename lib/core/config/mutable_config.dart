@@ -11,10 +11,14 @@ import 'package:game_tools_lib/domain/entities/base/model.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/domain/game/helper/example/example_config.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
+import 'package:game_tools_lib/presentation/pages/settings/config_option_builder.dart';
+import 'package:game_tools_lib/presentation/pages/settings/config_option_builder_types.dart';
 
 part 'package:game_tools_lib/core/config/mutable_config_option.dart';
 
 part 'package:game_tools_lib/core/config/mutable_config_option_types.dart';
+
+part 'package:game_tools_lib/core/config/mutable_config_option_group.dart';
 
 /// Base class storing all mutable config values which are dynamically stored in a local storage file and may change
 /// during the runtime of the application. The members should always be final objects (like [logLevel])! If you want
@@ -37,21 +41,21 @@ base class MutableConfig {
   /// The current [logLevel] of the logger. All logs with a higher value than this will be ignored and only
   /// the more important logs with a lower [LogLevel] will be printed and stored!
   /// Default is [LogLevel.SPAM] to log everything!
-  final LogLevelConfigOption logLevel = LogLevelConfigOption(key: "config.logLevel", defaultValue: LogLevel.SPAM);
+  final LogLevelConfigOption logLevel = LogLevelConfigOption(titleKey: "config.logLevel", defaultValue: LogLevel.SPAM);
 
   /// Controls if the ui is displayed as dark, or light theme
-  final BoolConfigOption useDarkTheme = BoolConfigOption(key: "config.useDarkTheme", defaultValue: true);
+  final BoolConfigOption useDarkTheme = BoolConfigOption(titleKey: "config.useDarkTheme", defaultValue: true);
 
   /// The current language which is null per default and will return the system language if its null.
   /// But if the current system language is not supported, then internally this will fallback to the first entry of
   /// [FixedConfig.supportedLocales]!
   /// Important: use [LocaleConfigOption.activeLocale] to access the locale that is used in the app!
-  final LocaleConfigOption currentLocale = LocaleConfigOption(key: "config.currentLocale");
+  final LocaleConfigOption currentLocale = LocaleConfigOption(titleKey: "config.currentLocale");
 
   /// Controls how the window names will be matched ([false] = window title only has to contain the [GameWindow.name].
   /// Otherwise if [true] it has to be exactly the same). Used for [GameWindow], default is [false].
   final BoolConfigOption alwaysMatchGameWindowNamesEqual = BoolConfigOption(
-    key: "config.alwaysMatchGameWindowNamesEqual",
+    titleKey: "config.alwaysMatchGameWindowNamesEqual",
     defaultValue: false,
     updateCallback: _updateGameWindowConfigValues,
   );
@@ -59,12 +63,16 @@ base class MutableConfig {
   /// This is a debug variable to print out all opened windows if set to true. Used for [GameWindow], default is
   /// [false].
   final BoolConfigOption debugPrintGameWindowNames = BoolConfigOption(
-    key: "config.debugPrintGameWindowNames",
+    titleKey: "config.debugPrintGameWindowNames",
     defaultValue: false,
     updateCallback: _updateGameWindowConfigValues,
   );
 
   /// You can override this to return references to those config options you want to be able to modify in the UI!
+  ///
+  /// Important: you can group your config options except [ModelConfigOption] and [CustomConfigOption] with
+  /// [MutableConfigOptionGroup] and only use those inside of them! If you use any other config option except model
+  /// and custom outside of a group, they will automatically be put in the group "Other"!
   ///
   /// Remember to also add the config options from here if you want to by calling the super method and then add your
   /// own config options like for example:
@@ -72,14 +80,19 @@ base class MutableConfig {
   /// ```dart
   /// @override
   /// getConfigurableOptions() =>  <MutableConfigOption<dynamic>> \[
-  /// ...super.getConfigurableOptions(), BoolConfigOption(key: ""), StringConfigOption(key: "")
+  /// ...super.getConfigurableOptions(), ModelConfigOption(...), MutableConfigOptionGroup(StringConfigOption(...))
   /// \];
   /// ```
   List<MutableConfigOption<dynamic>> getConfigurableOptions() => <MutableConfigOption<dynamic>>[
-    logLevel,
-    useDarkTheme,
-    debugPrintGameWindowNames,
-    alwaysMatchGameWindowNamesEqual,
+    MutableConfigOptionGroup(
+      titleKey: "page.settings.group.general",
+      configOptions: <MutableConfigOption<dynamic>>[
+        logLevel,
+        useDarkTheme,
+        debugPrintGameWindowNames,
+        alwaysMatchGameWindowNamesEqual,
+      ],
+    ),
   ];
 
   /// This will be called automatically at the end of [GameToolsLib.initGameToolsLib] to load all

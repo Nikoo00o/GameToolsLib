@@ -1,6 +1,9 @@
 {
-  "empty.1": "1",
-  "empty.2": "2",
+  "page.home.title": "Home",
+  "page.settings.title": "Settings",
+  "page.settings.group.general": "General",
+  "page.settings.group.other": "Other",
+  "page.hotkeys.title": "Hotkeys",
   "page.logs.title": "Application Logs",
   "page.logs.level": "Level anzeigen",
   "page.logs.search": "Logs durchsuchen"

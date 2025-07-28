@@ -32,8 +32,6 @@ final class SimpleDropDownMenu<Type> extends GTBaseWidget {
   /// Optional to color the text of the individual entries!
   final Color Function(Type value)? colourTexts;
 
-
-
   const SimpleDropDownMenu({
     super.key,
     required this.label,

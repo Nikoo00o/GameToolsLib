@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_listener.dart';
+import 'package:provider/provider.dart';
 
 // ignore_for_file: use_setters_to_change_properties
 
@@ -17,6 +18,8 @@ import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change
 ///
 /// In the UI its best to use [SimpleChangeListener] to listen to the changes from this! Just pass [simpleChangeStream]
 /// to its constructor and that's it (or the object itself)!
+///
+/// Of course as an alternative you could also wrap your data class instance with a [ChangeNotifierProvider] instead!
 mixin SimpleChangeStream<Type> {
   Type? _value;
 

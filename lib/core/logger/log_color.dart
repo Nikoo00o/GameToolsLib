@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:game_tools_lib/presentation/base/gt_app_theme.dart';
+import 'package:game_tools_lib/core/utils/utils.dart';
 
 /// In rgb format
 final class LogColor {
@@ -27,7 +27,7 @@ final class LogColor {
     if (Theme.of(context).brightness == Brightness.dark) {
       return Color.fromRGBO(r, g, b, 1.0);
     } else {
-      return GTAppTheme.shadeColor(Color.fromRGBO(r, g, b, 1.0), 0.45);
+      return Color.fromRGBO(r, g, b, 1.0).shade(0.45);
     }
   }
 }

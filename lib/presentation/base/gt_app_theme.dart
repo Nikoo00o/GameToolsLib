@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:game_tools_lib/core/utils/utils.dart';
 
 //ignore_for_file: prefer_initializing_formals
 
@@ -16,7 +17,7 @@ import 'package:flutter/material.dart';
 /// build (for example look at https://material-foundation.github.io/material-theme-builder/ )
 ///
 /// The generated flutter theme will be provided inside of [getTheme].
-class GTAppTheme {
+final class GTAppTheme {
   /// Used for all most important key components across the UI (FAB, tint of elevated surface, etc).
   ///
   /// In addition to the color "primary", you can also access "onPrimary" for text on a primary background color. And the
@@ -178,26 +179,14 @@ class GTAppTheme {
     return MaterialColor(color.toARGB32(), colorMap);
   }
 
-  /// Makes a color brighter
-  static Color tintColor(Color color, double factor) =>
-      Color.from(alpha: 1.0, red: _tint(color.r, factor), green: _tint(color.g, factor), blue: _tint(color.b, factor));
+  /// Returns a color that is brighter by the percentage [factor] 0.000001 to 0.999999
+  static Color tintColor(Color color, double factor) => color.tint(factor);
 
-  /// Makes a color darker
-  static Color shadeColor(Color color, double factor) => Color.from(
-    alpha: 1.0,
-    red: _shade(color.r, factor),
-    green: _shade(color.g, factor),
-    blue: _shade(color.b, factor),
-  );
+  /// Returns a color that is darker by the percentage [factor] 0.000001 to 0.999999
+  static Color shadeColor(Color color, double factor) => color.shade(factor);
 
-  /// makes color brighter
-  static double _tint(double value, double factor) => _bounds(value + ((1.0 - value) * factor));
-
-  /// makes color darker
-  static double _shade(double value, double factor) => _bounds(value - (value * factor));
-
-  /// between 0.0 and 1.0 .
-  static double _bounds(double value) => max(0.0, min(1.0, value));
+  /// Returns a color that is the [source] blended into the [target] by the percentage [factor] 0.000001 to 0.999999
+  static Color blend(Color source, Color target, double factor) => source.blend(target, factor);
 }
 
 extension on MaterialColor {

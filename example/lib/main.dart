@@ -5,8 +5,8 @@ import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/domain/game/helper/example/example_event.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_app.dart';
-import 'package:game_tools_lib/presentation/pages/gt_home.dart';
 import 'package:game_tools_lib/presentation/pages/logs/gt_logs_page.dart';
+import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
 import 'package:provider/provider.dart';
 
 // todo: create template with either template as prefix or "my" for the different overrides
@@ -22,10 +22,10 @@ Future<void> _constantRebuilds(StateSetter setState, int millisecondDelay) async
 /// Used for quick tests/debugging on button click
 Future<void> _testSomething() async {}
 
-final class ExampleHome extends GTHome {
+final class ExamplePage extends GTNavigationPage {
   Future<void>? _builder;
 
-  ExampleHome({
+  ExamplePage({
     super.key,
     super.backgroundImage,
     super.backgroundColor,
@@ -106,6 +106,18 @@ final class ExampleHome extends GTHome {
       },
     );
   }
+
+  @override
+  String get navigationLabel => "Example Page";
+
+  @override
+  IconData get navigationNotSelectedIcon => Icons.add;
+
+  @override
+  IconData get navigationSelectedIcon => Icons.add_rounded;
+
+  @override
+  String get pageName => "ExamplePage";
 }
 
 String get testFolder => FileUtils.combinePath(<String>[FileUtils.getLocalFilePath("test"), "test_data"]);
@@ -138,6 +150,8 @@ Future<void> main() async {
   );
 
   await GameToolsLib.runLoop(
-    app: GTApp(startPage: ExampleHome()),
+    app: GTApp(
+      additionalNavigatorPages: <GTNavigationPage>[ExamplePage()],
+    ),
   );
 }

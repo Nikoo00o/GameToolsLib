@@ -1,25 +1,30 @@
 part of 'package:game_tools_lib/core/config/mutable_config.dart';
 
-/// Wrapper class for the typedefs
-final class _TypeConfigOption<T> extends MutableConfigOption<T> {
-  _TypeConfigOption({
-    required super.key,
+/// Wrapper for primitive types as config options. Use the following typedefs instead [BoolConfigOption],
+/// [IntConfigOption], [DoubleConfigOption], [StringConfigOption] and don't use this with any other type [T]!
+final class TypeConfigOption<T> extends MutableConfigOption<T> {
+  TypeConfigOption({
+    required super.titleKey,
+    super.descriptionKey,
     super.updateCallback,
     super.defaultValue,
   });
+
+  @override
+  ConfigOptionBuilder<T> get builder => ConfigOptionBuilderTypes<T>(configOption: this);
 }
 
 /// Used for bool config options
-typedef BoolConfigOption = _TypeConfigOption<bool>;
+typedef BoolConfigOption = TypeConfigOption<bool>;
 
 /// Used for int config options
-typedef IntConfigOption = _TypeConfigOption<int>;
+typedef IntConfigOption = TypeConfigOption<int>;
 
 /// Used for double config options
-typedef DoubleConfigOption = _TypeConfigOption<double>;
+typedef DoubleConfigOption = TypeConfigOption<double>;
 
 /// Used for string config options
-typedef StringConfigOption = _TypeConfigOption<String>;
+typedef StringConfigOption = TypeConfigOption<String>;
 
 /// This can be used with [EnumType] being any [enum] by just converting them to string and then to convert them back
 /// to an object [availableOptions] needs to be supplied with the enum values which will be compared as string!
@@ -32,7 +37,8 @@ final class EnumConfigOption<EnumType> extends MutableConfigOption<EnumType> {
   final List<EnumType> availableOptions;
 
   EnumConfigOption({
-    required super.key,
+    required super.titleKey,
+    super.descriptionKey,
     super.updateCallback,
     super.defaultValue,
     required this.availableOptions,
@@ -74,7 +80,8 @@ final class ModelConfigOption<T extends Model> extends MutableConfigOption<T> {
   /// [createNewModelInstance] function that creates a new instance of [T] by calling its fromJson factory constructor
   ModelConfigOption({
     required T Function(Map<String, dynamic> json) createNewModelInstance,
-    required super.key,
+    required super.titleKey,
+    super.descriptionKey,
     super.updateCallback,
     super.defaultValue,
     super.lazyLoaded,
@@ -117,7 +124,8 @@ final class CustomConfigOption<T> extends MutableConfigOption<T> {
   /// [createNewInstance] function that creates a new instance of [T] (or return null)
   CustomConfigOption({
     required T? Function(String? str) createNewInstance,
-    required super.key,
+    required super.titleKey,
+    super.descriptionKey,
     super.updateCallback,
     super.defaultValue,
     super.lazyLoaded,
@@ -130,7 +138,8 @@ final class CustomConfigOption<T> extends MutableConfigOption<T> {
 /// Special case: [LogLevel] as a enum config option.
 final class LogLevelConfigOption extends EnumConfigOption<LogLevel> {
   LogLevelConfigOption({
-    required super.key,
+    required super.titleKey,
+    super.descriptionKey,
     super.updateCallback,
     super.defaultValue,
   }) : super(availableOptions: LogLevel.values);
@@ -144,8 +153,12 @@ final class LocaleConfigOption extends EnumConfigOption<Locale?> {
 
   /// Workaround factory constructor added, because cant directly access the fixed config when its not already
   /// initialized. And can also not set the update callback to an instance member method during the constructor!
-  factory LocaleConfigOption({required String key, Locale? defaultValue}) {
-    final LocaleConfigOption option = LocaleConfigOption._(key: key, defaultValue: defaultValue);
+  factory LocaleConfigOption({required String titleKey, String? descriptionKey, Locale? defaultValue}) {
+    final LocaleConfigOption option = LocaleConfigOption._(
+      titleKey: titleKey,
+      descriptionKey: descriptionKey,
+      defaultValue: defaultValue,
+    );
     option._updateCallback = (Locale? _) {
       if (option.availableOptions.isEmpty) {
         option.availableOptions.addAll(FixedConfig.fixedConfig.supportedLocales); // only add supported locales once
@@ -155,7 +168,8 @@ final class LocaleConfigOption extends EnumConfigOption<Locale?> {
   }
 
   LocaleConfigOption._({
-    required super.key,
+    required super.titleKey,
+    super.descriptionKey,
     super.defaultValue,
   }) : super(availableOptions: <Locale?>[], updateCallback: null);
 

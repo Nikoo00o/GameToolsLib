@@ -12,12 +12,17 @@ part of 'package:game_tools_lib/core/config/mutable_config.dart';
 ///
 /// You can also access the cached value in a sync way with [cachedValue] (But [getValue] needs to be called at least
 /// once before!)
+///
+/// Remember for the ui the [builder] has to be overridden and also [titleKey] and [descriptionKey] are needed!
 sealed class MutableConfigOption<T> with ChangeNotifier {
   /// The key to locate this saved value in the database (must be a unique identifier string).
   /// But also the identifier label text (or translation key) for the ui (if this config option is editable in ui)
-  final String key;
+  final String titleKey;
 
-  /// Added to the [key] internally in the storage
+  /// Optional description text for the ui to display in addition to the [titleKey]
+  final String? descriptionKey;
+
+  /// Added to the [titleKey] internally in the storage
   static const String KEY_PREFIX = "CONFIG_";
 
   /// Cached Value
@@ -39,14 +44,19 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   /// and it is also called once at the end of [GameToolsLib.initGameToolsLib] on startup!
   /// [lazyLoaded] For big data this should be [true] to load on demand. Defaults to [false] (all data is kept in memory)
   MutableConfigOption({
-    required this.key,
+    required this.titleKey,
+    this.descriptionKey,
     FutureOr<void> Function(T?)? updateCallback,
     this.defaultValue,
     bool lazyLoaded = false,
   }) : _updateCallback = updateCallback,
        _lazyLoaded = lazyLoaded;
 
-  String get _transformedKey => "$KEY_PREFIX$key";
+  /// This has to be overridden in sub classes to return a subclass of [ConfigOptionBuilder] with a reference to this
+  /// that will build the UI for the config option.
+  ConfigOptionBuilder<T> get builder;
+
+  String get _transformedKey => "$KEY_PREFIX$titleKey";
 
   String get _dataBase => _lazyLoaded ? HiveDatabase.LAZY_DATABASE : HiveDatabase.INSTANT_DATABASE;
 
@@ -149,7 +159,7 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   }
 
   @override
-  String toString() => "$runtimeType(key: $key, value: $_value)";
+  String toString() => "$runtimeType(key: $titleKey, value: $_value)";
 
   /// Loads from storage
   Future<String?> _read() async {

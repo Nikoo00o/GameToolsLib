@@ -3,9 +3,10 @@ import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/enums/log_level.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/base/ui_helper.dart';
+import 'package:game_tools_lib/presentation/pages/logs/gt_logs_page.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/simple_drop_down_menu.dart';
 
-/// The search + select bar for logs
+/// The search + select bar for logs in the [GTLogsPage]
 final class GTLogsBar extends GTBaseWidget {
   const GTLogsBar();
 

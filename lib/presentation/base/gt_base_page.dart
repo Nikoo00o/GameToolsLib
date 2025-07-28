@@ -90,6 +90,26 @@ abstract base class GTBasePage extends GTBaseWidget {
     }
   }
 
+  /// Can be used in the [buildAppBar] to build a default app bar translating and showing the [titleKey] together
+  /// with the [GameToolsConfig.appTitle]. And [buildBackButton] is false per default, but can be used to build a
+  /// back button! Optionally [actions] can also display some elements on the right of the app bar!
+  PreferredSizeWidget? buildAppBarDefaultTitle(
+    BuildContext context,
+    String titleKey, {
+    bool buildBackButton = false,
+    List<Widget>? actions,
+  }) {
+    return AppBar(
+      leading: buildBackButton ? BackButton() : null,
+      title: Text(
+        "${GameToolsConfig.baseConfig.appTitle} - ${translate(context, titleKey)}",
+        style: textTitleLarge(context).copyWith(fontWeight: FontWeight.bold),
+      ),
+      centerTitle: false,
+      actions: actions,
+    );
+  }
+
   /// This can be overridden inside of a subclass to build the [AppBar] for this page.
   PreferredSizeWidget? buildAppBar(BuildContext context) => null;
 

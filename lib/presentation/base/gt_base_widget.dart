@@ -12,11 +12,18 @@ abstract base class GTBaseWidget extends StatelessWidget {
   /// Placeholders are replaced with [keyParams].
   ///
   /// Needs the current [context] to react to locale changes!
-  String translate(BuildContext context, String key, {List<String>? keyParams}) {
+  String translate(BuildContext context, String key, {List<String>? keyParams}) =>
+      translateS(context, key, keyParams: keyParams);
+
+  /// Translates a translation [key] for the current locale.
+  ///
+  /// Placeholders are replaced with [keyParams].
+  ///
+  /// Needs the current [context] to react to locale changes!
+  static String translateS(BuildContext context, String key, {List<String>? keyParams}) {
     context.select<LocaleConfigOption, Locale?>((LocaleConfigOption option) => option.activeLocale);
     return GTApp.translate(key, keyParams: keyParams); // IMPORTANT: first watch for changes to the locale above!!!
   }
-
 
   /// Returns the theme data. The [ThemeData.colorScheme] contains the colors used inside of the app.
   ThemeData theme(BuildContext context) => Theme.of(context);

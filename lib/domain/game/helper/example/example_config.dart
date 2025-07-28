@@ -23,7 +23,7 @@ final class ExampleFixedConfig extends FixedConfig {
 final class ExampleMutableConfig extends MutableConfig {
   /// The key of the config value is just the same as the member variable name
   ModelConfigOption<ExampleModel> get somethingNew => ModelConfigOption<ExampleModel>(
-    key: "somethingNew",
+    titleKey: "config.example.somethingnew",
     defaultValue: ExampleModel(someData: 5, modifiableData: <ExampleModel>[]),
     lazyLoaded: false,
     updateCallback: (ExampleModel? newModel) => Logger.verbose("got new model $newModel"),
@@ -32,7 +32,7 @@ final class ExampleMutableConfig extends MutableConfig {
 
   /// Private member instance is needed to supply different value to the overridden getter below!
   final LogLevelConfigOption _logLevelInstance = LogLevelConfigOption(
-    key: "config.logLevel.example",
+    titleKey: "config.example.loglevel",
     defaultValue: LogLevel.SPAM,
   );
 
@@ -42,14 +42,19 @@ final class ExampleMutableConfig extends MutableConfig {
 
   /// New option used above in [ExampleFixedConfig] to override the long periodic spam delay and set it to 0 per
   /// default (so all periodic spam logs are always logged)
-  IntConfigOption get mutableDelay => IntConfigOption(key: "Mutable Delay", defaultValue: 0);
+  IntConfigOption get mutableDelay => IntConfigOption(titleKey: "Mutable Delay", defaultValue: 0);
 
-  /// Important: also pass all new config options to the ui!
+  /// Important: also pass all new config options to the ui! (no translation key used for the group in this example
+  /// and the last log level instance config option will be put in the "other" group)
   @override
   getConfigurableOptions() => <MutableConfigOption<dynamic>>[
     ...super.getConfigurableOptions(),
+    MutableConfigOptionGroup(
+      titleKey: "Example Group",
+      configOptions: <MutableConfigOption<dynamic>>[mutableDelay],
+    ),
     somethingNew,
-    mutableDelay,
+    _logLevelInstance,
   ];
 }
 

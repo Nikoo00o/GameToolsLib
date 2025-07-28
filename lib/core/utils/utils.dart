@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:ui' show Color;
 
 import 'package:game_tools_lib/core/enums/native_image_type.dart';
@@ -142,4 +143,32 @@ extension ColorExtension on Color {
   /// Different color access hsv (also 0 to 255), same as [redI]. This is the brightness of the color (0 is black and
   /// 255 is brightest color)
   int get v => redI;
+
+  /// Returns a color that is brighter by the percentage [factor] 0.000001 to 0.999999
+  Color tint(double factor) =>
+      Color.from(alpha: 1.0, red: _tint(r, factor), green: _tint(g, factor), blue: _tint(b, factor));
+
+  /// Returns a color that is darker by the percentage [factor] 0.000001 to 0.999999
+  Color shade(double factor) =>
+      Color.from(alpha: 1.0, red: _shade(r, factor), green: _shade(g, factor), blue: _shade(b, factor));
+
+  /// Returns a color that is blended into the [target] by the percentage [factor] 0.000001 to 0.999999
+  Color blend(Color target, double factor) => Color.from(
+    alpha: 1.0,
+    red: _shift(r, factor, target.r),
+    green: _shift(g, factor, target.g),
+    blue: _shift(b, factor, target.b),
+  );
+
+  /// Moves [value] closer to 1 by [factor]
+  static double _tint(double value, double factor) => _bounds(value + ((1.0 - value) * factor));
+
+  /// Moves [value] closer to 0 by [factor]
+  static double _shade(double value, double factor) => _bounds(value - (value * factor));
+
+  /// Moves [value] closer to [target] by [factor]
+  static double _shift(double value, double factor, double target) => _bounds(value + ((target - value) * factor));
+
+  /// between 0.0 and 1.0 .
+  static double _bounds(double value) => max(0.0, min(1.0, value));
 }

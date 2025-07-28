@@ -10,14 +10,21 @@ import 'package:game_tools_lib/core/utils/locale_extension.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/base/ui_helper.dart';
+import 'package:game_tools_lib/presentation/pages/gt_home_page.dart';
+import 'package:game_tools_lib/presentation/pages/gt_hotkeys_page.dart';
+import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
+import 'package:game_tools_lib/presentation/pages/navigation/gt_navigator.dart';
+import 'package:game_tools_lib/presentation/pages/settings/gt_settings_page.dart';
 import 'package:provider/provider.dart';
 
 // todo: doc comment
 /// The top level widget that builds the app itself with the widget subtree
-class GTApp extends StatelessWidget {
-  final Widget startPage;
+base class GTApp extends StatelessWidget {
+  /// This may be used to provide additional pages to display as options in the navigation rail of [GTNavigator].
+  /// But you can also override [buildNavigator] instead for more options.
+  final List<GTNavigationPage> additionalNavigatorPages;
 
-  const GTApp({required this.startPage});
+  const GTApp({required this.additionalNavigatorPages});
 
   List<ChangeNotifierProvider<dynamic>> _buildProvider() {
     return <ChangeNotifierProvider<dynamic>>[
@@ -26,12 +33,27 @@ class GTApp extends StatelessWidget {
     ];
   }
 
+  Widget buildNavigator(BuildContext context) {
+    return GTNavigator(
+      pages: <GTNavigationPage>[
+        GTHomePage(),
+        GTSettingsPage(),
+        GTHotkeysPage(),
+        ...additionalNavigatorPages,
+      ],
+    );
+  }
+
+  Widget buildOverlaySwitcher(BuildContext context, Widget navigatorChild) {
+    return navigatorChild; // todo: implement
+  }
+
   Widget buildHome(BuildContext context) {
     // todo: swapper hat provider für home page um anders sich zu bauen.
     // und gibt constraints für home page und baut im overlay mode den settings knopf oben rechts (ggf togglebar und
     // auch hotkey einstellbar? aber dann würde erkennung nicht gehen? ggf dazu schreiben! oder vorher noch andere
     // methode testen!)
-    return startPage;
+    return buildOverlaySwitcher(context, buildNavigator(context));
   }
 
   @override

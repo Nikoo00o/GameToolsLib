@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_page.dart';
 import 'package:game_tools_lib/presentation/base/ui_helper.dart';
-import 'package:game_tools_lib/presentation/pages/gt_home.dart';
 import 'package:game_tools_lib/presentation/pages/logs/gt_logs_bar.dart';
 import 'package:game_tools_lib/presentation/pages/logs/gt_logs_view.dart';
 import 'package:provider/single_child_widget.dart';
@@ -23,17 +22,8 @@ base class GTLogsPage extends GTBasePage {
   ];
 
   @override
-  PreferredSizeWidget? buildAppBar(BuildContext context) {
-    return AppBar(
-      leading: BackButton(),
-      title: Text(
-        translate(context, "page.logs.title"),
-        style: textTitleLarge(context).copyWith(fontWeight: FontWeight.bold),
-      ),
-      centerTitle: false,
-      actions: <Widget>[GTLogsBar()],
-    );
-  }
+  PreferredSizeWidget? buildAppBar(BuildContext context) =>
+      buildAppBarDefaultTitle(context, "page.logs.title", actions: <Widget>[GTLogsBar()]);
 
   @override
   Widget buildBody(BuildContext context) {
@@ -41,5 +31,5 @@ base class GTLogsPage extends GTBasePage {
   }
 
   @override
-  String get pageName => "GTLogs";
+  String get pageName => "GTLogsPage";
 }

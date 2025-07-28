@@ -32,7 +32,7 @@ void _testInit() {
     expect(GameToolsLib.baseConfig.fixed.logIntoStorage, false, reason: "log into storage is false");
     expect(await GameToolsLib.baseConfig.mutable.logLevel.getValue(), LogLevel.SPAM, reason: "log level is spam");
     expect(GameToolsLib.database.basePath, HiveDatabaseMock.FLUTTER_TEST_PATH, reason: "database path is testing");
-    expect(GameToolsLib.baseConfig.mutable.logLevel.key, "config.logLevel.example", reason: "key is changed");
+    expect(GameToolsLib.baseConfig.mutable.logLevel.titleKey, "config.example.logLevel", reason: "key is changed");
     expect(GameToolsLib.baseConfig.fixed.logPeriodicSpamDelayMS, 0, reason: "periodic spam delay always");
   }, initDefaultGameToolsLib: false);
   testO("initialize game tools lib with default base config", () async {
@@ -93,7 +93,7 @@ void _testInit() {
 
 void _testConfigDB() {
   testO("testing database cache", () async {
-    LogLevelConfigOption logLevel = LogLevelConfigOption(key: "logLevel", defaultValue: LogLevel.VERBOSE);
+    LogLevelConfigOption logLevel = LogLevelConfigOption(titleKey: "logLevel", defaultValue: LogLevel.VERBOSE);
     expect(logLevel.cachedValue(), LogLevel.VERBOSE, reason: "cache is initially set to default");
     await logLevel.setValue(LogLevel.INFO);
     expect(logLevel.cachedValue(), LogLevel.INFO, reason: "cache is updated after set");
@@ -102,16 +102,16 @@ void _testConfigDB() {
     expect(logLevel.cachedValue(), LogLevel.INFO, reason: "cache is updated after get");
     await logLevel.deleteValue();
     expect(logLevel.cachedValue(), LogLevel.VERBOSE, reason: "after delete cache is back to default");
-    logLevel = LogLevelConfigOption(key: "logLevel");
+    logLevel = LogLevelConfigOption(titleKey: "logLevel");
     expect(logLevel.cachedValue(), null, reason: "with no default, cache is initially null");
-    logLevel = LogLevelConfigOption(key: "logLevel", defaultValue: LogLevel.DEBUG);
+    logLevel = LogLevelConfigOption(titleKey: "logLevel", defaultValue: LogLevel.DEBUG);
     await logLevel.setValue(null);
     expect(logLevel.cachedValue(), LogLevel.DEBUG, reason: "set to null not best behaviour still return default");
     expect(await logLevel.getValue(), null, reason: "but normal get correctly returns null");
   });
 
   testO("testing database get/set", () async {
-    LogLevelConfigOption logLevel = LogLevelConfigOption(key: "logLevel", defaultValue: LogLevel.VERBOSE);
+    LogLevelConfigOption logLevel = LogLevelConfigOption(titleKey: "logLevel", defaultValue: LogLevel.VERBOSE);
     expect(await logLevel.getValue(), LogLevel.VERBOSE, reason: "return default with null");
     await logLevel.setValue(LogLevel.INFO);
     expect(await logLevel.getValue(), LogLevel.INFO, reason: "return updated after set");
@@ -121,7 +121,7 @@ void _testConfigDB() {
     expect(await logLevel.getValue(), LogLevel.VERBOSE, reason: "return default after delete");
     await logLevel.setValue(null);
     expect(await logLevel.getValue(), null, reason: "return null after explicit set to null");
-    logLevel = LogLevelConfigOption(key: "logLevel");
+    logLevel = LogLevelConfigOption(titleKey: "logLevel");
     expect(await logLevel.getValue(), null, reason: "return null with no default");
     await logLevel.setValue(LogLevel.INFO);
     await logLevel.deleteValue();
@@ -131,7 +131,7 @@ void _testConfigDB() {
   testO("testing config update callback", () async {
     bool called = false;
     LogLevelConfigOption logLevel = LogLevelConfigOption(
-      key: "logLevel",
+      titleKey: "logLevel",
       defaultValue: LogLevel.VERBOSE,
       updateCallback: (_) async {
         await Utils.delay(Duration(milliseconds: 25));
@@ -149,7 +149,7 @@ void _testConfigDB() {
     await Utils.delay(Duration(milliseconds: 50)); // longer wait than the callback takes!
     expect(called, true, reason: "async call after update cached value only with delay");
     logLevel = LogLevelConfigOption(
-      key: "logLevel",
+      titleKey: "logLevel",
       defaultValue: LogLevel.VERBOSE,
       updateCallback: (_) => called = true,
     );
@@ -180,7 +180,7 @@ void _testConfigDB() {
     );
 
     final ModelConfigOption<ExampleModel> option = ModelConfigOption<ExampleModel>(
-      key: "somethingNew",
+      titleKey: "somethingNew",
       lazyLoaded: false,
       createNewModelInstance: ModelConfigOption.createNewExampleModelInstance,
     );
