@@ -37,7 +37,7 @@ abstract base class _TestPositionedPage extends StatelessWidget {
       height: height.toDouble(),
       child: TextField(
         controller: controller,
-        decoration: InputDecoration(border: OutlineInputBorder()),
+        decoration: const InputDecoration(border: OutlineInputBorder()),
       ),
     ),
   );
@@ -62,7 +62,7 @@ final class TestColouredBoxes extends _TestPositionedPage {
       // also one more to the top (because middle would be at 339.5),
       buildContainer(630, 338, 4, 4, Colors.red),
       buildContainer(1164, 581, 100, 100, Colors.purple),
-      buildButton(25, 625, () => setState(() => _edit.text = afterButtonText), Text("set text field")),
+      buildButton(25, 625, () => setState(() => _edit.text = afterButtonText), const Text("set text field")),
       buildEditText(1030, 25, 200, 50, _edit),
     ];
   }

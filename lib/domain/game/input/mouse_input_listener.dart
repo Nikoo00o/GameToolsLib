@@ -10,6 +10,7 @@ base class MouseInputListener extends BaseInputListener<MouseKey> {
     required super.createEventCallback,
     required super.alwaysCreateNewEvents,
     required super.defaultKey,
+    super.configGroupLabel,
   });
 
   @override

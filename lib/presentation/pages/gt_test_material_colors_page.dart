@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_app_theme.dart';
-import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
+import 'package:game_tools_lib/presentation/base/gt_base_page.dart';
 
-// todo: implement and document
-base class GTHotkeysPage extends GTNavigationPage {
-  const GTHotkeysPage({
+/// Only for testing/debugging to see all material colors
+base class GtTestMaterialColorsPage extends GTBasePage {
+  const GtTestMaterialColorsPage({
     super.key,
     super.backgroundImage,
     super.backgroundColor,
@@ -14,7 +14,6 @@ base class GTHotkeysPage extends GTNavigationPage {
 
   @override
   Widget buildBody(BuildContext context) {
-    Logger.info("REBUILD HOTKEYS");
     final GTAppTheme theme = GameToolsConfig.baseConfig.appColors;
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -34,6 +33,10 @@ base class GTHotkeysPage extends GTNavigationPage {
       ],
     );
   }
+
+  @override
+  PreferredSizeWidget? buildAppBar(BuildContext context) =>
+      buildAppBarDefaultTitle(context, "Material Color Test", buildBackButton: true);
 
   Widget _buildButtons(BuildContext context, String theme) {
     return Container(
@@ -194,14 +197,5 @@ base class GTHotkeysPage extends GTNavigationPage {
   }
 
   @override
-  String get pageName => "GTHotkeysPage";
-
-  @override
-  String get navigationLabel => "page.hotkeys.title";
-
-  @override
-  IconData get navigationNotSelectedIcon => Icons.keyboard_alt_outlined;
-
-  @override
-  IconData get navigationSelectedIcon => Icons.keyboard_alt;
+  String get pageName => "GtTestMaterialColorsPage";
 }

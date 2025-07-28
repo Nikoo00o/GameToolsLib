@@ -52,6 +52,9 @@ abstract base class Logger {
   /// The current custom logger instance which also may be null
   static Logger? get instance => _instance;
 
+  /// Returns null, or [instance] as [T]
+  static T? instanceOfSubType<T>() => _instance is T ? _instance as T : null;
+
   /// Does not await the [log] call with its synchronized write to storage if enabled
   static void error(String? message, [Object? error, StackTrace? stackTrace]) {
     assert(_instance != null, "logger not initialised");
@@ -173,7 +176,7 @@ abstract base class Logger {
 
   Future<void> _log(LogMessage logMessage) async {
     _wrapLog(convertLogMessageToConsole(logMessage), logMessage.level).forEach(logToConsole);
-    addConsoleDelimiter();
+    addConsoleDelimiter(logMessage);
     if (_isTesting == false) {
       logToUi(logMessage);
       await _lock.synchronized(() => logToStorage(logMessage)); // the static log methods will not await this,
@@ -182,8 +185,8 @@ abstract base class Logger {
   }
 
   /// Adds a delimiter between the logs. can also be overridden in sub classes.
-  void addConsoleDelimiter() {
-    logToConsole(String.fromCharCodes(List<int>.generate(80, (int index) => "-".codeUnits.first)));
+  void addConsoleDelimiter(LogMessage message) {
+    logToConsole(message.buildDelimiter(chars: 80, withNewLines: false));
   }
 
   List<String> convertLogMessageToConsole(LogMessage logMessage) {

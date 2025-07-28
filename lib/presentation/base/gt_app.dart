@@ -11,7 +11,7 @@ import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/base/ui_helper.dart';
 import 'package:game_tools_lib/presentation/pages/gt_home_page.dart';
-import 'package:game_tools_lib/presentation/pages/gt_hotkeys_page.dart';
+import 'package:game_tools_lib/presentation/pages/hotkeys/gt_hotkeys_page.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigator.dart';
 import 'package:game_tools_lib/presentation/pages/settings/gt_settings_page.dart';
@@ -36,7 +36,7 @@ base class GTApp extends StatelessWidget {
   Widget buildNavigator(BuildContext context) {
     return GTNavigator(
       pages: <GTNavigationPage>[
-        GTHomePage(),
+        const GTHomePage(),
         GTSettingsPage(),
         GTHotkeysPage(),
         ...additionalNavigatorPages,
@@ -71,7 +71,7 @@ base class GTApp extends StatelessWidget {
                 builder: (BuildContext context, bool darkTheme, Widget? child) {
                   final ThemeData theme = _baseConfig.appColors.getTheme(darkTheme: darkTheme);
                   _setSystemStatusBar(isDarkTheme: theme.brightness == Brightness.dark);
-                  Logger.spam("Building app with ${darkTheme ? "dark" : "light"} theme and $locale locale");
+                  Logger.spam("Building app with ", darkTheme ? "dark" : "light", " theme and locale ", locale);
                   return _buildApp(context, theme, locale);
                 },
               );
@@ -142,12 +142,12 @@ base class GTApp extends StatelessWidget {
         for (final MapEntry<String, dynamic> pair in jsonMap.entries) {
           _keys[pair.key] = pair.value.toString();
         }
-        Logger.spam("Loaded translation file", file.path);
+        Logger.spam("Loaded translation file: ", file.path);
       } else {
         Logger.debug("Translation file does not exist: ${file.path}");
       }
     }
-    Logger.spam("Loaded ${_keys.length} translation key-value-pairs for the locale $locale");
+    Logger.spam("Loaded ", _keys.length, " translation key-value-pairs for the locale ", locale);
   }
 
   /// Translates a [key] to a value of the map and replaces the placeholders with the optional [keyParams]..

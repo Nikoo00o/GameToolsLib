@@ -20,7 +20,7 @@ final class HiveDatabase {
   /// Returns the the [HiveDatabase._instance] if already set, otherwise throws a [FileNotFoundException]
   static HiveDatabase get database {
     if (_instance == null) {
-      throw FileNotFoundException(message: "HiveDatabase._init was not called yet");
+      throw const FileNotFoundException(message: "HiveDatabase._init was not called yet");
     }
     return _instance!;
   }
@@ -165,7 +165,7 @@ final class HiveDatabase {
     return FileUtils.readFileAsBytes(await _getAbsolutePath(localFilePath));
   }
 
-  static final JsonEncoder _encoder = JsonEncoder.withIndent("    ");
+  static const JsonEncoder _encoder = JsonEncoder.withIndent("    ");
 
   /// Same as [writeFile], but with a [json] map instead of bytes!
   Future<void> writeJson({required String localFilePath, required Map<String, dynamic> json}) async {

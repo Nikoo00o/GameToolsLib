@@ -126,10 +126,11 @@ String testFile(String fileName) => FileUtils.combinePath(<String>[testFolder, f
 
 Future<void> main() async {
   final bool init = await GameToolsLib.useExampleConfig(
-    isCalledFromTesting: FileUtils.wasRunFromTests,
+    isCalledFromTesting: false,
     windowName: "Snipping Tool",
   );
   if (init == false) {
+    Logger.error("Could not init lib");
     return; // todo: show some error ui?
   }
   GameToolsLib.gameManager().addInputListener(
@@ -146,6 +147,35 @@ Future<void> main() async {
       createEventCallback: () => ExampleEvent(isInstant: false),
       alwaysCreateNewEvents: true,
       defaultKey: BoardKey.ctrlC,
+    ),
+  );
+
+  GameToolsLib.gameManager().addInputListener(
+    KeyInputListener(
+      configLabel: "",
+      createEventCallback: () => ExampleEvent(isInstant: false),
+      alwaysCreateNewEvents: true,
+      defaultKey: BoardKey.a,
+    ),
+  );
+
+  GameToolsLib.gameManager().addInputListener(
+    KeyInputListener(
+      configLabel: "b",
+      configGroupLabel: "test",
+      createEventCallback: () => ExampleEvent(isInstant: false),
+      alwaysCreateNewEvents: true,
+      defaultKey: BoardKey.b,
+    ),
+  );
+
+  GameToolsLib.gameManager().addInputListener(
+    KeyInputListener(
+      configLabel: "c",
+      configGroupLabel: "test",
+      createEventCallback: () => ExampleEvent(isInstant: false),
+      alwaysCreateNewEvents: true,
+      defaultKey: BoardKey.c,
     ),
   );
 

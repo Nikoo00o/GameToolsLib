@@ -9,7 +9,7 @@ import 'package:game_tools_lib/presentation/pages/logs/gt_logs_page.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_listener.dart';
 
 /// Used in [GTLogsPage] to display the complete logs view!
-final class GTLogsView extends GTBaseWidget {
+final class GTLogsView extends StatelessWidget with GTBaseWidget {
   const GTLogsView({super.key});
 
   @override
@@ -33,7 +33,8 @@ final class GTLogsView extends GTBaseWidget {
     );
   }
 
-  Widget buildInnerList(BuildContext context, List<LogMessage> logMessages, LogLevel maxLogLevel, String searchString) {
+  /// Convert logs from data layer to logs that can be displayed in the ui
+  static List<LogMessage> filterLogMessages(List<LogMessage> logMessages, LogLevel maxLogLevel, String searchString) {
     final List<LogMessage> searchedMessages = List<LogMessage>.of(logMessages);
     final String searchLower = searchString.toLowerCase();
     searchedMessages.removeWhere((LogMessage msg) {
@@ -43,6 +44,11 @@ final class GTLogsView extends GTBaseWidget {
       }
       return lower == null || (searchLower.isNotEmpty && lower.contains(searchLower) == false);
     });
+    return searchedMessages;
+  }
+
+  Widget buildInnerList(BuildContext context, List<LogMessage> logMessages, LogLevel maxLogLevel, String searchString) {
+    final List<LogMessage> searchedMessages = filterLogMessages(logMessages, maxLogLevel, searchString);
     return ListView.builder(
       itemCount: searchedMessages.length,
       itemBuilder: (BuildContext context, int index) {
@@ -54,7 +60,7 @@ final class GTLogsView extends GTBaseWidget {
 }
 
 /// Builds a card displaying the [logMessage]
-final class GTLogMessageView extends GTBaseWidget {
+final class GTLogMessageView extends StatelessWidget with GTBaseWidget {
   final LogMessage logMessage;
 
   const GTLogMessageView({super.key, required this.logMessage});

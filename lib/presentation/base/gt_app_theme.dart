@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 
@@ -71,6 +69,9 @@ final class GTAppTheme {
   ThemeData getTheme({required bool darkTheme}) => ThemeData(
     colorScheme: getColorScheme(brightness: darkTheme ? Brightness.dark : Brightness.light),
     useMaterial3: true,
+    scrollbarTheme: ScrollbarThemeData(
+      thumbVisibility: WidgetStateProperty.all<bool>(true),
+    ),
   );
 
   /// Returns the parsed [ColorScheme] from the base material colors.

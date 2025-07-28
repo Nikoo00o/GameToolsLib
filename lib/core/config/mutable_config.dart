@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ui';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/enums/log_level.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
@@ -12,6 +11,7 @@ import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/domain/game/helper/example/example_config.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder.dart';
+import 'package:game_tools_lib/presentation/pages/settings/config_option_builder_group.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder_types.dart';
 
 part 'package:game_tools_lib/core/config/mutable_config_option.dart';
@@ -56,6 +56,7 @@ base class MutableConfig {
   /// Otherwise if [true] it has to be exactly the same). Used for [GameWindow], default is [false].
   final BoolConfigOption alwaysMatchGameWindowNamesEqual = BoolConfigOption(
     titleKey: "config.alwaysMatchGameWindowNamesEqual",
+    descriptionKey: "config.alwaysMatchGameWindowNamesEqual.description",
     defaultValue: false,
     updateCallback: _updateGameWindowConfigValues,
   );
@@ -64,6 +65,7 @@ base class MutableConfig {
   /// [false].
   final BoolConfigOption debugPrintGameWindowNames = BoolConfigOption(
     titleKey: "config.debugPrintGameWindowNames",
+    descriptionKey: "config.debugPrintGameWindowNames.description",
     defaultValue: false,
     updateCallback: _updateGameWindowConfigValues,
   );
@@ -89,6 +91,7 @@ base class MutableConfig {
       configOptions: <MutableConfigOption<dynamic>>[
         logLevel,
         useDarkTheme,
+        currentLocale,
         debugPrintGameWindowNames,
         alwaysMatchGameWindowNamesEqual,
       ],
@@ -96,10 +99,13 @@ base class MutableConfig {
   ];
 
   /// This will be called automatically at the end of [GameToolsLib.initGameToolsLib] to load all
-  /// [getConfigurableOptions] and also update the listeners/callbacks!
+  /// [getConfigurableOptions] by loading their values without updating listeners and calling [MutableConfigOption.onInit]
+  /// on them!
   Future<void> loadAllConfigurableOptions() async {
     for (final MutableConfigOption<dynamic> option in getConfigurableOptions()) {
-      await option.getValue(updateListeners: true);
+      await option.getValue(updateListeners: false);
+      await option.onInit?.call(option);
+      Logger.verbose("Initialized Config $option");
     }
   }
 

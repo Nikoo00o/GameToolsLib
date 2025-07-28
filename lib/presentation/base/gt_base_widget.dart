@@ -3,25 +3,22 @@ import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/presentation/base/gt_app.dart';
 import 'package:provider/provider.dart';
 
-/// Base class for all widgets with some helper functions
-abstract base class GTBaseWidget extends StatelessWidget {
-  const GTBaseWidget({super.key});
-
-  /// Translates a translation [key] for the current locale.
-  ///
-  /// Placeholders are replaced with [keyParams].
+/// Base class for all widgets with some common helper functions as a mixin that can be used for each widget!
+mixin class GTBaseWidget {
+  /// Translates a translation [key] for the current locale and placeholders are replaced with [keyParams].
   ///
   /// Needs the current [context] to react to locale changes!
   String translate(BuildContext context, String key, {List<String>? keyParams}) =>
-      translateS(context, key, keyParams: keyParams);
+      translateS(context, key, keyParams: keyParams, listen: true);
 
-  /// Translates a translation [key] for the current locale.
+  /// Translates a translation [key] for the current locale and placeholders are replaced with [keyParams].
   ///
-  /// Placeholders are replaced with [keyParams].
-  ///
-  /// Needs the current [context] to react to locale changes!
-  static String translateS(BuildContext context, String key, {List<String>? keyParams}) {
-    context.select<LocaleConfigOption, Locale?>((LocaleConfigOption option) => option.activeLocale);
+  /// Depending on [listen] this can listen to locale changes and rebuild the calling widget automatically if needed!
+  /// If used in button callbacks, always use false!
+  static String translateS(BuildContext context, String key, {List<String>? keyParams, required bool listen}) {
+    if (listen) {
+      context.select<LocaleConfigOption, Locale?>((LocaleConfigOption option) => option.activeLocale);
+    }
     return GTApp.translate(key, keyParams: keyParams); // IMPORTANT: first watch for changes to the locale above!!!
   }
 
@@ -191,4 +188,21 @@ abstract base class GTBaseWidget extends StatelessWidget {
 
   /// Returns if the current theme is dark
   bool isDarkTheme(BuildContext context) => theme(context).brightness == Brightness.dark;
+
+  /// Tries to show a translated bottom snack bar with the message and returns if it was successful.
+  ///
+  /// Because this is mostly called after some action in a callback, [listen] for [translateS] is false here to not
+  /// listen to new locale changes! You should check [BuildContext.mounted] first if you call this across async gaps
+  /// as well.
+  bool showToast(BuildContext context, String key, {List<String>? keyParams, bool listen = false}) {
+    final ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? result =
+        ScaffoldMessenger.maybeOf(
+          context,
+        )?.showSnackBar(
+          SnackBar(
+            content: Text(translateS(context, key, keyParams: keyParams, listen: listen)),
+          ),
+        );
+    return result != null;
+  }
 }

@@ -19,7 +19,7 @@ import 'package:provider/single_child_widget.dart';
 /// To build selectors, etc look for example at [UIHelper.configConsumer] or just use the default [Consumer], or
 /// [Selector] widgets. But if you need to listen to a stream that provides updates to the ui via events, then use
 ///
-abstract base class GTBasePage extends GTBaseWidget {
+abstract base class GTBasePage extends StatelessWidget with GTBaseWidget {
   /// The default page padding
   static const EdgeInsets defaultPagePadding = EdgeInsets.fromLTRB(8, 8, 8, 8);
 
@@ -100,7 +100,7 @@ abstract base class GTBasePage extends GTBaseWidget {
     List<Widget>? actions,
   }) {
     return AppBar(
-      leading: buildBackButton ? BackButton() : null,
+      leading: buildBackButton ? const BackButton() : const SizedBox(),
       title: Text(
         "${GameToolsConfig.baseConfig.appTitle} - ${translate(context, titleKey)}",
         style: textTitleLarge(context).copyWith(fontWeight: FontWeight.bold),

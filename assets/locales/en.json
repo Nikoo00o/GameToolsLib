@@ -1,10 +1,25 @@
 {
+  "locale.en": "English",
+  "locale.de": "German",
+  "locale.system": "System",
+  "input.number": "Enter Number",
+  "input.text": "Enter Text",
+  "config.logLevel": "Log Level",
+  "config.useDarkTheme": "Use dark theme",
+  "config.currentLocale": "Language",
+  "config.debugPrintGameWindowNames": "Print window names",
+  "config.debugPrintGameWindowNames.description": "All open windows only in debug mode",
+  "config.alwaysMatchGameWindowNamesEqual": "Compare windows strictly",
+  "config.alwaysMatchGameWindowNamesEqual.description": "The window of the game has to have the same name. Otherwise it will be tested if the target name is contained in the window name",
   "page.home.title": "Home",
   "page.settings.title": "Settings",
   "page.settings.group.general": "General",
   "page.settings.group.other": "Other",
   "page.hotkeys.title": "Hotkeys",
+  "page.hotkeys.group.other": "Other",
   "page.logs.title": "Application Logs",
-  "page.logs.level": "Level anzeigen",
-  "page.logs.search": "Logs durchsuchen"
+  "page.logs.level": "Show Level",
+  "page.logs.search": "Search Logs",
+  "page.logs.copy.to.clipboard" : "Copy to Clipboard",
+  "page.logs.copy.to.clipboard.done" : "Visible app logs were copied into the clipboard!"
 }

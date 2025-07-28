@@ -23,7 +23,8 @@ Future<void> main() async {
   );
 }
 
-GameToolsConfigBaseType get _baseConfig => GameToolsConfigBaseType(fixed: FixedConfig(), mutable: MutableConfig());
+GameToolsConfigBaseType get _baseConfig =>
+    GameToolsConfigBaseType(fixed: const FixedConfig(), mutable: MutableConfig());
 
 void _testInit() {
   testO("initialize game tools lib with default example config", () async {
@@ -128,25 +129,29 @@ void _testConfigDB() {
     expect(await logLevel.getValue(), null, reason: "still return null after set and delete");
   });
 
-  testO("testing config update callback", () async {
+  testO("testing config update callback and null cases", () async {
     bool called = false;
     LogLevelConfigOption logLevel = LogLevelConfigOption(
       titleKey: "logLevel",
       defaultValue: LogLevel.VERBOSE,
       updateCallback: (_) async {
-        await Utils.delay(Duration(milliseconds: 25));
+        await Utils.delay(const Duration(milliseconds: 25));
         called = true;
       },
     );
-    await logLevel.getValue();
-    expect(called, false, reason: "no call on returning default");
+    LogLevel? value = await logLevel.getValue();
+    expect(called, false, reason: "no call at first if null and returning default (not saved in db)");
+    expect(logLevel.cachedValue(), LogLevel.VERBOSE, reason: "cache returns default value at first");
+    expect(value, LogLevel.VERBOSE, reason: "and real get would also return default");
     await logLevel.setValue(LogLevel.INFO);
     expect(called, true, reason: "call after set");
     called = false;
-    await logLevel.getValue();
-    expect(called, false, reason: "no call after get");
+    expect(logLevel.cachedValue(), LogLevel.INFO, reason: "info after set");
+    value = await logLevel.getValue();
+    expect(value, LogLevel.INFO, reason: "and real also info after set");
+    expect(called, false, reason: "no call after get when already has same value");
     logLevel.onlyUpdateCachedValue(null);
-    await Utils.delay(Duration(milliseconds: 50)); // longer wait than the callback takes!
+    await Utils.delay(const Duration(milliseconds: 50)); // longer wait than the callback takes!
     expect(called, true, reason: "async call after update cached value only with delay");
     logLevel = LogLevelConfigOption(
       titleKey: "logLevel",
@@ -155,7 +160,27 @@ void _testConfigDB() {
     );
     called = false;
     logLevel.onlyUpdateCachedValue(null);
-    expect(called, true, reason: "non async callback called directly after update cache");
+    expect(called, false, reason: "don't call callback with same value");
+    expect(logLevel.cachedValue(), LogLevel.VERBOSE, reason: "cache is now default");
+    expect(await logLevel.getValue(), LogLevel.INFO, reason: "and real still returns correct one");
+
+    await logLevel.setValue(null);
+    called = false;
+    value = await logLevel.getValue();
+    expect(called, false, reason: "no getValue call with explicit set to null");
+    expect(logLevel.cachedValue(), LogLevel.VERBOSE, reason: "cache again default");
+    expect(value, null, reason: "but real is now explicit null");
+    called = false;
+
+    await logLevel.setValue(LogLevel.VERBOSE);
+    logLevel.onlyUpdateCachedValue(null);
+    called = false;
+    await logLevel.getValue();
+    expect(called, true, reason: "but then getting new value again if cache is null and real data different");
+    called = false;
+    await logLevel.getValue();
+    expect(called, false, reason: "next no call with same value get");
+    expect(logLevel.cachedValue(), LogLevel.VERBOSE, reason: "and also correct value at the end");
   });
 
   final ExampleModel someModel = ExampleModel(
@@ -167,7 +192,7 @@ void _testConfigDB() {
       ),
     ],
   );
-  final String modelJson =
+  const String modelJson =
       "{\"JSON_SOME_DATA\":10,\"JSON_MODIFIABLE_DATA\":[{\"JSON_SOME_DATA\":20,\"JSON_MODIFIABLE_DATA\":"
       "[{\"JSON_SOME_DATA\":null,\"JSON_MODIFIABLE_DATA\":[]}]}]}";
 
@@ -183,6 +208,7 @@ void _testConfigDB() {
       titleKey: "somethingNew",
       lazyLoaded: false,
       createNewModelInstance: ModelConfigOption.createNewExampleModelInstance,
+      createModelBuilder: null,
     );
     expect(await option.getValue(), null, reason: "first null with no value");
     await option.setValue(someModel);

@@ -22,7 +22,6 @@ linter:
     unnecessary_string_escapes: false
     prefer_const_constructors: true
     prefer_const_declarations: true
-    prefer_const_literals_to_create_immutables: true
     always_specify_types: true
     avoid_bool_literals_in_conditional_expressions: true
     avoid_catching_errors: true

@@ -136,7 +136,7 @@ void _testEvents() {
 
 // these tests can be run at the same time, because they don't affect static variables
 void _testGameLogWatcher() {
-  final String initialContent =
+  const String initialContent =
       "l4\r\nskip\n\nl5\n0000/00/00 00:00:00 0000000000 ffffffff [INFO Client 00000] : You have entered Some Area.";
 
   testD("Error initialize with no file path", () async {

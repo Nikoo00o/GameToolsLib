@@ -41,9 +41,9 @@ final class ExampleEvent extends GameEvent {
         // requires focus and open window! do something....
       }
       if (updateCounter >= 11) {
-        return (GameEventStatus.DONE, Duration(milliseconds: 45));
+        return (GameEventStatus.DONE, const Duration(milliseconds: 45));
       } else {
-        return (GameEventStatus.NEXT_STEP, Duration(milliseconds: 45));
+        return (GameEventStatus.NEXT_STEP, const Duration(milliseconds: 45));
       }
     }
   }
@@ -51,6 +51,6 @@ final class ExampleEvent extends GameEvent {
   @override
   Future<(GameEventStatus, Duration)> onStep2() async {
     updateCounter += 10;
-    return (GameEventStatus.PREV_STEP, Duration(milliseconds: 45));
+    return (GameEventStatus.PREV_STEP, const Duration(milliseconds: 45));
   }
 }

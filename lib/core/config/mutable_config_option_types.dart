@@ -8,6 +8,7 @@ final class TypeConfigOption<T> extends MutableConfigOption<T> {
     super.descriptionKey,
     super.updateCallback,
     super.defaultValue,
+    super.onInit,
   });
 
   @override
@@ -28,13 +29,18 @@ typedef StringConfigOption = TypeConfigOption<String>;
 
 /// This can be used with [EnumType] being any [enum] by just converting them to string and then to convert them back
 /// to an object [availableOptions] needs to be supplied with the enum values which will be compared as string!
-/// This also provides [buildLabelsForUI] and [buildCurrentUILabel].
 ///
 /// Of course you could also use this with any custom class that has its [toString] method overridden if you supply a
 /// list of values that should be compared against!
+///
+/// For building the ui, you can also use [convertToTranslationKeys] in the constructor to convert the
+/// values of the enums to some translation keys (instead of using raw strings).
 final class EnumConfigOption<EnumType> extends MutableConfigOption<EnumType> {
   /// The list of enum values [EnumType.values]!
   final List<EnumType> availableOptions;
+
+  /// Should return a translation key for a given [EnumType]'s [value]. Can also be null to just use [toString] on them.
+  final String Function(EnumType value)? convertToTranslationKeys;
 
   EnumConfigOption({
     required super.titleKey,
@@ -42,14 +48,9 @@ final class EnumConfigOption<EnumType> extends MutableConfigOption<EnumType> {
     super.updateCallback,
     super.defaultValue,
     required this.availableOptions,
+    this.convertToTranslationKeys,
+    super.onInit,
   });
-
-  /// Used to build the ui elements which are used to configure this config option.
-  /// Just returns a list of the names of the enum values, but may be overridden in a subclass!
-  List<String> buildLabelsForUI() => availableOptions.map((EnumType element) => element.toString()).toList();
-
-  /// Used to build the ui element for the [cachedValue]. Per default uses [_dataToString], but can be overridden.
-  String? buildCurrentUILabel() => _dataToString(cachedValue());
 
   @override
   EnumType? _stringToData(String? str) {
@@ -63,6 +64,9 @@ final class EnumConfigOption<EnumType> extends MutableConfigOption<EnumType> {
 
   @override
   String? _dataToString(EnumType? data) => data?.toString();
+
+  @override
+  ConfigOptionBuilder<EnumType> get builder => ConfigOptionBuilderEnum<EnumType>(configOption: this);
 }
 
 /// Used to store an entity/object implementing the [Model] interface and supporting to/from json conversion!
@@ -70,10 +74,19 @@ final class EnumConfigOption<EnumType> extends MutableConfigOption<EnumType> {
 /// Important: you need to supply a [_createNewModelInstance] function that creates a new instance of your specific
 /// model subclass [T] with the given json map by calling its [fromJson] factory constructor
 ///
-/// As An example look at [createNewExampleModelInstance]
+/// As An example look at [createNewExampleModelInstance].
+///
+/// Important: you also have to use [createModelBuilder] if this is included in [MutableConfig.getConfigurableOptions]
+/// or otherwise leave it at null. For an example of that look at [createExampleModelBuilder]
 final class ModelConfigOption<T extends Model> extends MutableConfigOption<T> {
   /// function that creates a new instance of [T] by calling its fromJson factory constructor
   final T Function(Map<String, dynamic> json) _createNewModelInstance;
+
+  /// This has to create a subclass of [ConfigOptionBuilderModel] to build the UI config option content for the model of
+  /// type [T]!
+  ///
+  /// This may also be null if this model option is not contained in [MutableConfig.getConfigurableOptions]
+  final ConfigOptionBuilderModel<T> Function(ModelConfigOption<T> option)? createModelBuilder;
 
   /// [updateCallback] Optional update callback that is called after [setValue] to update data references elsewhere.
   /// [lazyLoaded] For big data this should be [true] to load on demand. Defaults to [false] (all data is kept in memory)
@@ -81,10 +94,12 @@ final class ModelConfigOption<T extends Model> extends MutableConfigOption<T> {
   ModelConfigOption({
     required T Function(Map<String, dynamic> json) createNewModelInstance,
     required super.titleKey,
+    required this.createModelBuilder,
     super.descriptionKey,
     super.updateCallback,
     super.defaultValue,
     super.lazyLoaded,
+    super.onInit,
   }) : _createNewModelInstance = createNewModelInstance;
 
   @override
@@ -107,32 +122,54 @@ final class ModelConfigOption<T extends Model> extends MutableConfigOption<T> {
     return _createNewModelInstance.call(json);
   }
 
-  /// Example for how [_createNewModelInstance] functions should look
+  /// Example for how [_createNewModelInstance] functions should look with [ExampleModel]
   static ExampleModel createNewExampleModelInstance(Map<String, dynamic> json) => ExampleModel.fromJson(json);
+
+  /// Example for how [createModelBuilder] functions should look with [ConfigOptionBuilderModelExample] and [ExampleModel]
+  static ConfigOptionBuilderModelExample createExampleModelBuilder(ModelConfigOption<ExampleModel> option) =>
+      ConfigOptionBuilderModelExample(configOption: option);
+
+  @override
+  ConfigOptionBuilder<T>? get builder => createModelBuilder?.call(this);
 }
 
 /// Custom Config option where you have the freedom of deciding how to convert a string into your data of type [T] by
 /// using the [_createNewInstance] callback.
 ///
-/// For the other way around, [toString] will just be called on your object of type [T]
+/// For the other way around, [toString] will just be called on your object of type [T].
+///
+/// Important: you also have to pass the [buildCustomContentWidget] if this is included in
+/// [MutableConfig.getConfigurableOptions] or otherwise null.
 final class CustomConfigOption<T> extends MutableConfigOption<T> {
   /// function that creates a new instance of [T] (or return null)
   final T? Function(String? str) _createNewInstance;
+
+  /// If this is not null (and this is included in [MutableConfig.getConfigurableOptions]), then it is used to build
+  /// the ui for this config option! It will be notified when this config option changes and has the current internal
+  /// data in [customData].
+  final Widget Function(BuildContext context, T customData)? buildCustomContentWidget;
 
   /// [updateCallback] Optional update callback that is called after [setValue] to update data references elsewhere.
   /// [lazyLoaded] For big data this should be [true] to load on demand. Defaults to [false] (all data is kept in memory)
   /// [createNewInstance] function that creates a new instance of [T] (or return null)
   CustomConfigOption({
     required T? Function(String? str) createNewInstance,
+    required this.buildCustomContentWidget,
     required super.titleKey,
     super.descriptionKey,
     super.updateCallback,
     super.defaultValue,
     super.lazyLoaded,
+    super.onInit,
   }) : _createNewInstance = createNewInstance;
 
   @override
   T? _stringToData(String? str) => _createNewInstance.call(str);
+
+  @override
+  ConfigOptionBuilder<T>? get builder => buildCustomContentWidget == null
+      ? null
+      : ConfigOptionBuilderCustom<T>(configOption: this, buildContentCallback: buildCustomContentWidget!);
 }
 
 /// Special case: [LogLevel] as a enum config option.
@@ -142,6 +179,7 @@ final class LogLevelConfigOption extends EnumConfigOption<LogLevel> {
     super.descriptionKey,
     super.updateCallback,
     super.defaultValue,
+    super.onInit,
   }) : super(availableOptions: LogLevel.values);
 }
 
@@ -149,29 +187,26 @@ final class LogLevelConfigOption extends EnumConfigOption<LogLevel> {
 ///
 /// This is a nullable [EnumConfigOption] and has some methods overridden!
 final class LocaleConfigOption extends EnumConfigOption<Locale?> {
-  static const String _systemLocale = "System Locale";
-
-  /// Workaround factory constructor added, because cant directly access the fixed config when its not already
-  /// initialized. And can also not set the update callback to an instance member method during the constructor!
-  factory LocaleConfigOption({required String titleKey, String? descriptionKey, Locale? defaultValue}) {
-    final LocaleConfigOption option = LocaleConfigOption._(
-      titleKey: titleKey,
-      descriptionKey: descriptionKey,
-      defaultValue: defaultValue,
-    );
-    option._updateCallback = (Locale? _) {
-      if (option.availableOptions.isEmpty) {
-        option.availableOptions.addAll(FixedConfig.fixedConfig.supportedLocales); // only add supported locales once
-      }
-    };
-    return option;
-  }
-
-  LocaleConfigOption._({
+  LocaleConfigOption({
     required super.titleKey,
     super.descriptionKey,
     super.defaultValue,
-  }) : super(availableOptions: <Locale?>[], updateCallback: null);
+  }) : super(
+         availableOptions: <Locale?>[],
+         updateCallback: null,
+         convertToTranslationKeys: _localeToKey,
+         onInit: _addSupportedLocales,
+       );
+
+  /// callback used in added to add support locales during init, because a constructor could not directly access
+  /// the fixed config when its not already initialized. and can also not access instance members during constructor.
+  static Future<void> _addSupportedLocales(MutableConfigOption<dynamic> configOption) async {
+    final LocaleConfigOption localeConfigOption = configOption as LocaleConfigOption;
+    localeConfigOption.availableOptions.addAll(FixedConfig.fixedConfig.supportedLocales);
+  }
+
+  /// callback used for translation keys in ui builder
+  static String _localeToKey(Locale? locale) => locale?.translationKey ?? "locale.system";
 
   /// Returns the currently active locale which can be the current [_value], but also the default system locale, but
   /// also the first locale of the locale list!
@@ -185,21 +220,4 @@ final class LocaleConfigOption extends EnumConfigOption<Locale?> {
 
   @override
   String? _dataToString(Locale? data) => data?.toLanguageTag();
-
-  @override
-  List<String> buildLabelsForUI() {
-    return availableOptions.map((Locale? element) {
-      if (element == null) {
-        return _systemLocale;
-      } else {
-        return element.toString();
-      }
-    }).toList();
-  }
-
-  @override
-  String? buildCurrentUILabel() {
-    final String? value = super.buildCurrentUILabel();
-    return value ?? _systemLocale;
-  }
 }

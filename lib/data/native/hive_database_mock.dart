@@ -23,7 +23,7 @@ final class HiveDatabaseMock extends HiveDatabase {
   Future<void> _init() async {
     Logger.debug("Loaded Test Hive Databases");
     if (throwExceptionInInit) {
-      throw FileNotFoundException(message: "test mock database should throw");
+      throw const FileNotFoundException(message: "test mock database should throw");
     }
   }
 

@@ -17,7 +17,7 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 abstract base class BaseInputListener<DataType> {
   /// If this is empty, then this listener will not get any ui build to be able to modify it! Otherwise it should
   /// display a info label text (or translation key), but it will also be used as the database storage key (for the
-  /// editable stored [_key])
+  /// editable stored [_key]). Also look at [configGroupLabel] if you want to group up some listeners.
   final String configLabel;
 
   /// This will be called before to only execute [createEventCallback] if this returns true!
@@ -41,6 +41,11 @@ abstract base class BaseInputListener<DataType> {
   /// This is the default hotkey for the input listener used for the internal [_key]
   final DataType defaultKey;
 
+  /// If the [configLabel] is not empty, then this may also be set to group up multiple input listeners in
+  /// config groups by matching the group labels! In the config menu the labels will also be translated.
+  /// But this is optional and null by default!
+  final String? configGroupLabel;
+
   /// The current hotkey which is loaded/saved, but initially null
   DataType? _key;
 
@@ -58,7 +63,14 @@ abstract base class BaseInputListener<DataType> {
     required this.createEventCallback,
     required this.alwaysCreateNewEvents,
     required this.defaultKey,
-  });
+    this.configGroupLabel,
+  }) {
+    if (configLabel.isEmpty && configGroupLabel != null) {
+      throw ConfigException(
+        message: "Used config group label $configGroupLabel when configLabel was null for default key $defaultKey",
+      );
+    }
+  }
 
   void _addEvent() {
     if (eventCreateCondition.call()) {

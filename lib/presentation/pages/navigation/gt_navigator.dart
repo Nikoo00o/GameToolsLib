@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_app.dart';
-import 'package:game_tools_lib/presentation/base/gt_app_theme.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_page.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_notifier.dart';
@@ -50,7 +49,7 @@ base class GTNavigator extends GTBasePage {
     final List<NavigationRailDestination> destinations = pages.map(
       (GTNavigationPage page) {
         return NavigationRailDestination(
-          padding: EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: 4),
           icon: Icon(page.navigationNotSelectedIcon),
           selectedIcon: Icon(page.navigationSelectedIcon),
           label: Text(translate(context, page.navigationLabel)),

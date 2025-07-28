@@ -21,18 +21,20 @@ final class ExampleFixedConfig extends FixedConfig {
 /// Also here an example is given how to override default values for members of the super class like here [logLevel]
 /// with a different key, but the same default value spam
 final class ExampleMutableConfig extends MutableConfig {
-  /// The key of the config value is just the same as the member variable name
-  ModelConfigOption<ExampleModel> get somethingNew => ModelConfigOption<ExampleModel>(
-    titleKey: "config.example.somethingnew",
+  /// For showcase this does not use a translation key here!
+  final ModelConfigOption<ExampleModel> somethingNew = ModelConfigOption<ExampleModel>(
+    titleKey: "Example Model",
     defaultValue: ExampleModel(someData: 5, modifiableData: <ExampleModel>[]),
     lazyLoaded: false,
     updateCallback: (ExampleModel? newModel) => Logger.verbose("got new model $newModel"),
     createNewModelInstance: ModelConfigOption.createNewExampleModelInstance,
+    createModelBuilder: ModelConfigOption.createExampleModelBuilder,
   );
 
   /// Private member instance is needed to supply different value to the overridden getter below!
+  /// This translation key is only for showcase and not contained in the translation files!
   final LogLevelConfigOption _logLevelInstance = LogLevelConfigOption(
-    titleKey: "config.example.loglevel",
+    titleKey: "config.example.logLevel",
     defaultValue: LogLevel.SPAM,
   );
 
@@ -45,7 +47,7 @@ final class ExampleMutableConfig extends MutableConfig {
   IntConfigOption get mutableDelay => IntConfigOption(titleKey: "Mutable Delay", defaultValue: 0);
 
   /// Important: also pass all new config options to the ui! (no translation key used for the group in this example
-  /// and the last log level instance config option will be put in the "other" group)
+  /// and the last log level instance config option will be duplicated and put in the "other" group as well to test it)
   @override
   getConfigurableOptions() => <MutableConfigOption<dynamic>>[
     ...super.getConfigurableOptions(),
@@ -54,7 +56,7 @@ final class ExampleMutableConfig extends MutableConfig {
       configOptions: <MutableConfigOption<dynamic>>[mutableDelay],
     ),
     somethingNew,
-    _logLevelInstance,
+    logLevel,
   ];
 }
 

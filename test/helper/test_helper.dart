@@ -142,7 +142,7 @@ abstract final class TestHelper {
         final Size size = tester.view.physicalSize;
         appWidth = size.width.round();
         appHeight = size.height.round();
-        await Utils.delay(Duration(milliseconds: 75)); // small delay until window is open
+        await Utils.delay(const Duration(milliseconds: 75)); // small delay until window is open
         await _runOrdered(beforeTest, afterTest);
       });
     } else {
@@ -172,7 +172,7 @@ abstract final class TestHelper {
       gameLogWatcher: GameLogWatcher.empty(),
     );
     if (result == false) {
-      throw TestException(message: "TestHelper.initGameToolsLib failed");
+      throw const TestException(message: "TestHelper.initGameToolsLib failed");
     }
   }
 
@@ -192,7 +192,7 @@ abstract final class TestHelper {
           if (test.initLib) {
             await initGameToolsLib(_mainWindowTitle);
             HiveDatabaseMock.throwExceptionInInit = false;
-            await Future<void>.delayed(Duration(milliseconds: 5));
+            await Future<void>.delayed(const Duration(milliseconds: 5));
             await Logger.waitForLoggingToBeDone();
           }
           await beforeTest?.call();
@@ -206,7 +206,7 @@ abstract final class TestHelper {
         if (GameToolsLib.wasInitStarted) {
           await Logger.waitForLoggingToBeDone();
           await GameToolsLib.close();
-          await Future<void>.delayed(Duration(milliseconds: 5));
+          await Future<void>.delayed(const Duration(milliseconds: 5));
         }
         await Logger.waitForLoggingToBeDone();
       }

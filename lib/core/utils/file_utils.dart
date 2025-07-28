@@ -41,14 +41,16 @@ abstract final class FileUtils {
   /// file paths to the [subFolderPath] for the packages that include it (important: first entry will always be the
   /// "game_tools_lib" package and the last entry will always be your application!).
   ///
-  /// If this is run from tests, it will point to the project asset folder instead!
+  /// If this is run from tests, it will point to the project asset folder instead! But still contain the package
+  /// assets directories if they are available!
   static List<String> getAssetFoldersFor(String subFolderPath) {
+    String assets = combinePath(<String>[GameToolsConfig.resourceFolderPath, "flutter_assets"]);
     if (wasRunFromTests) {
-      return <String>[
-        absolutePath(combinePath(<String>[workingDirectory, "assets"])),
-      ];
+      assets = assets.substring(absolutePath(workingDirectory).length + 1); // point to real exe asset dir for package
+      // asset search
+      assets = combinePath(<String>[absolutePath(p.dirname(Platform.resolvedExecutable)), assets]);
     }
-    final String assets = combinePath(<String>[GameToolsConfig.resourceFolderPath, "flutter_assets"]);
+
     final String packages = combinePath(<String>[assets, "packages"]);
     final String lastSearchPart = combinePath(<String>["assets", subFolderPath]);
     final List<Directory> libs = FileUtils.searchSubFoldersInDir(packages, lastSearchPart);
@@ -65,8 +67,16 @@ abstract final class FileUtils {
         paths.insert(0, absolutePathF(dir));
       }
     }
-    if (app.existsSync()) {
-      paths.add(absolutePathF(app));
+
+    if (wasRunFromTests) {
+      final Directory testDir = Directory(absolutePath(combinePath(<String>[workingDirectory, lastSearchPart])));
+      if (testDir.existsSync()) {
+        paths.add(absolutePathF(testDir));
+      }
+    } else {
+      if (app.existsSync()) {
+        paths.add(absolutePathF(app));
+      }
     }
     return paths;
   }
@@ -83,10 +93,24 @@ abstract final class FileUtils {
   /// Also canonicalizes paths (for example on windows no capitalization)
   static String absolutePathP(List<String> parts) => p.canonicalize(combinePath(parts));
 
-  /// Run as exe and not from debugger
-  static bool get wasRunFromTests =>
-      p.basenameWithoutExtension(Platform.resolvedExecutable) == "tester" ||
-      p.basenameWithoutExtension(Platform.resolvedExecutable) == "flutter_tester";
+  /// Run from debugger in android studio, etc, or as tests!
+  static bool get wasRunFromTests {
+    if (_scriptPath.isNotEmpty && _scriptPath.startsWith("/")) {
+      final String exeDir = p.dirname(absolutePath(_exePath));
+      final String scriptDir = p.dirname(absolutePath(_scriptPath.substring(1)));
+      return exeDir != scriptDir && exeDir.startsWith(scriptDir);
+    }
+    return false;
+  }
+
+  /// For example "C:\...\game_tools_lib\example\build\windows\x64\runner\Debug\game_tools_lib_example.exe"
+  /// (real path platform specific separators)
+  static final String _exePath = Platform.resolvedExecutable;
+
+  /// Internal script path saved by flutter only with separator "/" not platform specific.
+  /// Can be "/C:/.../game_tools_lib/example/main.dart" during testing and during release it can be:
+  /// "/C:/...game_tools_lib/example/build/windows/x64/runner/Debug/main.dart"
+  static final String _scriptPath = Platform.script.path;
 
   /// Returns the path to the working directory from where the script was executed
   static String get workingDirectory => Directory.current.path;

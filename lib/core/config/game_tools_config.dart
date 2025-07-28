@@ -21,6 +21,8 @@ base class GameToolsConfig<FixedConfigType extends FixedConfig, MutableConfigTyp
   const GameToolsConfig({required this.fixed, required this.mutable});
 
   /// Absolute path to the folder from the working directory where all resource/assets/etc files for this are stored!
+  /// When running from debugger in android studio, or from tests, this will point to "project_dir/data" and
+  /// otherwise for a running app this points to "exe_dir/data"
   static final String resourceFolderPath = FileUtils.getLocalFilePath("data");
 
   /// You should override this to display the name of your tool in your app!
@@ -49,7 +51,7 @@ base class GameToolsConfig<FixedConfigType extends FixedConfig, MutableConfigTyp
   /// Returns the the [GameToolsConfig._instance] if already set, otherwise throws a [ConfigException]
   static T config<T extends GameToolsConfigBaseType>() {
     if (_instance == null) {
-      throw ConfigException(message: "GameToolsConfig was not initialized yet!");
+      throw const ConfigException(message: "GameToolsConfig was not initialized yet!");
     } else if (_instance is T) {
       return _instance as T;
     } else {

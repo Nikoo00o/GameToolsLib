@@ -105,15 +105,19 @@ abstract base class GameManager<ConfigType extends GameToolsConfigBaseType> {
   /// [LogInputListener]!)
   void addInputListener(BaseInputListener<dynamic> listener) {
     _inputListeners.add(listener);
-    Logger.verbose("Added $listener");
+    Logger.verbose("Added input listener $listener");
   }
 
   /// Removes the [listener] from the internal list of input listeners (important: this does not include the
   /// [LogInputListener]!)
   void removeInputListener(BaseInputListener<dynamic> listener) {
     _inputListeners.remove(listener);
-    Logger.verbose("Removed $listener");
+    Logger.verbose("Removed input listener $listener");
   }
+
+  /// Returns an unmodifiable list of the current input listeners
+  UnmodifiableListView<BaseInputListener<dynamic>> getInputListeners() =>
+      UnmodifiableListView<BaseInputListener<dynamic>>(_inputListeners);
 
   /// Adds a new [listener] to the internal list of log input listeners
   void addLogInputListener(LogInputListener listener) => GameToolsLib.addLogInputListener(listener);
@@ -124,7 +128,7 @@ abstract base class GameManager<ConfigType extends GameToolsConfigBaseType> {
   /// Returns the the [GameManager._instance] if already set, otherwise throws a [ConfigException]
   static T gameManager<T extends GameManagerBaseType>() {
     if (_instance == null) {
-      throw ConfigException(message: "GameManager was not initialized yet ");
+      throw const ConfigException(message: "GameManager was not initialized yet ");
     } else if (_instance is T) {
       return _instance as T;
     } else {

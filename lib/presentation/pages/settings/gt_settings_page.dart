@@ -1,80 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
+import 'package:game_tools_lib/core/exceptions/exceptions.dart';
+import 'package:game_tools_lib/game_tools_lib.dart';
+import 'package:game_tools_lib/presentation/pages/navigation/gt_grouped_builders_extension.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder.dart';
-import 'package:game_tools_lib/presentation/pages/settings/config_option_builder_types.dart';
-import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_notifier.dart';
-import 'package:provider/provider.dart';
-import 'package:provider/single_child_widget.dart';
+import 'package:game_tools_lib/presentation/pages/settings/config_option_builder_group.dart';
 
-// todo: implement and document
-base class GTSettingsPage extends GTNavigationPage {
-  final List<MultiConfigOptionBuilder<dynamic>> _builders;
+/// A [GTNavigationPage] that contains all config options from [MutableConfig.getConfigurableOptions] by using
+/// [GTGroupedBuildersExtension] with [MultiConfigOptionBuilder]\<dynamic\> as the type to use the builders for the
+/// config options and [GTSettingsGroupIndex] for the index!
+///
+/// This builds an internal config group navigation bar to navigate through the [MutableConfigOptionGroup],
+/// [ModelConfigOption] and [CustomConfigOption] of [MutableConfig.getConfigurableOptions] in [buildBody]'s
+/// [buildGroupLabels]. Then the individual config options on the right part of a page are build with
+/// [buildCurrentGroupOptions] by using the [ConfigOptionBuilder] subclasses!
+base class GTSettingsPage extends GTNavigationPage
+    with GTGroupedBuildersExtension<MultiConfigOptionBuilder<dynamic>, GTSettingsGroupIndex> {
+  /// For the remaining options with no group
+  static const String otherGroup = "page.settings.group.other";
 
   GTSettingsPage({
     super.key,
     super.backgroundImage,
     super.backgroundColor,
     super.pagePadding,
-  }) : _builders = <MultiConfigOptionBuilder<dynamic>>[] {
+  }) {
+    builders = <MultiConfigOptionBuilder<dynamic>>[];
     final List<MutableConfigOption<dynamic>> options = MutableConfig.mutableConfig.getConfigurableOptions();
+    Logger.spam("Building GTSettingsPage options: ", options);
     final List<MutableConfigOption<dynamic>> otherRemaining = <MutableConfigOption<dynamic>>[];
     for (final MutableConfigOption<dynamic> option in options) {
-      if (option.builder is MultiConfigOptionBuilder<dynamic>) {
-        _builders.add(option.builder as MultiConfigOptionBuilder<dynamic>);
+      if (option.builder == null) {
+        throw ConfigException(
+          message:
+              "Config Option $option did not contain a builder, "
+              "but was used in MutableConfig.getConfigurableOptions",
+        );
+      } else if (option.builder is MultiConfigOptionBuilder<dynamic>) {
+        builders.add(option.builder as MultiConfigOptionBuilder<dynamic>);
       } else {
         otherRemaining.add(option);
       }
     }
     if (otherRemaining.isNotEmpty) {
       final MutableConfigOptionGroup other = MutableConfigOptionGroup(
-        titleKey: "page.settings.group.other",
+        titleKey: otherGroup,
         configOptions: otherRemaining,
       );
-      _builders.add(ConfigOptionBuilderGroup(configOption: other));
+      builders.add(ConfigOptionBuilderGroup(configOption: other));
     }
   }
-
-  Widget buildCurrentGroupOptions(BuildContext context, MultiConfigOptionBuilder<dynamic> builder) {
-    return builder.buildContent(context);
-  }
-
-  Widget buildGroupLabels(BuildContext context, int index) {
-    final List<NavigationRailDestination> destinations = _builders
-        .map((MultiConfigOptionBuilder<dynamic> builder) => builder.buildGroupLabel(context))
-        .toList();
-    return NavigationRail(
-      selectedLabelTextStyle: TextStyle(color: colorPrimary(context)),
-      minWidth: 100,
-      elevation: 15,
-      selectedIndex: index,
-      groupAlignment: -1.0,
-      onDestinationSelected: (int index) => context.read<GTSettingsIndex>().value = index,
-      labelType: NavigationRailLabelType.all,
-      destinations: destinations,
-    );
-  }
-
-  @override
-  Widget buildBody(BuildContext context) {
-    return Consumer<GTSettingsIndex>(
-      builder: (BuildContext context, GTSettingsIndex index, Widget? child) {
-        final int pos = index.value;
-        return Row(
-          children: <Widget>[
-            buildGroupLabels(context, pos),
-            SizedBox(width: 10),
-            Expanded(child: buildCurrentGroupOptions(context, _builders.elementAt(pos))),
-          ],
-        );
-      },
-    );
-  }
-
-  @override
-  List<SingleChildWidget> buildProviders(BuildContext context) => <SingleChildWidget>[
-    ChangeNotifierProvider<GTSettingsIndex>(create: (BuildContext context) => GTSettingsIndex(0)),
-  ];
 
   @override
   String get pageName => "GTSettingsPage";
@@ -87,9 +63,12 @@ base class GTSettingsPage extends GTNavigationPage {
 
   @override
   IconData get navigationSelectedIcon => Icons.settings;
+
+  @override
+  GTSettingsGroupIndex createIndexSubclass(BuildContext context) => GTSettingsGroupIndex(0);
 }
 
-/// This class stores the current index of [GTSettingsPage] which settings group is selected
-final class GTSettingsIndex extends SimpleChangeNotifier<int> {
-  GTSettingsIndex(super.value);
+/// The specific subclass used for [GTSettingsPage] to provide the current config group index
+final class GTSettingsGroupIndex extends GTGroupIndex {
+  GTSettingsGroupIndex(super.value);
 }

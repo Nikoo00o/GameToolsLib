@@ -136,19 +136,19 @@ abstract final class UIHelper {
     stream: stream,
     builder: (BuildContext context, AsyncSnapshot<EventData> state) {
       if (state.hasError) {
-        return errorBuilder?.call(context, state.error, child) ?? (child ?? SizedBox());
+        return errorBuilder?.call(context, state.error, child) ?? (child ?? const SizedBox());
       }
       switch (state.connectionState) {
         case ConnectionState.none:
           if (initialEvent != null) {
             return eventBuilder.call(context, initialEvent, child);
           }
-          return transitionBuilder?.call(context, state, child) ?? (child ?? SizedBox());
+          return transitionBuilder?.call(context, state, child) ?? (child ?? const SizedBox());
         case ConnectionState.waiting:
           if (initialEvent != null) {
             return eventBuilder.call(context, initialEvent, child);
           }
-          return transitionBuilder?.call(context, state, child) ?? (child ?? SizedBox());
+          return transitionBuilder?.call(context, state, child) ?? (child ?? const SizedBox());
         case ConnectionState.active:
           return eventBuilder.call(context, state.data as EventData, child);
         case ConnectionState.done:

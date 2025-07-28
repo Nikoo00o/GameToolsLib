@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/enums/log_level.dart';
+import 'package:game_tools_lib/core/logger/custom_logger.dart';
+import 'package:game_tools_lib/core/logger/log_message.dart';
+import 'package:game_tools_lib/domain/game/game_window.dart';
+import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/base/ui_helper.dart';
 import 'package:game_tools_lib/presentation/pages/logs/gt_logs_page.dart';
+import 'package:game_tools_lib/presentation/pages/logs/gt_logs_view.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/simple_drop_down_menu.dart';
 
 /// The search + select bar for logs in the [GTLogsPage]
-final class GTLogsBar extends GTBaseWidget {
+final class GTLogsBar extends StatelessWidget with GTBaseWidget {
   const GTLogsBar();
 
   @override
@@ -15,6 +20,14 @@ final class GTLogsBar extends GTBaseWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+          child: IconButton(
+            tooltip: translate(context, "page.logs.copy.to.clipboard"),
+            onPressed: () => _onCopyToClipboard(context),
+            icon: const Icon(Icons.copy),
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
           child: _buildSearchContainer(context),
@@ -27,13 +40,35 @@ final class GTLogsBar extends GTBaseWidget {
     );
   }
 
+  Future<void> _onCopyToClipboard(BuildContext context) async {
+    final CustomLogger? logger = Logger.instance as CustomLogger?;
+    if (logger != null) {
+      final String searchText = UIHelper.modifySimpleValue<String>(context).value;
+      final LogLevel logLevel = UIHelper.modifySimpleValue<LogLevel>(context).value;
+      final List<LogMessage> messages = GTLogsView.filterLogMessages(logger.changeValue, logLevel, searchText);
+      if (messages.isNotEmpty) {
+        final StringBuffer data = StringBuffer();
+        for (final LogMessage message in messages) {
+          data.write(message.toString());
+          data.write(message.buildDelimiter(chars: 100, withNewLines: true));
+        }
+        await InputManager.setClipboard(data.toString());
+        if (context.mounted) {
+          showToast(context, "page.logs.copy.to.clipboard.done");
+        }
+      }
+    }
+  }
+
   Widget _buildSearchContainer(BuildContext context) {
     return SizedBox(
       width: 280,
       height: 40,
       child: TextField(
+        maxLines: 1,
         onChanged: (String newSearchText) => UIHelper.modifySimpleValue<String>(context).value = newSearchText,
         decoration: InputDecoration(
+          isDense: true,
           prefixIcon: const Icon(Icons.search),
           hintText: translate(context, "page.logs.search"),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(32)),

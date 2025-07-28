@@ -33,7 +33,7 @@ abstract final class InputManager {
   static Point<int>? getWindowMousePos(GameWindow window) {
     final Point<int>? pos = _nativeWindow.getWindowMousePos(window._windowID);
     if (pos == null) {
-      throw WindowClosedException(message: "Cant get mouse pos inside window");
+      throw const WindowClosedException(message: "Cant get mouse pos inside window");
     }
     if (window.isWithinWindow(pos) == false) {
       return null;

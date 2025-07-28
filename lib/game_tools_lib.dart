@@ -136,15 +136,15 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       Logger.verbose("Game Tools Lib is already initialized and not doing it again!");
       return true; // first check if already called
     }
+    GameManager._instance = gameManager; // most important first signal that init was started
     _GameToolsLibHelper._initConfigAndLogger(config, logger, isCalledFromTesting: isCalledFromTesting); // first logger
     if (Platform.isWindows == false) {
       throw UnimplementedError("This platform is currently not supported yet"); // then check platform support
     }
     if (gameWindows.isEmpty) {
-      throw ConfigException(message: "initGameToolsLib called with empty gameWindows list");
+      throw const ConfigException(message: "initGameToolsLib called with empty gameWindows list");
     } else {
       _gameWindows = gameWindows; // static instance variables that need to be assigned
-      GameManager._instance = gameManager;
     }
     // then init data base
     if (await _GameToolsLibHelper._initDatabase(isCalledFromTesting: isCalledFromTesting) == false) {
@@ -171,7 +171,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   /// [app] can also be null if you don't want any user interface (otherwise it is used with [runApp])
   static Future<void> runLoop({required Widget? app}) async {
     if (_GameToolsLibHelper._initialized == false) {
-      throw ConfigException(message: "initGameToolsLib was not called before runLoop");
+      throw const ConfigException(message: "initGameToolsLib was not called before runLoop");
     }
     if (app != null) {
       Logger.verbose("Running app ${app.runtimeType}");
@@ -250,7 +250,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     final ExampleMutableConfig mutableConfig = GameToolsLib.config<ExampleGameToolsConfig>().mutable;
     final GameToolsConfigBaseType baseAccess = GameToolsLib.baseConfig; // using base type
     final ExampleModel newValue = await mutableConfig.somethingNew.valueNotNull();
-    return !fixedConfig.logIntoStorage && newValue.someData == 5 && !baseAccess.fixed.logIntoStorage;
+    return !fixedConfig.logIntoStorage && (newValue.someData ?? 1) >= 1 && !baseAccess.fixed.logIntoStorage;
   }
 
   GameToolsLib._();

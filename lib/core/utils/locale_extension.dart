@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:game_tools_lib/core/config/fixed_config.dart';
+import 'package:game_tools_lib/game_tools_lib.dart';
 
 /// Provides [getLocaleByName], [getSupportedSystemLocale], [translationKey] and [fileName] for [Locale]
 extension LocaleExtension on Locale {
@@ -39,6 +40,7 @@ extension LocaleExtension on Locale {
             .isNotEmpty) {
       return systemLocale;
     } else {
+      Logger.verbose("System locale was not in the list of supported locales, using default instead");
       return null;
     }
   }

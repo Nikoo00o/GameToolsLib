@@ -30,7 +30,7 @@ base class GameLogWatcher {
   /// it took any longer, it won't and instead treat the game as just starting up after the tool.
   ///
   /// Important: the file modified time stamp only cares about seconds and will not have millisecond precision!
-  Duration get delayForOldLines => Duration(minutes: 1);
+  Duration get delayForOldLines => const Duration(minutes: 1);
 
   /// If the game has no log file, then use [GameLogWatcher.empty] instead.
   /// [gameLogFilePaths] is a list of possible paths to the game log file (will use the most recent modified found file)
@@ -94,7 +94,7 @@ base class GameLogWatcher {
   /// Returns the the [GameLogWatcher._instance] if already set, otherwise throws a [ConfigException]
   static T logWatcher<T extends GameLogWatcher>() {
     if (_instance == null) {
-      throw ConfigException(message: "GameLogWatcher was not initialized yet ");
+      throw const ConfigException(message: "GameLogWatcher was not initialized yet ");
     } else if (_instance is T) {
       return _instance as T;
     } else {

@@ -23,11 +23,11 @@ base class GTLogsPage extends GTBasePage {
 
   @override
   PreferredSizeWidget? buildAppBar(BuildContext context) =>
-      buildAppBarDefaultTitle(context, "page.logs.title", actions: <Widget>[GTLogsBar()]);
+      buildAppBarDefaultTitle(context, "page.logs.title", buildBackButton: true, actions: <Widget>[const GTLogsBar()]);
 
   @override
   Widget buildBody(BuildContext context) {
-    return GTLogsView();
+    return const GTLogsView();
   }
 
   @override

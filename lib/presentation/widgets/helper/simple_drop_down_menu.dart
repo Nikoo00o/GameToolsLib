@@ -4,7 +4,7 @@ import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 /// Used to create a drop down menu for [Type] which is mostly used for enums.
 /// You should provide the [initialValue] value and the list of [values] further up in the widget tree and then you
 /// can receive updates when the value changes with [onValueChange]!
-final class SimpleDropDownMenu<Type> extends GTBaseWidget {
+final class SimpleDropDownMenu<Type> extends StatelessWidget with GTBaseWidget {
   /// The list of available drop down options
   final List<Type> values;
 
@@ -12,13 +12,16 @@ final class SimpleDropDownMenu<Type> extends GTBaseWidget {
   final Type initialValue;
 
   /// The translation key to display on the menu
-  final String label;
+  final String? label;
 
-  /// Default would be 160
-  final double width;
+  /// Default would be 160 (but the result may also be smaller)
+  final double maxWidth;
 
   /// Default would be 40
   final double height;
+
+  /// Pads the content from the left and right (default is 16)
+  final double horizontalPadding;
 
   /// Flutters default
   static const double defaultWidth = 184;
@@ -32,15 +35,21 @@ final class SimpleDropDownMenu<Type> extends GTBaseWidget {
   /// Optional to color the text of the individual entries!
   final Color Function(Type value)? colourTexts;
 
+  /// Optional to return a matching translation keys for the enum type [value] to display them instead of just
+  /// calling toString on them!
+  final String Function(Type value)? translationKeys;
+
   const SimpleDropDownMenu({
     super.key,
-    required this.label,
+    this.label,
     required this.values,
     required this.initialValue,
     required this.onValueChange,
     this.colourTexts,
-    this.width = 160,
+    this.translationKeys,
+    this.maxWidth = 160,
     this.height = 40,
+    this.horizontalPadding = 16,
   });
 
   @override
@@ -48,19 +57,19 @@ final class SimpleDropDownMenu<Type> extends GTBaseWidget {
     return DropdownMenu<Type>(
       inputDecorationTheme: InputDecorationTheme(
         isDense: true,
-        contentPadding: EdgeInsets.symmetric(horizontal: width / 10),
-        constraints: BoxConstraints.tight(Size(width, height)),
+        contentPadding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+        constraints: BoxConstraints.tight(Size(maxWidth, height)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
         ),
       ),
       trailingIcon: Transform.translate(
         offset: Offset(0, (height - defaultHeight) / 2 + 4),
-        child: Icon(Icons.arrow_drop_down),
+        child: const Icon(Icons.arrow_drop_down),
       ),
       initialSelection: initialValue,
       requestFocusOnTap: true,
-      label: Text(translate(context, label)),
+      label: label == null ? null : Text(translate(context, label!)),
       onSelected: onValueChange,
       dropdownMenuEntries: List<DropdownMenuEntry<Type>>.generate(
         values.length,
@@ -68,7 +77,7 @@ final class SimpleDropDownMenu<Type> extends GTBaseWidget {
           final Type value = values.elementAt(index);
           return DropdownMenuEntry<Type>(
             value: value,
-            label: value.toString(),
+            label: translationKeys != null ? translate(context, translationKeys!.call(value)) : value.toString(),
             style: colourTexts != null ? MenuItemButton.styleFrom(foregroundColor: colourTexts!.call(value)) : null,
           );
         },

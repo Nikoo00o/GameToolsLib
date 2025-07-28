@@ -59,8 +59,7 @@ base class CustomLogger extends Logger with SimpleChangeStream<List<LogMessage>>
         final String date = DateFormat("yyyy-MM-dd").format(DateTime.now());
         final String path = FileUtils.combinePath(<String>[Logger.config!.logFolder, "$date.txt"]);
         await FileUtils.addToFile(path, logMessage.toString());
-        final String delimiter = String.fromCharCodes(List<int>.generate(100, (int index) => "-".codeUnits.first));
-        await FileUtils.addToFile(path, "\n$delimiter\n");
+        await FileUtils.addToFile(path, logMessage.buildDelimiter(chars: 100, withNewLines: true));
       } catch (e, s) {
         final StartupLogger fallback = StartupLogger();
         await fallback.log("Error logging to storage:", LogLevel.ERROR, e, s);

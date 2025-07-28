@@ -19,7 +19,7 @@ final class ExampleLogWatcher extends GameLogWatcher {
   Future<void> manualUpdate() async => super._fetchNewLines();
 
   @override
-  Duration get delayForOldLines => Duration(seconds: 1);
+  Duration get delayForOldLines => const Duration(seconds: 1);
 
   @override
   List<LogInputListener> additionalListeners() => <LogInputListener>[

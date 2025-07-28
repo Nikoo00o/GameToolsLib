@@ -10,6 +10,7 @@ base class KeyInputListener extends BaseInputListener<BoardKey> {
     required super.createEventCallback,
     required super.alwaysCreateNewEvents,
     required super.defaultKey,
+    super.configGroupLabel,
   });
 
   @override

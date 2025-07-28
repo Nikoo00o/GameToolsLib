@@ -2,18 +2,23 @@ part of 'package:game_tools_lib/core/config/mutable_config.dart';
 
 /// Config option that is stored in a file for usage in [MutableConfig]
 ///
-/// Values of type [T] may also be [null]
+/// Values of type [T] may also be [null], but if [defaultValue] is set and explicit null is saved in the database,
+/// then [cachedValue] will incorrectly return the default value and not null! Use the async [getValue] in that case!
 ///
 /// Use [getValue], [valueNotNull], [setValue], [deleteValue] to interact with the value.
 /// You can also use the [_updateCallback] to get updates after [setValue] before the other listeners from the
 /// [ChangeNotifier] will get notified. Remember that you can also manage those listeners manually with [addListener]
-/// and [removeListener]! Remember that on startup at the end of [GameToolsLib.initGameToolsLib] this is also
-/// notified for updates once!
+/// and [removeListener]!
+///
+/// Remember that on startup at the end of [GameToolsLib.initGameToolsLib] the [onInit] is called if not null for the
+/// config options contained in [MutableConfig.getConfigurableOptions] together with a call to [getValue] with
+/// updateListeners being false.
 ///
 /// You can also access the cached value in a sync way with [cachedValue] (But [getValue] needs to be called at least
 /// once before!)
 ///
-/// Remember for the ui the [builder] has to be overridden and also [titleKey] and [descriptionKey] are needed!
+/// Remember for the ui the [builder] has to be overridden and also [titleKey] and [descriptionKey] are needed if
+/// this option is included in [MutableConfig.getConfigurableOptions]!
 sealed class MutableConfigOption<T> with ChangeNotifier {
   /// The key to locate this saved value in the database (must be a unique identifier string).
   /// But also the identifier label text (or translation key) for the ui (if this config option is editable in ui)
@@ -29,7 +34,7 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   T? _value;
 
   /// Optional update callback that is called after [setValue] to update data references elsewhere
-  FutureOr<void> Function(T?)? _updateCallback;
+  final FutureOr<void> Function(T?)? _updateCallback;
 
   /// Optional default value that will be used if saved data is null (if [setValue] is called with [null], or
   /// [deleteValue] is called, then this will also be set to [null]
@@ -40,8 +45,15 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   /// initialized!
   final bool _lazyLoaded;
 
-  /// [updateCallback] Optional update callback that is called after [setValue] to update data references elsewhere
-  /// and it is also called once at the end of [GameToolsLib.initGameToolsLib] on startup!
+  /// This is an optional callback that will be called once at the end of [GameToolsLib.initGameToolsLib] on startup
+  /// for the config values contained in [MutableConfig.getConfigurableOptions].
+  ///
+  /// This can be done for custom initialisation that needs the [FixedConfig] or anything else that is not
+  /// initialized yet when the constructor is called.
+  /// You have to cast the [configOption] to your type in the callback manually!
+  final Future<void> Function(MutableConfigOption<dynamic> configOption)? onInit;
+
+  /// [updateCallback] Optional update callback that is called after [setValue] to update data references elsewhere!
   /// [lazyLoaded] For big data this should be [true] to load on demand. Defaults to [false] (all data is kept in memory)
   MutableConfigOption({
     required this.titleKey,
@@ -49,22 +61,28 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
     FutureOr<void> Function(T?)? updateCallback,
     this.defaultValue,
     bool lazyLoaded = false,
+    this.onInit,
   }) : _updateCallback = updateCallback,
        _lazyLoaded = lazyLoaded;
 
   /// This has to be overridden in sub classes to return a subclass of [ConfigOptionBuilder] with a reference to this
   /// that will build the UI for the config option.
-  ConfigOptionBuilder<T> get builder;
+  ///
+  /// A subclass may also return null here, but then it may not be included in [MutableConfig.getConfigurableOptions]!
+  ConfigOptionBuilder<T>? get builder;
 
   String get _transformedKey => "$KEY_PREFIX$titleKey";
 
   String get _dataBase => _lazyLoaded ? HiveDatabase.LAZY_DATABASE : HiveDatabase.INSTANT_DATABASE;
 
-  /// Converts and reads the value, or [defaultValue] if data was never set (or deleted with [deleteValue]]
+  /// Converts and reads the value, or [defaultValue] if data was never set (or deleted with [deleteValue]] and also
+  /// updates [_value]. This also correctly returns null if null was explicitly saved in the database!
   ///
-  /// Also updates [_value]. And if [updateListeners] is true, this will also call [_onValueChange] if this loaded
-  /// different new that than the current value (mostly not used)!
-  Future<T?> getValue({bool updateListeners = false}) async {
+  /// If [updateListeners] is true, this will also call [_onValueChange] if this loaded a different new value that
+  /// than the current value (this is only false at the end of [GameToolsLib.initGameToolsLib] where the
+  /// [MutableConfig.getConfigurableOptions] are loaded)! And it being true affects only those config options not
+  /// contained there when they are loaded for the first time!
+  Future<T?> getValue({bool updateListeners = true}) async {
     if (_value != null) {
       return _value;
     }
@@ -77,7 +95,7 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
     }
     final T? newData = _stringToData(await _read());
     if (updateListeners) {
-      await _onValueChange(newData); // update cache
+      await _onValueChange(newData); // update cache (only when current value not null)
     } else {
       _value = newData;
       if (newData != _value) {
@@ -90,10 +108,10 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   /// Uses [getValue], but throws a [ConfigException] if the data is null and no [defaultValue] is set
   Future<T> valueNotNull() async {
     final T? data = await getValue();
-    if (data != null) {
+    if (data is T) {
       return data;
     } else {
-      throw ConfigException(message: "Config option is not nullable, but data is null");
+      throw const ConfigException(message: "Config option is not nullable, but data is null");
     }
   }
 
@@ -101,7 +119,7 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   /// Can return null if both are null. This should only be called after [getValue] was called at least once!
   ///
   /// IMPORTANT: this can not check if the database has an explicit null value and it would still return the
-  /// [defaultValue] even tho its not the correct behaviour!
+  /// [defaultValue] even it may not be the desired behaviour!
   T? cachedValue() {
     return _value ?? defaultValue;
   }
@@ -109,10 +127,10 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   /// Uses [cachedValue], but throws a [ConfigException] if the data is null and no [defaultValue] is set
   T cachedValueNotNull() {
     final T? data = cachedValue();
-    if (data != null) {
+    if (data is T) {
       return data;
     } else {
-      throw ConfigException(message: "Config option is not nullable, but cached data is null");
+      throw const ConfigException(message: "Config option is not nullable, but cached data is null");
     }
   }
 
@@ -144,15 +162,12 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   /// [_updateCallback] first and [notifyListeners] afterwards to update the listeners when this config option was
   /// changed.
   ///
-  /// This is also called once on startup at the end of [GameToolsLib.initGameToolsLib] when all config
-  /// values get loaded!
-  ///
   /// Remember that this can also throw the exceptions of the [_updateCallback] if its set!
   Future<void> _onValueChange(T? data) async {
     final bool changed = _value != data;
     _value = data; // first change data
     if (changed) {
-      Logger.debug("$this changed and updated listeners");
+      Logger.debug("Updating config option listeners for new data for: $this");
       await _updateCallback?.call(_value);
       notifyListeners();
     }

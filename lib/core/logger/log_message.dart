@@ -53,6 +53,13 @@ final class LogMessage {
     return buffer.toString();
   }
 
+  /// If [withNewLines] is true, then at the start and end a new line character is added after the [chars] amount of
+  /// "-" characters
+  String buildDelimiter({required int chars, required bool withNewLines}) {
+    final String delimiter = String.fromCharCodes(List<int>.generate(chars, (int index) => "-".codeUnits.first));
+    return withNewLines ? "\n$delimiter\n" : delimiter;
+  }
+
   void _write(Iterable<String> lines, StringBuffer buffer) {
     for (final String line in lines) {
       buffer.write("\n$line");

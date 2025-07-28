@@ -1,10 +1,25 @@
 {
+  "locale.en": "Englisch",
+  "locale.de": "Deutsch",
+  "locale.system": "System",
+  "input.number": "Zahl eingeben",
+  "input.text": "Text eingeben",
+  "config.logLevel": "Log Level",
+  "config.useDarkTheme": "Dark Theme benutzen",
+  "config.currentLocale": "Sprache",
+  "config.debugPrintGameWindowNames": "Fenster Namen ausgeben",
+  "config.debugPrintGameWindowNames.description": "Alle offene Fenster aus nur im Debug Modus",
+  "config.alwaysMatchGameWindowNamesEqual": "Fenster exakt vergleichen",
+  "config.alwaysMatchGameWindowNamesEqual.description": "Das Fenster vom Spiel muss den gleichen Namen haben. Ansonsten wird vergleicht, ob der gesuchte Name im Fenster Namen vorhanden ist",
   "page.home.title": "Home",
   "page.settings.title": "Einstellungen",
   "page.settings.group.general": "Allgemein",
   "page.settings.group.other": "Anderes",
   "page.hotkeys.title": "Hotkeys",
+  "page.hotkeys.group.other": "Anderes",
   "page.logs.title": "Application Logs",
-  "page.logs.level": "Show Level",
-  "page.logs.search": "Search Logs"
+  "page.logs.level": "Level anzeigen",
+  "page.logs.search": "Logs durchsuchen",
+  "page.logs.copy.to.clipboard" : "In Zwischenablage kopieren",
+  "page.logs.copy.to.clipboard.done" : "Sichtbare App Logs wurden in die Zwischenablage kopiert!"
 }

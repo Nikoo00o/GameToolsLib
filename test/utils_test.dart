@@ -12,6 +12,7 @@ import 'package:game_tools_lib/core/utils/utils.dart';
 import 'helper/test_helper.dart';
 
 //ignore_for_file: avoid_print
+//ignore_for_file: prefer_const_constructors
 
 /// Some logs may not be printed in tests if an expect fails, because the print was not flushed to the console yet!
 Future<void> main() async {
@@ -45,11 +46,11 @@ void _testGeneral() {
     expect(ListUtils.equals(li1, <String>["1", "2"]), false, reason: "no exception with different lists");
   });
   testD("color equality", () async {
-    final Color c1 = Color.fromARGB(125, 125, 125, 125);
-    final Color c2 = Color.fromARGB(125, 125, 125, 125);
-    final Color c3 = Color.fromARGB(123, 125, 125, 125);
-    final Color c4 = Color.fromARGB(125, 123, 125, 125);
-    final Color c5 = Color.fromARGB(125, 126, 125, 125);
+    const Color c1 = Color.fromARGB(125, 125, 125, 125);
+    const Color c2 = Color.fromARGB(125, 125, 125, 125);
+    const Color c3 = Color.fromARGB(123, 125, 125, 125);
+    const Color c4 = Color.fromARGB(125, 123, 125, 125);
+    const Color c5 = Color.fromARGB(125, 126, 125, 125);
     expect(c1.equals(c2, skipAlpha: false), true, reason: "same color match");
     expect(c1.equals(c3, skipAlpha: false), false, reason: "alpha diff");
     expect(c1.equals(c3), true, reason: "alpha ignored");
@@ -114,8 +115,8 @@ void _testGeneral() {
     final Bounds<int> b1 = Bounds<int>(x: 3, y: 5, width: 13, height: 15);
     final Bounds<double> b2 = Bounds<double>.sides(left: 3.0, top: 5.0, right: 16.0, bottom: 20.0);
     expect(b1 == b2, true, reason: "different constructors and types should match!");
-    expect(b1.middlePos, Point<int>(10, 13), reason: "int middle pos rounded up");
-    expect(b2.middlePos, Point<double>(9.5, 12.5), reason: "double middle pos");
+    expect(b1.middlePos, const Point<int>(10, 13), reason: "int middle pos rounded up");
+    expect(b2.middlePos, const Point<double>(9.5, 12.5), reason: "double middle pos");
     expect(b1.move(3, 4), Bounds<int>(x: 6, y: 9, width: 13, height: 15), reason: "move check");
     expect(
       b1 + Bounds<int>(x: 1, y: 2, width: 3, height: 4),
@@ -132,14 +133,14 @@ void _testGeneral() {
     expect(b2.scale(0.5, 1.5), Bounds<double>(x: 1.5, y: 7.5, width: 6.5, height: 22.5), reason: "scale double");
     expect(b1.contains(b1.middlePos), true, reason: "int middle contains");
     expect(b2.contains(b2.middlePos), true, reason: "double middle contains");
-    expect(b2.contains(Point<double>(3.0, 5.0)), true, reason: "contain top left corner");
-    expect(b2.contains(Point<double>(16.0, 20.0)), true, reason: "contain bot right corner");
-    expect(b1.contains(Point<int>(2, 10)), false, reason: "not contain left out");
-    expect(b1.contains(Point<int>(10, 4)), false, reason: "not contain top out");
-    expect(b1.contains(Point<int>(17, 10)), false, reason: "not contain right out");
-    expect(b1.contains(Point<int>(10, 21)), false, reason: "not contain bottom out");
+    expect(b2.contains(const Point<double>(3.0, 5.0)), true, reason: "contain top left corner");
+    expect(b2.contains(const Point<double>(16.0, 20.0)), true, reason: "contain bot right corner");
+    expect(b1.contains(const Point<int>(2, 10)), false, reason: "not contain left out");
+    expect(b1.contains(const Point<int>(10, 4)), false, reason: "not contain top out");
+    expect(b1.contains(const Point<int>(17, 10)), false, reason: "not contain right out");
+    expect(b1.contains(const Point<int>(10, 21)), false, reason: "not contain bottom out");
 
-    final String modelJson =
+    const String modelJson =
         "{\"JSON_POS\":{\"JSON_X\":3.0,\"JSON_Y\":5.0},\"JSON_SIZE\":{\"JSON_X\":13.0,\"JSON_Y\":15.0}}";
     expect(jsonEncode(b2), modelJson, reason: "bounds model should match");
     expect(
@@ -151,11 +152,11 @@ void _testGeneral() {
 }
 
 void _testFiles() {
-  final String cmp1 = "2test1\r\nöäü\r\n시험\r\n1\r\n2\r\n3\r\n4\r\n";
+  const String cmp1 = "2test1\r\nöäü\r\n시험\r\n1\r\n2\r\n3\r\n4\r\n";
   testD("String split to lines", () async {
-    final String d1 = "one\ntwo";
-    final String d2 = "one\r\ntwo";
-    final String d3 = "one\r\ntwo\nthree\n";
+    const String d1 = "one\ntwo";
+    const String d2 = "one\r\ntwo";
+    const String d3 = "one\r\ntwo\nthree\n";
     final List<String> l1 = StringUtils.splitIntoLines(d1);
     final List<String> l2 = StringUtils.splitIntoLines(d2);
     final List<String> l3 = StringUtils.splitIntoLines(d3);
@@ -168,7 +169,7 @@ void _testFiles() {
   });
 
   testD("Reading Utf files", () async {
-    final String cmp2 = "2test1\nöäü\n시험\n1\n2\n3\n4\n";
+    const String cmp2 = "2test1\nöäü\n시험\n1\n2\n3\n4\n";
     final String text8as8 = await FileUtils.readFile(testFile("utf8.txt"), encoding: utf8);
     final String text8as16 = await FileUtils.readFile(testFile("utf8.txt"), encoding: utf16);
     final String text16as16Be = await FileUtils.readFile(testFile("be_utf16.txt"), encoding: utf16);

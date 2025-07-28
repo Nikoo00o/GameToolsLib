@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
+import 'package:game_tools_lib/presentation/pages/gt_test_material_colors_page.dart';
 import 'package:game_tools_lib/presentation/pages/logs/gt_logs_page.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
 
@@ -20,13 +21,19 @@ base class GTHomePage extends GTNavigationPage {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          Text("Edit ui"),
-          Text("switch to overlay"),
+          const Text("Edit ui"),
+          const Text("switch to overlay"),
           TextButton(
             onPressed: () {
-              pushPage(context, GTLogsPage());
+              pushPage(context, const GTLogsPage());
             },
-            child: Text("Show App Logs"),
+            child: const Text("Show App Logs"),
+          ),
+          TextButton(
+            onPressed: () {
+              pushPage(context, const GtTestMaterialColorsPage());
+            },
+            child: const Text("Debug Test Material Colors"),
           ),
         ],
       ),
