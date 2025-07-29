@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_app.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_page.dart';
@@ -12,7 +11,14 @@ import 'package:provider/provider.dart';
 /// The navigator of the [GTApp] building the current [GTNavigationPage] at the [GTNavIndex] which starts at
 /// [startIndex] of the [pages] (which should be set in the constructor!).
 ///
-/// This does not override / use any of the methods of [GTBasePage]
+/// This does not override / use any of the methods of [GTBasePage].
+///
+/// The first menu on the left has the same color as the default app bar per default and then the inner content of
+/// the page has rounded corners.
+///
+/// Per default this will build the right inner body of the [GTNavigationPage] in the [colorScaffoldBackground] color
+/// with a padding around it and everything else (like [buildAppBarDefaultTitle]) and the [buildCurrentNavRail] is in the
+/// [colorSurfaceContainer] color! Also the [GTNavigationPage]'s are padded with the [GTNavigationPage.getNavPadding]
 base class GTNavigator extends GTBasePage {
   /// List of [GTNavigationPage] pages that are the options to navigate to
   final List<GTNavigationPage> pages;
@@ -37,10 +43,11 @@ base class GTNavigator extends GTBasePage {
     required this.pages,
     this.navTopWidget,
     this.startIndex = 0,
-    this.minRailSize = 190,
+    this.minRailSize = 120,
     this.alignment = -1.0,
   }) : _debugCurIndex = startIndex;
 
+  /// Build the current [page]
   Widget buildCurrentPage(BuildContext context, GTNavigationPage page) {
     return page.build(context);
   }
@@ -56,16 +63,23 @@ base class GTNavigator extends GTBasePage {
         );
       },
     ).toList();
-    return NavigationRail(
-      backgroundColor: colorSurface(context).blend(colorPrimaryContainer(context), 0.2),
-      selectedLabelTextStyle: TextStyle(color: colorPrimary(context)),
-      minWidth: minRailSize,
-      selectedIndex: index,
-      groupAlignment: alignment,
-      onDestinationSelected: (int index) => context.read<GTNavIndex>().value = index,
-      labelType: NavigationRailLabelType.all,
-      leading: navTopWidget,
-      destinations: destinations,
+    return FocusTraversalGroup(
+      child: NavigationRail(
+        backgroundColor: colorSurfaceContainer(context),
+        selectedLabelTextStyle: TextStyle(color: colorPrimary(context)),
+        minWidth: minRailSize,
+        selectedIndex: index,
+        groupAlignment: alignment,
+        onDestinationSelected: (int index) => context.read<GTNavIndex>().value = index,
+        labelType: NavigationRailLabelType.all,
+        indicatorShape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(
+            Radius.circular(12.0),
+          ),
+        ),
+        leading: navTopWidget,
+        destinations: destinations,
+      ),
     );
   }
 
@@ -75,13 +89,13 @@ base class GTNavigator extends GTBasePage {
       body: Row(
         children: <Widget>[
           buildCurrentNavRail(context, index),
-          const VerticalDivider(thickness: 1, width: 1),
           Expanded(child: buildCurrentPage(context, page)),
         ],
       ),
       appBar: page.buildAppBar(context),
       drawer: page.buildMenuDrawer(context),
       bottomNavigationBar: page.buildBottomBar(context),
+      backgroundColor: colorSurfaceContainer(context),
     );
   }
 

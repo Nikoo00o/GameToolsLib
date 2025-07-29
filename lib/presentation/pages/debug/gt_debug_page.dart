@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:game_tools_lib/core/enums/gt_contrast.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
-import 'package:game_tools_lib/presentation/base/gt_app_theme.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_page.dart';
+import 'package:game_tools_lib/presentation/pages/debug/gt_debug_status.dart';
 
 /// Only for testing/debugging to see all material colors
-base class GtTestMaterialColorsPage extends GTBasePage {
-  const GtTestMaterialColorsPage({
+base class GTDebugPage extends GTBasePage {
+  const GTDebugPage({
     super.key,
     super.backgroundImage,
     super.backgroundColor,
@@ -14,21 +15,20 @@ base class GtTestMaterialColorsPage extends GTBasePage {
 
   @override
   Widget buildBody(BuildContext context) {
-    final GTAppTheme theme = GameToolsConfig.baseConfig.appColors;
     return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: <Widget>[
-        Theme(
-          data: theme.getTheme(darkTheme: true),
-          child: Builder(
-            builder: (BuildContext context) => _buildButtons(context, "dark"),
-          ),
-        ),
-        Theme(
-          data: theme.getTheme(darkTheme: false),
-          child: Builder(
-            builder: (BuildContext context) => _buildButtons(context, "light"),
-          ),
+        const GTDebugStatus(),
+        const Spacer(),
+        Row(
+          children: <Widget>[
+            const Spacer(),
+            Text("Material Button Colors: ", style: textTitleLarge(context).copyWith(color: colorPrimary(context))),
+            const Spacer(),
+            _materialThemedContainer(true),
+            const Spacer(),
+            _materialThemedContainer(false),
+            const Spacer(),
+          ],
         ),
       ],
     );
@@ -36,18 +36,24 @@ base class GtTestMaterialColorsPage extends GTBasePage {
 
   @override
   PreferredSizeWidget? buildAppBar(BuildContext context) =>
-      buildAppBarDefaultTitle(context, "Material Color Test", buildBackButton: true);
+      buildAppBarDefaultTitle(context, "page.debug.title", buildBackButton: true);
 
-  Widget _buildButtons(BuildContext context, String theme) {
+  Widget _materialThemedContainer(bool isDark) {
+    return Theme(
+      data: GameToolsConfig.baseConfig.appColors.getTheme(darkTheme: isDark, contrast: GTContrast.DEFAULT),
+      child: Builder(
+        builder: (BuildContext context) => _materialButtons(context, isDark ? "dark" : "light"),
+      ),
+    );
+  }
+
+  Widget _materialButtons(BuildContext context, String theme) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 5, 20, 5),
+      padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
       color: colorScaffoldBackground(context),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               FilledButton(
                 onPressed: () {},
@@ -61,18 +67,29 @@ base class GtTestMaterialColorsPage extends GTBasePage {
                 ),
                 child: const Text("primary container"),
               ),
+            ],
+          ),
+          Row(
+            children: <Widget>[
               FilledButton(
                 onPressed: () {},
                 style: ButtonStyle(
                   backgroundColor: WidgetStateProperty.all(colorInversePrimary(context)),
                   foregroundColor: WidgetStateProperty.all(colorInverseSurface(context)),
                 ),
-                child: const Text("inverse"),
+                child: const Text("prim inverse"),
+              ),
+              ElevatedButton(
+                onPressed: () {},
+                child: const Text("elevated"),
+              ),
+              OutlinedButton(
+                onPressed: () {},
+                child: const Text("outlined"),
               ),
             ],
           ),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               FilledButton(
                 onPressed: () {},
@@ -88,12 +105,11 @@ base class GtTestMaterialColorsPage extends GTBasePage {
                   backgroundColor: WidgetStateProperty.all(colorSecondaryContainer(context)),
                   foregroundColor: WidgetStateProperty.all(colorOnSecondaryContainer(context)),
                 ),
-                child: const Text("secondary container"),
+                child: const Text("secondary container (tonal)"),
               ),
             ],
           ),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               FilledButton(
                 onPressed: () {},
@@ -101,7 +117,7 @@ base class GtTestMaterialColorsPage extends GTBasePage {
                   backgroundColor: WidgetStateProperty.all(colorTertiary(context)),
                   foregroundColor: WidgetStateProperty.all(colorOnTertiary(context)),
                 ),
-                child: Text("tertiary $theme"),
+                child: const Text("tertiary (filled like others)"),
               ),
               FilledButton(
                 onPressed: () {},
@@ -114,10 +130,8 @@ base class GtTestMaterialColorsPage extends GTBasePage {
             ],
           ),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   FilledButton(
                     onPressed: () {},
@@ -125,7 +139,7 @@ base class GtTestMaterialColorsPage extends GTBasePage {
                       backgroundColor: WidgetStateProperty.all(colorError(context)),
                       foregroundColor: WidgetStateProperty.all(colorOnError(context)),
                     ),
-                    child: Text("error $theme"),
+                    child: const Text("error"),
                   ),
                   FilledButton(
                     onPressed: () {},
@@ -133,17 +147,19 @@ base class GtTestMaterialColorsPage extends GTBasePage {
                       backgroundColor: WidgetStateProperty.all(colorErrorContainer(context)),
                       foregroundColor: WidgetStateProperty.all(colorOnErrorContainer(context)),
                     ),
-                    child: const Text("error container"),
+                    child: const Text("error cont"),
+                  ),
+                  const FilledButton(
+                    onPressed: null,
+                    child: Text("disabled primary"),
                   ),
                 ],
               ),
             ],
           ),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   FilledButton(
                     onPressed: () {},
@@ -161,15 +177,17 @@ base class GtTestMaterialColorsPage extends GTBasePage {
                     ),
                     child: const Text("surface variant"),
                   ),
+                  TextButton(
+                    onPressed: () {},
+                    child: const Text("text but"),
+                  ),
                 ],
               ),
             ],
           ),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   FilledButton(
                     onPressed: () {},
@@ -197,5 +215,5 @@ base class GtTestMaterialColorsPage extends GTBasePage {
   }
 
   @override
-  String get pageName => "GtTestMaterialColorsPage";
+  String get pageName => "GTDebugPage";
 }

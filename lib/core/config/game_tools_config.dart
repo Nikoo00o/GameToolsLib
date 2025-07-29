@@ -30,7 +30,7 @@ base class GameToolsConfig<FixedConfigType extends FixedConfig, MutableConfigTyp
 
   /// You should override this to customize the colors of your app in regards to the material 3 theme!
   /// https://m3.material.io/styles/color/system/how-the-system-works#094adbe5-d41e-49b4-8dff-906d6094668d
-  GTAppTheme get appColors => const GTAppTheme.seed(Color(0xff004A95));
+  GTAppTheme get appColors => const GTAppTheme.seed(seedColor: Color(0xff004A95), baseSuccessColor: Colors.green);
 
   /// Absolute path to the stored log files
   String get logFolder => FileUtils.combinePath(<String>[resourceFolderPath, "logs"]);
@@ -43,8 +43,12 @@ base class GameToolsConfig<FixedConfigType extends FixedConfig, MutableConfigTyp
   /// for the library assets!
   ///
   /// Only a translation file "en.json" is bundled with this library and it will be loaded before your "en.json"
-  /// file, but your values may replace the old ones! (also locale files from other packages will be loaded before)
-  static List<String> localeFolders = FileUtils.getAssetFoldersFor("locales");
+  /// file, but your values may replace the old ones! (also locale files from other packages will be loaded before).
+  ///
+  /// Uses an internal cached [_localeFolders]!
+  List<String> get localeFolders => _localeFolders;
+
+  static final List<String> _localeFolders = FileUtils.getAssetFoldersFor("locales");
 
   static GameToolsConfigBaseType? _instance;
 

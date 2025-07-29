@@ -93,6 +93,8 @@ final class Bounds<T extends num> implements Model {
   @override
   String toString() => "Bounds(l: $left, t: $top, r: $right, b: $bottom)";
 
+  String toStringAsPos() => "x: $x, y: $y,     width: $width, height: $height";
+
   static const String JSON_POS = "JSON_POS";
   static const String JSON_SIZE = "JSON_SIZE";
 

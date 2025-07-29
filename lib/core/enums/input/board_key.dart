@@ -3,6 +3,10 @@ part of 'package:game_tools_lib/domain/game/game_window.dart';
 /// Used for [InputManager] to identify the different keyboard keys including special modifier.
 /// Can be used to either press a key, or check if a key is pressed.
 /// Uses [keyCode], [keyName] and [logicalKeys].
+///
+/// For a better user interface representation [keyTextHint] is used internally when the user configures a shortcut
+/// for this to present a keyboard region + language specific label with [keyCombinationText]!
+///
 /// Also contains the all used keys as static members like [enter], [n1] for the number 1 key, [a] characters,
 /// etc which should be preferred to be used directly like an enum (or with the [copyWith] constructor, because not all
 /// [LogicalKeyboardKey]'s are supported!
@@ -27,10 +31,10 @@ final class BoardKey implements Model {
   /// If null, this is ignored, otherwise if used in check [false] means that it must not be active!
   final bool? withMeta;
 
-  /// Fn key only available on some keyboards (all platforms)
-  /// If null, this is ignored, otherwise if used in check [false] means that it must not be active!
-  /// If this is used for checking if the key was pressed, then this also treats fn lock as the same as fn!
-  final bool? withFN;
+  /// Used internally when the user configures a shortcut for [keyCombinationText] and per default [null].
+  /// This will not be used for comparison and is also not reliable and will not work every time, but it tries to
+  /// display the region + language specific keyboard character!
+  final String? keyTextHint;
 
   /// Use with a [LogicalKeyboardKey] as [key] for the virtual key and optionally your modifiers see [BoardKey].
   /// Prefer to use the [copyWith] constructor on the static members of this if you need different modifier!
@@ -40,7 +44,7 @@ final class BoardKey implements Model {
     this.withControl,
     this.withAlt,
     this.withMeta,
-    this.withFN,
+    this.keyTextHint,
   }) : logicalKey = key;
 
   BoardKey copyWith({
@@ -49,7 +53,6 @@ final class BoardKey implements Model {
     bool? withControl,
     bool? withAlt,
     bool? withMeta,
-    bool? withFN,
   }) {
     return BoardKey(
       logicalKey ?? this.logicalKey,
@@ -57,7 +60,6 @@ final class BoardKey implements Model {
       withControl: withControl ?? this.withControl,
       withAlt: withAlt ?? this.withAlt,
       withMeta: withMeta ?? this.withMeta,
-      withFN: withFN ?? this.withFN,
     );
   }
 
@@ -69,7 +71,6 @@ final class BoardKey implements Model {
     if (withControl == true) LogicalKeyboardKey.control,
     if (withAlt == true) LogicalKeyboardKey.alt,
     if (withMeta == true) LogicalKeyboardKey.meta,
-    if (withFN == true) LogicalKeyboardKey.fn,
     logicalKey,
   ];
 
@@ -78,6 +79,26 @@ final class BoardKey implements Model {
 
   /// Returns the label for the [logicalKey]
   String get keyName => logicalKey.keyLabel;
+
+  /// This is used to display the key with its modifiers in the ui! For example "Control + Alt + D"
+  ///
+  /// The [keyTextHint] is used internally automatically when the user configures a new shortcut to capture the
+  /// region + language specific keyboard keystroke sequence!
+  String get keyCombinationText {
+    final List<LogicalKeyboardKey> keys = logicalKeys;
+    final StringBuffer buff = StringBuffer();
+    for (int i = 0; i < keys.length; ++i) {
+      if (i == keys.length - 1 && keyTextHint != null) {
+        buff.write(keyTextHint!.toUpperCase());
+        break;
+      }
+      buff.write(keys.elementAt(i).keyLabel.toUpperCase());
+      if (i < keys.length - 1) {
+        buff.write(" + ");
+      }
+    }
+    return buff.toString();
+  }
 
   /// Special Key combinations
   static const BoardKey ctrlC = BoardKey(LogicalKeyboardKey.keyC, withControl: true);
@@ -230,11 +251,8 @@ final class BoardKey implements Model {
   /// This always contains shift and capslock. Only used for checking if a key was pressed.
   List<LogicalKeyboardKey> get _anyShift => <LogicalKeyboardKey>[LogicalKeyboardKey.shift, LogicalKeyboardKey.capsLock];
 
-  /// This always contains fn and fn lock. Only used for checking if a key was pressed.
-  List<LogicalKeyboardKey> get _anyFN => <LogicalKeyboardKey>[LogicalKeyboardKey.fn, LogicalKeyboardKey.fnLock];
-
-  /// The matching logical keys for the modifiers that are explicitly set to [true] except [withShift] and [withFN],
-  /// see [_anyShift] and [_anyFN].
+  /// The matching logical keys for the modifiers that are explicitly set to [true] except [withShift],
+  /// see [_anyShift].
   /// Only used for checking if a key was pressed.
   List<LogicalKeyboardKey> get _activeModifierNoLocks => <LogicalKeyboardKey>[
     if (withControl == true) LogicalKeyboardKey.control,
@@ -242,8 +260,8 @@ final class BoardKey implements Model {
     if (withMeta == true) LogicalKeyboardKey.meta,
   ];
 
-  /// The matching logical keys for the modifiers that are explicitly set to [false] except [withShift] and [withFN],
-  /// see [_anyShift] and [_anyFN].
+  /// The matching logical keys for the modifiers that are explicitly set to [false] except [withShift],
+  /// see [_anyShift].
   /// Only used for checking if a key was pressed.
   List<LogicalKeyboardKey> get _inactiveModifierNoLocks => <LogicalKeyboardKey>[
     if (withControl == false) LogicalKeyboardKey.control,
@@ -259,23 +277,22 @@ final class BoardKey implements Model {
           withShift == other.withShift &&
           withControl == other.withControl &&
           withAlt == other.withAlt &&
-          withMeta == other.withMeta &&
-          withFN == other.withFN;
+          withMeta == other.withMeta;
 
   @override
-  int get hashCode => Object.hash(logicalKey.keyId, withShift, withControl, withAlt, withMeta, withFN);
+  int get hashCode => Object.hash(logicalKey.keyId, withShift, withControl, withAlt, withMeta);
 
   @override
   String toString() =>
       "BoardKey(id: ${logicalKey.keyId}, shift: $withShift, ctrl: $withControl, alt: $withAlt, "
-      "meta: $withMeta, fn: $withFN)";
+      "meta: $withMeta, hint: $keyTextHint)";
 
   static const String JSON_ID = "JSON_ID";
   static const String JSON_SHIFT = "JSON_SHIFT";
   static const String JSON_CTRL = "JSON_CTRL";
   static const String JSON_ALT = "JSON_ALT";
   static const String JSON_META = "JSON_META";
-  static const String JSON_FN = "JSON_FN";
+  static const String JSON_KEY_TEXT_HINT = "JSON_KEY_TEXT_HINT";
 
   @override
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -284,7 +301,7 @@ final class BoardKey implements Model {
     JSON_CTRL: withControl,
     JSON_ALT: withAlt,
     JSON_META: withMeta,
-    JSON_FN: withFN,
+    JSON_KEY_TEXT_HINT: keyTextHint,
   };
 
   factory BoardKey.fromJson(Map<String, dynamic> json) => BoardKey(
@@ -293,6 +310,6 @@ final class BoardKey implements Model {
     withControl: json[JSON_CTRL] as bool?,
     withAlt: json[JSON_ALT] as bool?,
     withMeta: json[JSON_META] as bool?,
-    withFN: json[JSON_FN] as bool?,
+    keyTextHint: json[JSON_KEY_TEXT_HINT] as String?,
   );
 }

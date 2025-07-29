@@ -10,6 +10,7 @@ final class MutableConfigOptionGroup extends MutableConfigOption<List<MutableCon
     required List<MutableConfigOption<dynamic>> configOptions,
   }) : super(onInit: _callInitForValues) {
     _value = configOptions;
+    _exists = true; // config option groups always exist, because they are not saved to storage
   }
 
   static Future<void> _callInitForValues(MutableConfigOption<dynamic> configOption) async {
@@ -19,9 +20,12 @@ final class MutableConfigOptionGroup extends MutableConfigOption<List<MutableCon
       throw ConfigException(message: "Error calling onInit for $group, because it has no children");
     }
     for (final MutableConfigOption<dynamic> option in options) {
-      await option.onInit?.call(option);
+      await option.onInit();
     }
   }
+
+  @override
+  String toString() => StringUtils.toStringPretty(this, <String, Object?>{"key": titleKey, "value": _value});
 
   @override
   ConfigOptionBuilder<List<MutableConfigOption<dynamic>>> get builder => ConfigOptionBuilderGroup(configOption: this);

@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
+import 'package:game_tools_lib/core/enums/gt_contrast.dart';
 import 'package:game_tools_lib/core/utils/file_utils.dart';
 import 'package:game_tools_lib/core/utils/locale_extension.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
+import 'package:game_tools_lib/presentation/base/gt_overlay_switcher.dart';
 import 'package:game_tools_lib/presentation/base/ui_helper.dart';
 import 'package:game_tools_lib/presentation/pages/gt_home_page.dart';
 import 'package:game_tools_lib/presentation/pages/hotkeys/gt_hotkeys_page.dart';
@@ -26,7 +28,7 @@ base class GTApp extends StatelessWidget {
 
   const GTApp({required this.additionalNavigatorPages});
 
-  List<ChangeNotifierProvider<dynamic>> _buildProvider() {
+  List<ChangeNotifierProvider<dynamic>> buildProvider() {
     return <ChangeNotifierProvider<dynamic>>[
       UIHelper.configProvider(option: _mutableConfig.currentLocale),
       UIHelper.configProvider(option: _mutableConfig.useDarkTheme),
@@ -45,21 +47,17 @@ base class GTApp extends StatelessWidget {
   }
 
   Widget buildOverlaySwitcher(BuildContext context, Widget navigatorChild) {
-    return navigatorChild; // todo: implement
+    return GTOverlaySwitcher(navigatorChild: navigatorChild);
   }
 
   Widget buildHome(BuildContext context) {
-    // todo: swapper hat provider für home page um anders sich zu bauen.
-    // und gibt constraints für home page und baut im overlay mode den settings knopf oben rechts (ggf togglebar und
-    // auch hotkey einstellbar? aber dann würde erkennung nicht gehen? ggf dazu schreiben! oder vorher noch andere
-    // methode testen!)
     return buildOverlaySwitcher(context, buildNavigator(context));
   }
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: _buildProvider(),
+      providers: buildProvider(),
       child: Builder(
         builder: (BuildContext context) {
           return Selector<LocaleConfigOption, Locale>(
@@ -69,9 +67,14 @@ base class GTApp extends StatelessWidget {
               return UIHelper.configConsumer(
                 option: _mutableConfig.useDarkTheme,
                 builder: (BuildContext context, bool darkTheme, Widget? child) {
-                  final ThemeData theme = _baseConfig.appColors.getTheme(darkTheme: darkTheme);
+                  final ThemeData theme = _baseConfig.appColors.getTheme(
+                    darkTheme: darkTheme,
+                    contrast: GTContrast.DEFAULT,
+                  );
                   _setSystemStatusBar(isDarkTheme: theme.brightness == Brightness.dark);
-                  Logger.spam("Building app with ", darkTheme ? "dark" : "light", " theme and locale ", locale);
+                  Logger.verbose(
+                    "Displaying $runtimeType with ${darkTheme ? "dark" : "light"} theme and locale $locale",
+                  );
                   return _buildApp(context, theme, locale);
                 },
               );
@@ -130,9 +133,15 @@ base class GTApp extends StatelessWidget {
   /// translation values
   static final Map<String, String> _keys = <String, String>{};
 
+  static Locale? _cachedLocale;
+
+  /// This is set during build, so it might be null!
+  static Locale? get currentLocale => _cachedLocale;
+
   /// Is called with the new [locale] when it changes (and of course once at init) to load all translation values
   static void _loadLocale(Locale locale) {
-    final List<String> folders = GameToolsConfig.localeFolders; // sorted correctly: lib first, game last
+    _cachedLocale = locale;
+    final List<String> folders = _baseConfig.localeFolders; // sorted correctly: lib first, game last
     _keys.clear();
     for (final String folder in folders) {
       final File file = File(FileUtils.combinePath(<String>[folder, locale.fileName]));
@@ -172,7 +181,7 @@ base class GTApp extends StatelessWidget {
       }
       return translatedKey;
     }
-    Logger.verbose("The key to be translated was not found: $key");
+    Logger.spam("Translation key not found for locale $_cachedLocale: $key");
     return key;
   }
 }

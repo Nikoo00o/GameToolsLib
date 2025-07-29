@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:collection/collection.dart';
 import 'package:flutter/widgets.dart';
 import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/enums/log_level.dart';
@@ -34,9 +35,12 @@ part 'package:game_tools_lib/core/config/mutable_config_option_group.dart';
 /// Access the values async with [MutableConfigOption.getValue] at least once (afterwards you could also access the
 /// cached value in a sync way with [MutableConfigOption.cachedValue]!
 ///
+/// Remember for initialization of your mutable config members, you can not access anything in the constructor, so if
+/// you need to reply on other config options, etc, use [MutableConfigOption.onInit]!
+///
 /// Look at [getConfigurableOptions] which you can optionally override depending on which config options you want
 /// to be able to be modified in the UI. Those will also be loaded once automatically on startup in
-/// [loadAllConfigurableOptions].
+/// [loadAllConfigurableOptions]. Important: access those from the outside cached with [configurableOptions] instead!
 base class MutableConfig {
   /// The current [logLevel] of the logger. All logs with a higher value than this will be ignored and only
   /// the more important logs with a lower [LogLevel] will be printed and stored!
@@ -85,6 +89,8 @@ base class MutableConfig {
   /// ...super.getConfigurableOptions(), ModelConfigOption(...), MutableConfigOptionGroup(StringConfigOption(...))
   /// \];
   /// ```
+  ///
+  /// To access those from the outside use the cached [configurableOptions] instead!
   List<MutableConfigOption<dynamic>> getConfigurableOptions() => <MutableConfigOption<dynamic>>[
     MutableConfigOptionGroup(
       titleKey: "page.settings.group.general",
@@ -92,20 +98,27 @@ base class MutableConfig {
         logLevel,
         useDarkTheme,
         currentLocale,
-        debugPrintGameWindowNames,
-        alwaysMatchGameWindowNamesEqual,
       ],
     ),
   ];
 
+  /// Used to return the cached [getConfigurableOptions]
+  List<MutableConfigOption<dynamic>> get configurableOptions {
+    _configurableOptions ??= getConfigurableOptions();
+    return UnmodifiableListView<MutableConfigOption<dynamic>>(_configurableOptions!);
+  }
+
+  /// Cache for [getConfigurableOptions]
+  List<MutableConfigOption<dynamic>>? _configurableOptions;
+
   /// This will be called automatically at the end of [GameToolsLib.initGameToolsLib] to load all
   /// [getConfigurableOptions] by loading their values without updating listeners and calling [MutableConfigOption.onInit]
-  /// on them!
+  /// on them! Important: from the outside, use the cached [configurableOptions] instead!
   Future<void> loadAllConfigurableOptions() async {
-    for (final MutableConfigOption<dynamic> option in getConfigurableOptions()) {
+    for (final MutableConfigOption<dynamic> option in configurableOptions) {
       await option.getValue(updateListeners: false);
-      await option.onInit?.call(option);
-      Logger.verbose("Initialized Config $option");
+      await option.onInit();
+      Logger.verbose("Loaded configurable option $option");
     }
   }
 

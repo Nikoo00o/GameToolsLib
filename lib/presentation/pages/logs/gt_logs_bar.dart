@@ -22,19 +22,19 @@ final class GTLogsBar extends StatelessWidget with GTBaseWidget {
       children: <Widget>[
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-          child: IconButton(
-            tooltip: translate(context, "page.logs.copy.to.clipboard"),
-            onPressed: () => _onCopyToClipboard(context),
-            icon: const Icon(Icons.copy),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
           child: _buildSearchContainer(context),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
           child: _buildFilterDropDown(context),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+          child: IconButton(
+            tooltip: translate(context, "page.logs.copy.to.clipboard"),
+            onPressed: () => _onCopyToClipboard(context),
+            icon: const Icon(Icons.copy),
+          ),
         ),
       ],
     );
@@ -72,6 +72,7 @@ final class GTLogsBar extends StatelessWidget with GTBaseWidget {
           prefixIcon: const Icon(Icons.search),
           hintText: translate(context, "page.logs.search"),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(32)),
+          fillColor: colorSurfaceContainer(context),
           filled: true,
         ),
       ),

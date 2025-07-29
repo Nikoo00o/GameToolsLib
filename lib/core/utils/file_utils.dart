@@ -15,7 +15,6 @@ abstract final class FileUtils {
   /// script was run!!!!
   ///
   /// If this was run from testing, then it will return [workingDirectory] so that tests work without any errors!
-  ///
   static String getLocalFilePath(String localPath) {
     if (wasRunFromTests) {
       return absolutePath(combinePath(<String>[workingDirectory, localPath]));
@@ -95,6 +94,9 @@ abstract final class FileUtils {
 
   /// Run from debugger in android studio, etc, or as tests!
   static bool get wasRunFromTests {
+    if (p.basenameWithoutExtension(_exePath) == "tester" || p.basenameWithoutExtension(_exePath) == "flutter_tester") {
+      return true;
+    }
     if (_scriptPath.isNotEmpty && _scriptPath.startsWith("/")) {
       final String exeDir = p.dirname(absolutePath(_exePath));
       final String scriptDir = p.dirname(absolutePath(_scriptPath.substring(1)));

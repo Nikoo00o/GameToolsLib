@@ -7,6 +7,7 @@ import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/domain/entities/base/model.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
+import 'package:game_tools_lib/domain/game/helper/example/example_config.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'helper/test_game_manager.dart';
 import 'helper/test_helper.dart';
@@ -100,15 +101,16 @@ void _testConfigDB() {
     expect(logLevel.cachedValue(), LogLevel.INFO, reason: "cache is updated after set");
     logLevel.onlyUpdateCachedValue(null);
     await logLevel.getValue();
-    expect(logLevel.cachedValue(), LogLevel.INFO, reason: "cache is updated after get");
+    expect(logLevel.cachedValue(), null, reason: "cache is null after explicit set");
+    expect(logLevel.cachedValueNotNull(), LogLevel.VERBOSE, reason: "non null method still returns default");
     await logLevel.deleteValue();
     expect(logLevel.cachedValue(), LogLevel.VERBOSE, reason: "after delete cache is back to default");
     logLevel = LogLevelConfigOption(titleKey: "logLevel");
     expect(logLevel.cachedValue(), null, reason: "with no default, cache is initially null");
     logLevel = LogLevelConfigOption(titleKey: "logLevel", defaultValue: LogLevel.DEBUG);
     await logLevel.setValue(null);
-    expect(logLevel.cachedValue(), LogLevel.DEBUG, reason: "set to null not best behaviour still return default");
-    expect(await logLevel.getValue(), null, reason: "but normal get correctly returns null");
+    expect(logLevel.cachedValue(), null, reason: "set to null returns null");
+    expect(await logLevel.getValue(), null, reason: "normal get correctly returns null");
   });
 
   testO("testing database get/set", () async {
@@ -117,7 +119,7 @@ void _testConfigDB() {
     await logLevel.setValue(LogLevel.INFO);
     expect(await logLevel.getValue(), LogLevel.INFO, reason: "return updated after set");
     logLevel.onlyUpdateCachedValue(null);
-    expect(await logLevel.getValue(), LogLevel.INFO, reason: "still return updated after clearing cache");
+    expect(await logLevel.getValue(), null, reason: "return null after setting cache");
     await logLevel.deleteValue();
     expect(await logLevel.getValue(), LogLevel.VERBOSE, reason: "return default after delete");
     await logLevel.setValue(null);
@@ -127,6 +129,16 @@ void _testConfigDB() {
     await logLevel.setValue(LogLevel.INFO);
     await logLevel.deleteValue();
     expect(await logLevel.getValue(), null, reason: "still return null after set and delete");
+    await logLevel.setValue(LogLevel.ERROR);
+    logLevel = LogLevelConfigOption(titleKey: "logLevel", defaultValue: LogLevel.VERBOSE);
+    expect(logLevel.cachedValue(), LogLevel.VERBOSE, reason: "first stored cannot be loaded from cache -> default");
+    expect(await logLevel.getValue(), LogLevel.ERROR, reason: "but then load stored from data");
+    await logLevel.setValue(null);
+    logLevel = LogLevelConfigOption(titleKey: "logLevel", defaultValue: LogLevel.VERBOSE);
+    expect(await logLevel.getValue(), null, reason: "now save explicit null");
+    await logLevel.deleteValue();
+    logLevel = LogLevelConfigOption(titleKey: "logLevel", defaultValue: LogLevel.VERBOSE);
+    expect(await logLevel.getValue(), LogLevel.VERBOSE, reason: "now default after delete");
   });
 
   testO("testing config update callback and null cases", () async {
@@ -139,17 +151,16 @@ void _testConfigDB() {
         called = true;
       },
     );
-    LogLevel? value = await logLevel.getValue();
+    await logLevel.getValue();
     expect(called, false, reason: "no call at first if null and returning default (not saved in db)");
-    expect(logLevel.cachedValue(), LogLevel.VERBOSE, reason: "cache returns default value at first");
-    expect(value, LogLevel.VERBOSE, reason: "and real get would also return default");
     await logLevel.setValue(LogLevel.INFO);
     expect(called, true, reason: "call after set");
     called = false;
-    expect(logLevel.cachedValue(), LogLevel.INFO, reason: "info after set");
-    value = await logLevel.getValue();
-    expect(value, LogLevel.INFO, reason: "and real also info after set");
+    await logLevel.setValue(LogLevel.INFO);
+    expect(called, false, reason: "not called again after another set");
+    await logLevel.getValue();
     expect(called, false, reason: "no call after get when already has same value");
+
     logLevel.onlyUpdateCachedValue(null);
     await Utils.delay(const Duration(milliseconds: 50)); // longer wait than the callback takes!
     expect(called, true, reason: "async call after update cached value only with delay");
@@ -159,28 +170,29 @@ void _testConfigDB() {
       updateCallback: (_) => called = true,
     );
     called = false;
-    logLevel.onlyUpdateCachedValue(null);
-    expect(called, false, reason: "don't call callback with same value");
-    expect(logLevel.cachedValue(), LogLevel.VERBOSE, reason: "cache is now default");
-    expect(await logLevel.getValue(), LogLevel.INFO, reason: "and real still returns correct one");
-
-    await logLevel.setValue(null);
-    called = false;
-    value = await logLevel.getValue();
-    expect(called, false, reason: "no getValue call with explicit set to null");
-    expect(logLevel.cachedValue(), LogLevel.VERBOSE, reason: "cache again default");
-    expect(value, null, reason: "but real is now explicit null");
-    called = false;
-
-    await logLevel.setValue(LogLevel.VERBOSE);
-    logLevel.onlyUpdateCachedValue(null);
-    called = false;
     await logLevel.getValue();
-    expect(called, true, reason: "but then getting new value again if cache is null and real data different");
+    expect(called, true, reason: "loaded old data with new access and called");
     called = false;
+    await logLevel.setValue(LogLevel.INFO);
+    expect(called, false, reason: "dont call callback with same data");
+    await logLevel.setValue(null);
+    expect(called, true, reason: "but call on explicit null set");
+    called = false;
+    logLevel = LogLevelConfigOption(
+      titleKey: "logLevel",
+      defaultValue: LogLevel.VERBOSE,
+      updateCallback: (_) => called = true,
+    );
+    await logLevel.getValue();
+    expect(called, true, reason: "also call when it was null");
+    called = false;
+    await logLevel.setValue(LogLevel.ERROR);
+    expect(called, true, reason: "and then when setting it to something else");
+    called = false;
+    logLevel.onlyUpdateCachedValue(LogLevel.ERROR);
     await logLevel.getValue();
     expect(called, false, reason: "next no call with same value get");
-    expect(logLevel.cachedValue(), LogLevel.VERBOSE, reason: "and also correct value at the end");
+    expect(logLevel.cachedValue(), LogLevel.ERROR, reason: "and also correct value at the end");
   });
 
   final ExampleModel someModel = ExampleModel(
@@ -204,7 +216,7 @@ void _testConfigDB() {
       reason: "new object from json should be equal",
     );
 
-    final ModelConfigOption<ExampleModel> option = ModelConfigOption<ExampleModel>(
+    ModelConfigOption<ExampleModel> option = ModelConfigOption<ExampleModel>(
       titleKey: "somethingNew",
       lazyLoaded: false,
       createNewModelInstance: ModelConfigOption.createNewExampleModelInstance,
@@ -212,7 +224,43 @@ void _testConfigDB() {
     );
     expect(await option.getValue(), null, reason: "first null with no value");
     await option.setValue(someModel);
-    option.onlyUpdateCachedValue(null);
-    expect(await option.getValue(), someModel, reason: "now should be the specific model");
+    option = ModelConfigOption<ExampleModel>(
+      titleKey: "somethingNew",
+      lazyLoaded: false,
+      createNewModelInstance: ModelConfigOption.createNewExampleModelInstance,
+      createModelBuilder: null,
+    );
+    expect(await option.getValue(), someModel, reason: "now should be the specific model from db");
+  });
+
+  testO("test real example config", () async {
+    ExampleGameToolsConfig config = ExampleGameToolsConfig();
+    expect(await config.mutable.logLevel.getValue(), LogLevel.SPAM, reason: "example config correct log level");
+    await config.mutable.logLevel.setValue(LogLevel.INFO);
+    config = ExampleGameToolsConfig();
+    expect(config.mutable.logLevel.cachedValue(), LogLevel.SPAM, reason: "other first spam cache");
+    expect(await config.mutable.logLevel.getValue(), LogLevel.INFO, reason: "other option should also load");
+  });
+
+  testO("test real input listener", () async {
+    final KeyInputListener listener = KeyInputListener(
+      configLabel: "test.1",
+      createEventCallback: () => throw UnimplementedError("not called"),
+      alwaysCreateNewEvents: true,
+      defaultKey: BoardKey.h,
+    );
+    String? data = await GameToolsLib.database.readFromHive(
+      key: "LISTENER_test.1",
+      databaseKey: HiveDatabase.INSTANT_DATABASE,
+    );
+    expect(listener.currentKey, BoardKey.h, reason: "first return default");
+    expect(data, null, reason: "and no data saved");
+    await listener.storeKey(BoardKey.b);
+    expect(listener.currentKey, BoardKey.b, reason: "then return set");
+    data = await GameToolsLib.database.readFromHive(
+      key: "LISTENER_test.1",
+      databaseKey: HiveDatabase.INSTANT_DATABASE,
+    );
+    expect(data?.isNotEmpty, true, reason: "and also saved");
   });
 }

@@ -33,7 +33,11 @@ abstract final class StringUtils {
   /// the member variables of the object!
   static String toStringPretty(Object object, Map<String, Object?> propertiesOfObject) {
     final StringBuffer buffer = StringBuffer();
-    buffer.writeln("\n${object.runtimeType} {");
+    if (object is String) {
+      buffer.writeln("\n$object {");
+    } else {
+      buffer.writeln("\n${object.runtimeType} {");
+    }
     propertiesOfObject.forEach((String key, Object? value) {
       buffer.write("  $key : ");
       final String valueString = value?.toString() ?? "null";

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 
 /// This can be used to get text values from a text field with [T] being either [int], [double], or [String] and
 /// build a related text input field for it!
@@ -20,7 +21,7 @@ final class SimpleTextField<T> extends StatefulWidget {
   State<SimpleTextField<T>> createState() => _SimpleTextFieldState<T>();
 }
 
-final class _SimpleTextFieldState<T> extends State<SimpleTextField<T>> {
+final class _SimpleTextFieldState<T> extends State<SimpleTextField<T>> with GTBaseWidget {
   late final TextEditingController _controller;
 
   @override
@@ -31,6 +32,7 @@ final class _SimpleTextFieldState<T> extends State<SimpleTextField<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final String hintKey = T == String ? "input.text" : "input.number";
     return SizedBox(
       width: widget.width,
       height: widget.height,
@@ -41,15 +43,16 @@ final class _SimpleTextFieldState<T> extends State<SimpleTextField<T>> {
         inputFormatters: T == String
             ? null
             : <TextInputFormatter>[
-                if (T == double) FilteringTextInputFormatter.allow(RegExp(r"(^-?\d*[\.,]?\d*)")),
+                if (T == double) FilteringTextInputFormatter.allow(RegExp(r"(^-?\d*[.,]?\d*)")),
                 if (T == int) FilteringTextInputFormatter.allow(RegExp(r"(^-?\d*)")),
               ],
         onChanged: widget.onChanged,
         decoration: InputDecoration(
-          hintText: T == String ? "input.text" : "input.number",
-          isDense: true,
+          hintText: translate(context, hintKey),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+          isDense: true,
           filled: true,
+          isCollapsed: false,
         ),
       ),
     );

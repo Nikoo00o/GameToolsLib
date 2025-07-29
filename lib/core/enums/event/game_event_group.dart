@@ -90,5 +90,5 @@ final class GameEventGroup {
   int get hashCode => bitValue.hashCode;
 
   @override
-  String toString() => "GameEventGroup($bitValue)";
+  String toString() => "G$bitValue";
 }

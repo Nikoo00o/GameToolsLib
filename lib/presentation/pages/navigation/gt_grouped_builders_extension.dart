@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/pages/hotkeys/gt_hotkeys_page.dart';
 import 'package:game_tools_lib/presentation/pages/hotkeys/hotkey_group_builder.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
@@ -28,6 +29,10 @@ abstract interface class GTGroupBuilderInterface {
   /// This should build the content of the children of this on the right side. Optionally a provider and consumer
   /// can be used to update when some config state changes
   Widget buildProviderWithContent(BuildContext context);
+
+  /// Should be overridden in the subclass to display the name (or translation key) that should be put on the
+  /// navigation rail
+  String get groupName;
 }
 
 /// An extension for [GTNavigationPage] for config pages that have a sub navigation rail on the left of available
@@ -42,17 +47,26 @@ abstract interface class GTGroupBuilderInterface {
 /// [GTHotkeysPage] which have the initialize the [builders] in the subclass constructor only once!!!
 ///
 /// And the [GTGroupIndex] must be just an empty subclass of [GTGroupIndex] to have different types for the provider
-/// and you have to override and create new object of it in [createIndexSubclass]
+/// and you have to override and create new object of it in [createIndexSubclass].
+///
+/// This also changes the [pagePadding] so that it only applies to the right side of the body! (and not the next
+/// inner navigation rail! by overriding [getInnerPadding] to null).
 base mixin GTGroupedBuildersExtension<BT extends GTGroupBuilderInterface, IndexType extends GTGroupIndex>
     on GTNavigationPage {
   /// The list of builders which must be initialized only once in the constructor of the sub class!
   late final List<BT> builders;
 
-  /// Calls [ConfigOptionBuilder.buildProvider] which then calls [ConfigOptionBuilder.buildContent] to build the
-  /// content of the [MultiConfigOptionBuilder] (which is just the list of config options on the right part of the
+  @override
+  bool get allowTabTraversal => true;
+
+  @override
+  EdgeInsetsGeometry? getInnerPadding() => null;
+
+  /// Calls [ConfigOptionBuilder.buildProviderWithContent] which then calls [ConfigOptionBuilder.buildContent] to build
+  /// the content of the [MultiConfigOptionBuilder] (which is just the list of config options on the right part of the
   /// page)! May be overridden in sub classes!
   Widget buildCurrentGroupOptions(BuildContext context, BT builder) {
-    return builder.buildProviderWithContent(context);
+    return FocusTraversalGroup(descendantsAreTraversable: false, child: builder.buildProviderWithContent(context));
   }
 
   /// Builds the [NavigationRail] (with some settings) by calling [MultiConfigOptionBuilder.buildGroupLabel] which
@@ -70,7 +84,7 @@ base mixin GTGroupedBuildersExtension<BT extends GTGroupBuilderInterface, IndexT
               child: NavigationRail(
                 selectedLabelTextStyle: TextStyle(color: colorPrimary(context)),
                 minWidth: 140,
-                elevation: 15,
+                backgroundColor: colorScaffoldBackground(context),
                 selectedIndex: index,
                 groupAlignment: -1.0,
                 onDestinationSelected: (int index) => context.read<IndexType>().value = index,
@@ -89,11 +103,16 @@ base mixin GTGroupedBuildersExtension<BT extends GTGroupBuilderInterface, IndexT
     return Consumer<IndexType>(
       builder: (BuildContext context, IndexType index, Widget? child) {
         final int pos = index.value;
+        final BT builder = builders.elementAt(pos);
+        Logger.verbose("Inner Nav Tab selected: ${builder.groupName}");
         return Row(
           children: <Widget>[
+            const SizedBox(width: 8),
             buildGroupLabels(context, pos),
-            const SizedBox(width: 10),
-            Expanded(child: buildCurrentGroupOptions(context, builders.elementAt(pos))),
+            const VerticalDivider(thickness: 1, width: 1),
+            Expanded(
+              child: Padding(padding: pagePadding, child: buildCurrentGroupOptions(context, builder)),
+            ),
           ],
         );
       },

@@ -100,7 +100,8 @@ abstract base class GTBasePage extends StatelessWidget with GTBaseWidget {
     List<Widget>? actions,
   }) {
     return AppBar(
-      leading: buildBackButton ? const BackButton() : const SizedBox(),
+      leading: buildBackButton ? const BackButton() : null,
+      backgroundColor: colorSurfaceContainer(context),
       title: Text(
         "${GameToolsConfig.baseConfig.appTitle} - ${translate(context, titleKey)}",
         style: textTitleLarge(context).copyWith(fontWeight: FontWeight.bold),
@@ -132,21 +133,21 @@ abstract base class GTBasePage extends StatelessWidget with GTBaseWidget {
   ///
   /// Optionally this can also pass data back to the last page!
   void popPage(BuildContext context, dynamic data) {
-    Logger.debug("Pop called on page $pageName with data $data");
+    Logger.verbose("Pop called on page $pageName with data $data");
     Navigator.of(context).pop(data);
   }
 
   /// pushes a new page (that has no route) on top of the navigator without removing other stored pages.
   /// This can also be awaited to wait for data returned by a [popPage] call when navigating back to this!
   Future<dynamic> pushPage(BuildContext context, GTBasePage page) async {
-    Logger.debug("Navigating to page ${page.pageName}");
+    Logger.verbose("Navigating to page ${page.pageName}");
     return Navigator.push<dynamic>(context, MaterialPageRoute<dynamic>(builder: (BuildContext context) => page));
   }
 
   /// Shows the left menu only if the [context] is below a [Scaffold]!
   void openMenuDrawer(BuildContext context) {
     if (isMenuDrawerOpen(context) == false) {
-      Logger.debug("Opening menu");
+      Logger.verbose("Opening menu");
       Scaffold.of(context).openDrawer();
     }
   }
@@ -154,7 +155,7 @@ abstract base class GTBasePage extends StatelessWidget with GTBaseWidget {
   /// Hides the left menu only if the [context] is below a [Scaffold]!
   void closeMenuDrawer(BuildContext context) {
     if (isMenuDrawerOpen(context) == true) {
-      Logger.debug("Closing menu");
+      Logger.verbose("Closing menu");
       Scaffold.of(context).closeDrawer();
     }
   }

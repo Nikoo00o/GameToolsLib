@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/presentation/base/gt_app.dart';
+import 'package:game_tools_lib/presentation/base/gt_app_theme_extension.dart';
 import 'package:provider/provider.dart';
 
 /// Base class for all widgets with some common helper functions as a mixin that can be used for each widget!
+///
+/// Best used to get colors like [colorPrimary] of the [theme], or text styles like [textBodyMedium], or translate
+/// text with [translate]!
 mixin class GTBaseWidget {
   /// Translates a translation [key] for the current locale and placeholders are replaced with [keyParams].
   ///
   /// Needs the current [context] to react to locale changes!
+  ///
+  /// Placeholders in the translation string of language.json have to start with "{0}" and then "{1}", "{2}", etc
   String translate(BuildContext context, String key, {List<String>? keyParams}) =>
       translateS(context, key, keyParams: keyParams, listen: true);
 
@@ -15,6 +21,8 @@ mixin class GTBaseWidget {
   ///
   /// Depending on [listen] this can listen to locale changes and rebuild the calling widget automatically if needed!
   /// If used in button callbacks, always use false!
+  ///
+  /// Placeholders in the translation string of language.json have to start with "{0}" and then "{1}", "{2}", etc
   static String translateS(BuildContext context, String key, {List<String>? keyParams, required bool listen}) {
     if (listen) {
       context.select<LocaleConfigOption, Locale?>((LocaleConfigOption option) => option.activeLocale);
@@ -25,68 +33,95 @@ mixin class GTBaseWidget {
   /// Returns the theme data. The [ThemeData.colorScheme] contains the colors used inside of the app.
   ThemeData theme(BuildContext context) => Theme.of(context);
 
-  /// This is the same as [colorBackground]
+  /// This is the same as [colorSurface] and also the default background color of a scaffold!
   Color colorScaffoldBackground(BuildContext context) => theme(context).scaffoldBackgroundColor;
 
-  /// Returns the color of [ThemeData.colorScheme].
+  /// A color derived from [colorSurface] that is used when certain buttons, etc are disabled
+  Color colorDisabled(BuildContext context) => theme(context).disabledColor;
+
+  /// Main color used across screens and components like the text of [OutlinedButton] or [TextButton], or the fill
+  /// color of [FilledButton]
   Color colorPrimary(BuildContext context) => theme(context).colorScheme.primary;
 
-  /// Returns the color of [ThemeData.colorScheme].
+  /// Text and against shown against [colorPrimary] like the text inside of a [FilledButton]
   Color colorOnPrimary(BuildContext context) => theme(context).colorScheme.onPrimary;
 
-  /// Returns the color of [ThemeData.colorScheme].
+  /// Standout container color for key components with a bit less emphasis than [colorPrimary]
   Color colorPrimaryContainer(BuildContext context) => theme(context).colorScheme.primaryContainer;
 
-  /// Returns the color of [ThemeData.colorScheme].
+  /// Contrast-passing color shown against the [colorPrimaryContainer]
   Color colorOnPrimaryContainer(BuildContext context) => theme(context).colorScheme.onPrimaryContainer;
 
-  /// Returns the color of [ThemeData.colorScheme].
+  /// Accent color used across screens and components
   Color colorSecondary(BuildContext context) => theme(context).colorScheme.secondary;
 
-  /// Returns the color of [ThemeData.colorScheme].
+  /// Text and icons shown against [colorSecondary]
   Color colorOnSecondary(BuildContext context) => theme(context).colorScheme.onSecondary;
 
-  /// Returns the color of [ThemeData.colorScheme].
+  /// Less prominent container color for components like the fill color [FilledButton.tonal]
   Color colorSecondaryContainer(BuildContext context) => theme(context).colorScheme.secondaryContainer;
 
-  /// Returns the color of [ThemeData.colorScheme].
+  /// Contrast-passing color shown against the [colorSecondaryContainer] like the text of [FilledButton.tonal]
   Color colorOnSecondaryContainer(BuildContext context) => theme(context).colorScheme.onSecondaryContainer;
 
-  /// Returns the color of [ThemeData.colorScheme].
+  /// Contrasting accent color used across screens and components
   Color colorTertiary(BuildContext context) => theme(context).colorScheme.tertiary;
 
-  /// Returns the color of [ThemeData.colorScheme].
+  /// Text and icons shown against [colorTertiary]
   Color colorOnTertiary(BuildContext context) => theme(context).colorScheme.onTertiary;
 
   /// Returns the color of [ThemeData.colorScheme].
   Color colorTertiaryContainer(BuildContext context) => theme(context).colorScheme.tertiaryContainer;
 
-  /// Returns the color of [ThemeData.colorScheme].
+  /// Contrast-passing color shown against [colorTertiaryContainer]
   Color colorOnTertiaryContainer(BuildContext context) => theme(context).colorScheme.onTertiaryContainer;
 
-  /// Returns the color of [ThemeData.colorScheme].
-  Color colorSurface(BuildContext context) => theme(context).colorScheme.surface;
-
-  /// Returns the color of [ThemeData.colorScheme].
-  Color colorOnSurface(BuildContext context) => theme(context).colorScheme.onSurface;
-
-  /// Returns the color of [ThemeData.colorScheme].
-  Color colorSurfaceContainerHighest(BuildContext context) => theme(context).colorScheme.surfaceContainerHighest;
-
-  /// Returns the color of [ThemeData.colorScheme].
-  Color colorOnSurfaceVariant(BuildContext context) => theme(context).colorScheme.onSurfaceVariant;
-
-  /// Returns the color of [ThemeData.colorScheme].
+  /// Indicates errors such as invalid input in a date picker
   Color colorError(BuildContext context) => theme(context).colorScheme.error;
 
-  /// Returns the color of [ThemeData.colorScheme].
+  /// Used for text and icons on the [colorError]
   Color colorOnError(BuildContext context) => theme(context).colorScheme.onError;
 
-  /// Returns the color of [ThemeData.colorScheme].
+  /// Container color for error messages and badges
   Color colorErrorContainer(BuildContext context) => theme(context).colorScheme.errorContainer;
 
-  /// Returns the color of [ThemeData.colorScheme].
+  /// Used for text and icons on [colorErrorContainer]
   Color colorOnErrorContainer(BuildContext context) => theme(context).colorScheme.onErrorContainer;
+
+  /// Surface color for components like cards, sheets and menus (also the [colorScaffoldBackground])
+  Color colorSurface(BuildContext context) => theme(context).colorScheme.surface;
+
+  /// Text and icons against the [colorSurface]
+  Color colorOnSurface(BuildContext context) => theme(context).colorScheme.onSurface;
+
+  /// Highest intensity of [colorSurfaceContainer]
+  Color colorSurfaceContainerHighest(BuildContext context) => theme(context).colorScheme.surfaceContainerHighest;
+
+  /// Medium high intensity of [colorSurfaceContainer]
+  Color colorSurfaceContainerHigh(BuildContext context) => theme(context).colorScheme.surfaceContainerHigh;
+
+  /// For dark theme a brighter variant of [colorSurface] and for light theme a darker shade of it.
+  /// It also has more intense versions with [colorSurfaceContainerHighest] and not that intense version with
+  /// [colorSurfaceContainerLowest]
+  Color colorSurfaceContainer(BuildContext context) => theme(context).colorScheme.surfaceContainer;
+
+  /// Medium low intensity of [colorSurfaceContainer]
+  Color colorSurfaceContainerLow(BuildContext context) => theme(context).colorScheme.surfaceContainerLow;
+
+  /// Lowest intensity of [colorSurfaceContainer]
+  Color colorSurfaceContainerLowest(BuildContext context) => theme(context).colorScheme.surfaceContainerLowest;
+
+  /// Displays opposite color of the surrounding ui
+  Color colorInverseSurface(BuildContext context) => theme(context).colorScheme.inverseSurface;
+
+  /// Text and icons against the [colorInverseSurface]
+  Color colorOnInverseSurface(BuildContext context) => theme(context).colorScheme.onInverseSurface;
+
+  /// Different variation of [colorSurface] shifted like 5% in the direction of [colorPrimary]
+  Color colorSurfaceVariant(BuildContext context) => theme(context).colorScheme.surfaceVariant;
+
+  /// Text and icons against the [colorSurfaceVariant]
+  Color colorOnSurfaceVariant(BuildContext context) => theme(context).colorScheme.onSurfaceVariant;
 
   /// Returns the color of [ThemeData.colorScheme].
   Color colorOutline(BuildContext context) => theme(context).colorScheme.outline;
@@ -94,97 +129,147 @@ mixin class GTBaseWidget {
   /// Returns the color of [ThemeData.colorScheme].
   Color colorOutlineVariant(BuildContext context) => theme(context).colorScheme.outlineVariant;
 
-  /// Returns the color of [ThemeData.colorScheme].
+  /// Used for shadows applied to elevated components, always black.
   Color colorShadow(BuildContext context) => theme(context).colorScheme.shadow;
 
-  /// Same as [colorShadow]
+  /// Used for scrims to separate floating components from the background, always black.
   Color colorScrim(BuildContext context) => theme(context).colorScheme.scrim;
 
-  /// Returns the color of [ThemeData.colorScheme].
-  Color colorSurfaceTint(BuildContext context) => theme(context).colorScheme.shadow;
-
-  /// Returns the color of [ThemeData.colorScheme].
-  Color colorInverseSurface(BuildContext context) => theme(context).colorScheme.inverseSurface;
-
-  /// Returns the color of [ThemeData.colorScheme].
-  Color colorOnInverseSurface(BuildContext context) => theme(context).colorScheme.onInverseSurface;
+  /// Returns the color of [ThemeData.colorScheme]. If used together with the elevation property to indicate
+  /// elevation of elements!
+  Color colorSurfaceTint(BuildContext context) => theme(context).colorScheme.surfaceTint;
 
   /// Returns the color of [ThemeData.colorScheme].
   Color colorInversePrimary(BuildContext context) => theme(context).colorScheme.inversePrimary;
 
-  /// Returns the disabled color of [ThemeData].
-  Color colorDisabled(BuildContext context) => theme(context).disabledColor;
+  /// Version of [colorSurface] that is dimmer in both light and dark theme
+  Color colorSurfaceDim(BuildContext context) => theme(context).colorScheme.surfaceDim;
 
-  /// Helper method for text styles
-  TextStyle _textParams(TextStyle? input) => TextStyle(
-    fontSize: input?.fontSize,
-    fontWeight: input?.fontWeight,
-    letterSpacing: input?.letterSpacing,
-    wordSpacing: input?.wordSpacing,
-    height: input?.height,
-    textBaseline: input?.textBaseline,
-    leadingDistribution: input?.leadingDistribution,
-  );
+  /// Version of [colorSurface] that is brighter in both light and dark theme
+  Color colorSurfaceBright(BuildContext context) => theme(context).colorScheme.surfaceBright;
+
+  /// Custom color used for success indicators from [GTAppThemeExtension]
+  Color colorSuccess(BuildContext context) => theme(context).extension<GTAppThemeExtension>()!.success;
+
+  /// Used for text/icons on the [colorOnSuccess] color.
+  Color colorOnSuccess(BuildContext context) => theme(context).extension<GTAppThemeExtension>()!.onSuccess;
+
+  /// Custom success container color for key components that display some success like a checkbox from [GTAppThemeExtension]
+  Color colorSuccessContainer(BuildContext context) =>
+      theme(context).extension<GTAppThemeExtension>()!.successContainer;
+
+  /// Contrast-passing color shown against the [colorSuccessContainer]
+  Color colorOnSuccessContainer(BuildContext context) =>
+      theme(context).extension<GTAppThemeExtension>()!.onSuccessContainer;
+
+  /// Version of [colorPrimary] that does not care for light, or dark theme
+  Color colorPrimaryFixed(BuildContext context) => theme(context).colorScheme.primaryFixed;
+
+  /// Text and icons against the [colorPrimaryFixed]
+  Color colorOnPrimaryFixed(BuildContext context) => theme(context).colorScheme.onPrimaryFixed;
+
+  /// Dimmer Version of [colorPrimaryFixed]
+  Color colorPrimaryFixedDim(BuildContext context) => theme(context).colorScheme.primaryFixedDim;
+
+  /// Stronger hue variant of [colorOnPrimaryFixed]
+  Color colorOnPrimaryFixedVariant(BuildContext context) => theme(context).colorScheme.onPrimaryFixedVariant;
+
+  /// Version of [colorSecondary] that does not care for light, or dark theme
+  Color colorSecondaryFixed(BuildContext context) => theme(context).colorScheme.secondaryFixed;
+
+  /// Text and icons against the [colorSecondaryFixed]
+  Color colorOnSecondaryFixed(BuildContext context) => theme(context).colorScheme.onSecondaryFixed;
+
+  /// Dimmer Version of [colorSecondaryFixed]
+  Color colorSecondaryFixedDim(BuildContext context) => theme(context).colorScheme.secondaryFixedDim;
+
+  /// Stronger hue variant of [colorSecondaryFixed]
+  Color colorOnSecondaryFixedVariant(BuildContext context) => theme(context).colorScheme.onSecondaryFixedVariant;
+
+  /// Version of [colorTertiary] that does not care for light, or dark theme
+  Color colorTertiaryFixed(BuildContext context) => theme(context).colorScheme.tertiaryFixed;
+
+  /// Text and icons against the [colorTertiaryFixed]
+  Color colorOnTertiaryFixed(BuildContext context) => theme(context).colorScheme.onTertiaryFixed;
+
+  /// Dimmer Version of [colorTertiaryFixed]
+  Color colorTertiaryFixedDim(BuildContext context) => theme(context).colorScheme.tertiaryFixedDim;
+
+  /// Stronger hue variant of [colorTertiaryFixed]
+  Color colorOnTertiaryFixedVariant(BuildContext context) => theme(context).colorScheme.onTertiaryFixedVariant;
+
+  /// Version of [colorSuccess] that does not care for light, or dark theme
+  Color colorSuccessFixed(BuildContext context) => theme(context).extension<GTAppThemeExtension>()!.successFixed;
+
+  /// Text and icons against the [colorSuccessFixed]
+  Color colorOnSuccessFixed(BuildContext context) => theme(context).extension<GTAppThemeExtension>()!.onSuccessFixed;
+
+  /// Dimmer Version of [colorSuccessFixed]
+  Color colorSuccessFixedDim(BuildContext context) => theme(context).extension<GTAppThemeExtension>()!.successFixedDim;
+
+  /// Stronger hue variant of [colorSuccessFixed]
+  Color colorOnSuccessFixedVariant(BuildContext context) =>
+      theme(context).extension<GTAppThemeExtension>()!.onSuccessFixedVariant;
 
   /// Returns only the size, weight and spacing of the [ThemeData.textTheme], so that the text color will not be
   /// overridden when using this in widgets! (and so that something like a disabled color still works!)
-  TextStyle textDisplayLarge(BuildContext context) => _textParams(theme(context).textTheme.displayLarge);
+  TextStyle textDisplayLarge(BuildContext context) => theme(context).textTheme.displayLarge!;
 
   /// Returns only the size, weight and spacing of the [ThemeData.textTheme], so that the text color will not be
   /// overridden when using this in widgets! (and so that something like a disabled color still works!)
-  TextStyle textDisplayMedium(BuildContext context) => _textParams(theme(context).textTheme.displayMedium);
+  TextStyle textDisplayMedium(BuildContext context) => theme(context).textTheme.displayMedium!;
 
   /// Returns only the size, weight and spacing of the [ThemeData.textTheme], so that the text color will not be
   /// overridden when using this in widgets! (and so that something like a disabled color still works!)
-  TextStyle textDisplaySmall(BuildContext context) => _textParams(theme(context).textTheme.displaySmall);
+  TextStyle textDisplaySmall(BuildContext context) => theme(context).textTheme.displaySmall!;
 
   /// Returns only the size, weight and spacing of the [ThemeData.textTheme], so that the text color will not be
   /// overridden when using this in widgets! (and so that something like a disabled color still works!)
-  TextStyle textHeadlineLarge(BuildContext context) => _textParams(theme(context).textTheme.headlineLarge);
+  TextStyle textHeadlineLarge(BuildContext context) => theme(context).textTheme.headlineLarge!;
 
   /// Returns only the size, weight and spacing of the [ThemeData.textTheme], so that the text color will not be
   /// overridden when using this in widgets! (and so that something like a disabled color still works!)
-  TextStyle textHeadlineMedium(BuildContext context) => _textParams(theme(context).textTheme.headlineMedium);
+  TextStyle textHeadlineMedium(BuildContext context) => theme(context).textTheme.headlineMedium!;
 
   /// Returns only the size, weight and spacing of the [ThemeData.textTheme], so that the text color will not be
   /// overridden when using this in widgets! (and so that something like a disabled color still works!)
-  TextStyle textHeadlineSmall(BuildContext context) => _textParams(theme(context).textTheme.headlineSmall);
+  TextStyle textHeadlineSmall(BuildContext context) => theme(context).textTheme.headlineSmall!;
 
   /// Returns only the size, weight and spacing of the [ThemeData.textTheme], so that the text color will not be
   /// overridden when using this in widgets! (and so that something like a disabled color still works!)
-  TextStyle textTitleLarge(BuildContext context) => _textParams(theme(context).textTheme.titleLarge);
+  TextStyle textTitleLarge(BuildContext context) => theme(context).textTheme.titleLarge!;
 
   /// Returns only the size, weight and spacing of the [ThemeData.textTheme], so that the text color will not be
   /// overridden when using this in widgets! (and so that something like a disabled color still works!)
-  TextStyle textTitleMedium(BuildContext context) => _textParams(theme(context).textTheme.titleMedium);
+  TextStyle textTitleMedium(BuildContext context) => theme(context).textTheme.titleMedium!;
 
   /// Returns only the size, weight and spacing of the [ThemeData.textTheme], so that the text color will not be
   /// overridden when using this in widgets! (and so that something like a disabled color still works!)
-  TextStyle textTitleSmall(BuildContext context) => _textParams(theme(context).textTheme.titleSmall);
+  TextStyle textTitleSmall(BuildContext context) => theme(context).textTheme.titleSmall!;
 
   /// Returns only the size, weight and spacing of the [ThemeData.textTheme], so that the text color will not be
   /// overridden when using this in widgets! (and so that something like a disabled color still works!)
-  TextStyle textLabelLarge(BuildContext context) => _textParams(theme(context).textTheme.labelLarge);
+  TextStyle textLabelLarge(BuildContext context) => theme(context).textTheme.labelLarge!;
 
   /// Returns only the size, weight and spacing of the [ThemeData.textTheme], so that the text color will not be
   /// overridden when using this in widgets! (and so that something like a disabled color still works!)
-  TextStyle textLabelMedium(BuildContext context) => _textParams(theme(context).textTheme.labelMedium);
+  TextStyle textLabelMedium(BuildContext context) => theme(context).textTheme.labelMedium!;
 
   /// Returns only the size, weight and spacing of the [ThemeData.textTheme], so that the text color will not be
   /// overridden when using this in widgets! (and so that something like a disabled color still works!)
-  TextStyle textLabelSmall(BuildContext context) => _textParams(theme(context).textTheme.labelSmall);
+  TextStyle textLabelSmall(BuildContext context) => theme(context).textTheme.labelSmall!;
 
   /// Returns only the size, weight and spacing of the [ThemeData.textTheme], so that the text color will not be
   /// overridden when using this in widgets! (and so that something like a disabled color still works!)
-  TextStyle textBodyLarge(BuildContext context) => _textParams(theme(context).textTheme.bodyLarge);
+  TextStyle textBodyLarge(BuildContext context) => theme(context).textTheme.bodyLarge!;
 
   /// Returns only the size, weight and spacing of the [ThemeData.textTheme], so that the text color will not be
   /// overridden when using this in widgets! (and so that something like a disabled color still works!)
-  TextStyle textBodyMedium(BuildContext context) => _textParams(theme(context).textTheme.bodyMedium);
+  TextStyle textBodyMedium(BuildContext context) => theme(context).textTheme.bodyMedium!;
 
   /// Returns only the size, weight and spacing of the [ThemeData.textTheme], so that the text color will not be
   /// overridden when using this in widgets! (and so that something like a disabled color still works!)
-  TextStyle textBodySmall(BuildContext context) => _textParams(theme(context).textTheme.bodySmall);
+  TextStyle textBodySmall(BuildContext context) => theme(context).textTheme.bodySmall!;
 
   /// Returns if the current theme is dark
   bool isDarkTheme(BuildContext context) => theme(context).brightness == Brightness.dark;

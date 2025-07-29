@@ -7,6 +7,8 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 base class MouseInputListener extends BaseInputListener<MouseKey> {
   MouseInputListener({
     required super.configLabel,
+    super.configLabelDescription,
+    super.eventCreateCondition,
     required super.createEventCallback,
     required super.alwaysCreateNewEvents,
     required super.defaultKey,
@@ -20,5 +22,5 @@ base class MouseInputListener extends BaseInputListener<MouseKey> {
   MouseKey? _stringToKey(String? str) => MouseKey.fromString(str);
 
   @override
-  bool _getNewKeyState() => InputManager.isMouseDown(currentKey);
+  bool _getNewKeyState() => InputManager.isMouseDown(currentKey!);
 }

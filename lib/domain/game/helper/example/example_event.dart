@@ -12,7 +12,10 @@ final class ExampleEvent extends GameEvent {
 
   final bool isInstant;
 
-  ExampleEvent({required this.isInstant, super.groups = GameEventGroup.no_group})
+  /// Optionally used for testing to do some custom work always in step 1 (most of the times this is null)
+  Future<void> Function()? additionalWorkInStep1;
+
+  ExampleEvent({required this.isInstant, super.groups = GameEventGroup.no_group, this.additionalWorkInStep1})
     : super(priority: isInstant ? GameEventPriority.INSTANT : GameEventPriority.LAST);
 
   @override
@@ -33,6 +36,7 @@ final class ExampleEvent extends GameEvent {
   @override
   Future<(GameEventStatus, Duration)> onStep1() async {
     updateCounter++;
+    await additionalWorkInStep1?.call();
     if (isInstant) {
       return (GameEventStatus.DONE, Duration.zero);
     } else {

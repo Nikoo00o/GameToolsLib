@@ -10,6 +10,8 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 ///
 /// You can also override the following: [onStart], [onStop], [onOpenChange], [onFocusChange].
 ///
+/// In subclasses you can do your custom initialization in the constructor and you can access everything there!
+///
 /// If you want to compare objects of this, you have to implement custom equality yourself in your sub classes! Per
 /// default it compares if references point to the same object.
 ///

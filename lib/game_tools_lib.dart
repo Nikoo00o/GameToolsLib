@@ -138,6 +138,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     }
     GameManager._instance = gameManager; // most important first signal that init was started
     _GameToolsLibHelper._initConfigAndLogger(config, logger, isCalledFromTesting: isCalledFromTesting); // first logger
+    Logger.verbose("GameToolsLib.initGameToolsLib... (remember to call GameToolsLib.runLoop afterwards!)");
     if (Platform.isWindows == false) {
       throw UnimplementedError("This platform is currently not supported yet"); // then check platform support
     }
@@ -159,7 +160,10 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     await gameLogWatcher._init(); // also init log watcher
     _GameToolsLibHelper._initialized = true;
     await config.mutable.loadAllConfigurableOptions(); // and lastly load all mutable config options
-    Logger.verbose("Game Tools Lib initialized successfully with input listeners: ${gameManager._inputListeners}!");
+    Logger.debug(
+      "GameToolsLib.initGameToolsLib done with config ${config.runtimeType}, manager "
+      "${gameManager.runtimeType}\nand windows $gameWindows",
+    );
     return true; // done (onInit and then start loop at the end)
   }
 
@@ -174,11 +178,14 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       throw const ConfigException(message: "initGameToolsLib was not called before runLoop");
     }
     if (app != null) {
-      Logger.verbose("Running app ${app.runtimeType}");
       runApp(app);
+    } else {
+      Logger.verbose("Displaying no app user interface for GameToolsLib (is this intended?)");
     }
+    Logger.spam("calling GameManager.onStart and then GameLogWatcher._handleOldLastLines before starting loop");
     await GameManager._instance!.onStart();
     await GameLogWatcher._instance!._handleOldLastLines();
+    _GameToolsLibHelper._printRunningLog();
     await _GameToolsLibEventLoop._startLoop(baseConfig.fixed.updatesPerSecond);
   }
 
@@ -250,7 +257,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     final ExampleMutableConfig mutableConfig = GameToolsLib.config<ExampleGameToolsConfig>().mutable;
     final GameToolsConfigBaseType baseAccess = GameToolsLib.baseConfig; // using base type
     final ExampleModel newValue = await mutableConfig.somethingNew.valueNotNull();
-    return !fixedConfig.logIntoStorage && (newValue.someData ?? 1) >= 1 && !baseAccess.fixed.logIntoStorage;
+    return !fixedConfig.logIntoStorage && (newValue.someData ?? 1) >= 0 && !baseAccess.fixed.logIntoStorage;
   }
 
   GameToolsLib._();

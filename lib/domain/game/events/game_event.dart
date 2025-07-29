@@ -22,6 +22,8 @@ typedef GameEventStepCallback = Future<(GameEventStatus, Duration)> Function();
 /// If you want to compare objects of this, you have to implement custom equality yourself in your sub classes! Per
 /// default it compares if references point to the same object.
 ///
+/// Initialization can be done in the constructor, or in [onStart]
+///
 /// For an example look at [ExampleEvent]
 abstract base class GameEvent {
   /// The priority of this event, if this is [GameEventPriority.INSTANT], then this will instantly be executed when
@@ -41,6 +43,11 @@ abstract base class GameEvent {
   /// The groups this event is assigned to currently (0 means no group and otherwise the group bits are set)
   GameEventGroup _groups;
 
+  /// Only used internally for debugging and logging to keep track of the event order
+  late final int _id;
+
+  static int _idCounter = 0;
+
   static final SpamIdentifier _stepLog = SpamIdentifier();
 
   /// The default parameter will add this event last in the queue and [GameEventGroup.no_group].
@@ -51,6 +58,7 @@ abstract base class GameEvent {
     GameEventGroup groups = GameEventGroup.no_group,
   }) : _groups = groups {
     _currentStep = onStep1; // always start on first step!
+    _id = _idCounter++;
   }
 
   /// Marks this event as being in the [group] (you can add events to as many groups of [GameEventGroup] as you like!)
@@ -90,7 +98,9 @@ abstract base class GameEvent {
   /// Don't use any delays inside of this!
   Future<void> onFocusChange(GameWindow window) async {}
 
-  /// Is called internally before this event starts updating with [onStep1] (should not await any delays!)
+  /// Is called internally once  before this event starts updating with [onStep1] (should not await any delays!)
+  /// So this can be used for custom async initialisation or actions that should only happen once in total, because
+  /// step1 can be called multiple times.
   Future<void> onStart() async {}
 
   /// Will be called from the remover after this event is removed from the event queue by [remove] (should not
@@ -371,5 +381,5 @@ abstract base class GameEvent {
   }
 
   @override
-  String toString() => "$runtimeType(p: $priority, g: $_groups)";
+  String toString() => "$runtimeType(id: $_id, p: $priority, group: $_groups)";
 }

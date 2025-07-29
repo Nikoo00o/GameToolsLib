@@ -266,22 +266,6 @@ abstract final class InputManager {
         }
       }
     }
-    if (key.withFN != null) {
-      final List<LogicalKeyboardKey> keys = key._anyFN;
-      bool fnDown = _nativeWindow.isKeyDown(keys.first);
-      if (_nativeWindow.isKeyToggled(keys.last)) {
-        fnDown = true;
-      }
-      if (key.withFN == true) {
-        if (fnDown == false) {
-          return false;
-        }
-      } else if (key.withFN == false) {
-        if (fnDown) {
-          return false;
-        }
-      }
-    }
     return true;
   }
 

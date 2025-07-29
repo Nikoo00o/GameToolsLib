@@ -12,7 +12,8 @@ part of 'package:game_tools_lib/core/config/mutable_config.dart';
 ///
 /// Remember that on startup at the end of [GameToolsLib.initGameToolsLib] the [onInit] is called if not null for the
 /// config options contained in [MutableConfig.getConfigurableOptions] together with a call to [getValue] with
-/// updateListeners being false.
+/// updateListeners being false to load those options once! Otherwise it will be called when this object is first used.
+/// Use this if your config option needs to access other config options, or needs any initialisation!
 ///
 /// You can also access the cached value in a sync way with [cachedValue] (But [getValue] needs to be called at least
 /// once before!)
@@ -30,10 +31,11 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   /// Added to the [titleKey] internally in the storage
   static const String KEY_PREFIX = "CONFIG_";
 
-  /// Cached Value
+  /// Cached Value loaded from storage and saved to storage
   T? _value;
 
-  /// Optional update callback that is called after [setValue] to update data references elsewhere
+  /// Optional update callback that is called after [setValue] to update data references elsewhere with the current
+  /// [cachedValue] (which may be null depending on what is stored and the default)!
   final FutureOr<void> Function(T?)? _updateCallback;
 
   /// Optional default value that will be used if saved data is null (if [setValue] is called with [null], or
@@ -45,25 +47,49 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   /// initialized!
   final bool _lazyLoaded;
 
-  /// This is an optional callback that will be called once at the end of [GameToolsLib.initGameToolsLib] on startup
-  /// for the config values contained in [MutableConfig.getConfigurableOptions].
+  /// Internal flag if this config option is currently saved to the storage
+  bool _exists = false;
+
+  /// see constructor, or general class configuration
+  Future<void> Function(MutableConfigOption<dynamic> configOption)? _onInit;
+
+  /// [updateCallback] Optional update callback that is called after [setValue] to update data references elsewhere!
+  /// [lazyLoaded] For big data this should be [true] to load on demand. Defaults to [false] (all data is kept in memory)
+  ///
+  /// [onInit] is an optional callback that will be called once at the end of [GameToolsLib.initGameToolsLib] on startup
+  /// for the config values contained in [MutableConfig.getConfigurableOptions]. Or otherwise the first time this
+  /// object is used!
   ///
   /// This can be done for custom initialisation that needs the [FixedConfig] or anything else that is not
   /// initialized yet when the constructor is called.
   /// You have to cast the [configOption] to your type in the callback manually!
-  final Future<void> Function(MutableConfigOption<dynamic> configOption)? onInit;
-
-  /// [updateCallback] Optional update callback that is called after [setValue] to update data references elsewhere!
-  /// [lazyLoaded] For big data this should be [true] to load on demand. Defaults to [false] (all data is kept in memory)
   MutableConfigOption({
     required this.titleKey,
     this.descriptionKey,
     FutureOr<void> Function(T?)? updateCallback,
     this.defaultValue,
     bool lazyLoaded = false,
-    this.onInit,
+    Future<void> Function(MutableConfigOption<dynamic> configOption)? onInit,
   }) : _updateCallback = updateCallback,
-       _lazyLoaded = lazyLoaded;
+       _lazyLoaded = lazyLoaded,
+       _onInit = onInit;
+
+  /// Calls the [_onInit] which is an optional callback that will be called once at the end of
+  /// [GameToolsLib.initGameToolsLib] on startup for the config values contained in
+  /// [MutableConfig.getConfigurableOptions].
+  ///
+  /// Or otherwise it is called the first time this object is used (so in [getValue], [setValue], [deleteValue]!
+  ///
+  /// This can be done for custom initialisation that needs the [FixedConfig] or anything else that is not
+  /// initialized yet when the constructor is called.
+  /// You have to cast the [configOption] to your type in the callback manually!
+  Future<void> onInit() async {
+    if (_onInit != null) {
+      await _onInit!.call(this);
+      Logger.spam("Custom init callback called for ", this);
+      _onInit = null;
+    }
+  }
 
   /// This has to be overridden in sub classes to return a subclass of [ConfigOptionBuilder] with a reference to this
   /// that will build the UI for the config option.
@@ -75,86 +101,110 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
 
   String get _dataBase => _lazyLoaded ? HiveDatabase.LAZY_DATABASE : HiveDatabase.INSTANT_DATABASE;
 
-  /// Converts and reads the value, or [defaultValue] if data was never set (or deleted with [deleteValue]] and also
-  /// updates [_value]. This also correctly returns null if null was explicitly saved in the database!
+  /// This will instantly return the stored data [_value] if this exists on storage ([_exists] is true) and will not
+  /// load it again!
+  ///
+  /// Otherwise it will update the status if this exists on storage and load new data from the storage  and then
+  /// also update the cached data [_value].
+  ///
+  /// Then at the end it returns [cachedValue] which returns the [_value] if it [_exists] and otherwise the
+  /// [defaultValue] (but of course both could be null by for example explicitly setting the stored data to null)
   ///
   /// If [updateListeners] is true, this will also call [_onValueChange] if this loaded a different new value that
   /// than the current value (this is only false at the end of [GameToolsLib.initGameToolsLib] where the
   /// [MutableConfig.getConfigurableOptions] are loaded)! And it being true affects only those config options not
   /// contained there when they are loaded for the first time!
   Future<T?> getValue({bool updateListeners = true}) async {
-    if (_value != null) {
+    if (_exists) {
       return _value;
     }
+    await onInit();
     final bool exists = await GameToolsLib.database.existsInHive(
       key: _transformedKey,
       databaseKey: _dataBase,
     );
-    if (exists == false) {
-      return defaultValue; // if it was never set (but also not explicitly set to null), return default
-    }
-    final T? newData = _stringToData(await _read());
+    final T? newData = exists ? _stringToData(await _read()) : null;
     if (updateListeners) {
-      await _onValueChange(newData); // update cache (only when current value not null)
+      await _onValueChange(newData, exists); // update cache (only when current value not null)
     } else {
       _value = newData;
+      _exists = exists;
       if (newData != _value) {
         Logger.verbose("First load called for $this");
       }
     }
-    return _value;
+    return cachedValue();
   }
 
-  /// Uses [getValue], but throws a [ConfigException] if the data is null and no [defaultValue] is set
+  /// Uses [getValue], but throws a [ConfigException] if it would return null(and if the return type [T] is not
+  /// nullable).
+  ///
+  /// This also has the special case that it first checks the stored value and if that one is null, it will also
+  /// check the default value afterwards once (which is different behaviour!)
   Future<T> valueNotNull() async {
     final T? data = await getValue();
-    if (data is T) {
+    if (data != null) {
       return data;
-    } else {
+    } else if (defaultValue != null) {
+      return defaultValue!;
+    } else if (data is! T) {
       throw const ConfigException(message: "Config option is not nullable, but data is null");
     }
+    return data;
   }
 
-  /// Returns the [_value] if its not null and otherwise the [defaultValue]
-  /// Can return null if both are null. This should only be called after [getValue] was called at least once!
+  /// Returns the stored data [_value] if this exists on storage ([_exists]) and otherwise it will return the default
+  /// value!
   ///
-  /// IMPORTANT: this can not check if the database has an explicit null value and it would still return the
-  /// [defaultValue] even it may not be the desired behaviour!
+  /// Of course in both cases it can return null (because you could explicitly store null in the database, or set the
+  /// default value to null as well!)
+  ///
+  /// This should only be called after [getValue] was called at least once!
   T? cachedValue() {
-    return _value ?? defaultValue;
+    return _exists ? _value : defaultValue;
   }
 
-  /// Uses [cachedValue], but throws a [ConfigException] if the data is null and no [defaultValue] is set
+  /// Uses [cachedValue], but throws a [ConfigException] if it would return null (and if the return type [T] is not
+  /// nullable).
+  ///
+  /// This also has the special case that it first checks the stored value and if that one is null, it will also
+  /// check the default value afterwards once (which is different behaviour!)
   T cachedValueNotNull() {
     final T? data = cachedValue();
-    if (data is T) {
+    if (data != null) {
       return data;
-    } else {
+    } else if (defaultValue != null) {
+      return defaultValue!;
+    } else if (data is! T) {
       throw const ConfigException(message: "Config option is not nullable, but cached data is null");
     }
+    return data;
   }
 
-  /// Mostly only used for testing without any other purpose.
-  /// Only sets [_value] and calls [_onValueChange] (unawaited!), but does not call [_write] to storage.
+  /// Mostly only used for testing without any other purpose (this can also not be used for deleting).
+  /// Only sets the cached [_value] and calls [_onValueChange] (unawaited!), but does not call [_write] to storage.
   void onlyUpdateCachedValue(T? data) {
-    unawaited(_onValueChange(data)); // updates cache
+    unawaited(_onValueChange(data, true)); // updates cache
   }
 
   /// Converts and writes the value and calls [_onValueChange] afterwards. And also updates the [_value].
   /// Can also explicitly set the stored [_value] to [null] so that null is returned instead of the [defaultValue].
+  /// To then have [cachedValue] return the [defaultValue] again, use [deleteValue] in the future.
   Future<void> setValue(T? data) async {
+    await onInit();
     await _write(_dataToString(data));
-    await _onValueChange(data); // updates cache
+    await _onValueChange(data, true); // updates cache
   }
 
-  /// Deletes from storage (NOT THE SAME AS SETTING TO NULL).
-  /// Also updates [_value]
+  /// Deletes from storage (NOT THE SAME AS SETTING TO NULL) so that [cachedValue] returns the [defaultValue] again.
+  /// Also updates [_value] and sets exists to false!
   Future<void> deleteValue() async {
+    await onInit();
     await GameToolsLib.database.deleteFromHive(
       key: _transformedKey,
       databaseKey: _dataBase,
     );
-    await _onValueChange(null); // updates cache
+    await _onValueChange(null, false); // updates cache
   }
 
   /// This will be called at the end of [onlyUpdateCachedValue], [setValue] and [deleteValue] (and conditionally also
@@ -163,12 +213,13 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   /// changed.
   ///
   /// Remember that this can also throw the exceptions of the [_updateCallback] if its set!
-  Future<void> _onValueChange(T? data) async {
-    final bool changed = _value != data;
+  Future<void> _onValueChange(T? data, bool exists) async {
+    final bool changed = _exists != exists || _value != data;
     _value = data; // first change data
+    _exists = exists;
     if (changed) {
       Logger.debug("Updating config option listeners for new data for: $this");
-      await _updateCallback?.call(_value);
+      await _updateCallback?.call(cachedValue());
       notifyListeners();
     }
   }

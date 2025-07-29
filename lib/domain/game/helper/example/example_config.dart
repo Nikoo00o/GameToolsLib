@@ -24,6 +24,7 @@ final class ExampleMutableConfig extends MutableConfig {
   /// For showcase this does not use a translation key here!
   final ModelConfigOption<ExampleModel> somethingNew = ModelConfigOption<ExampleModel>(
     titleKey: "Example Model",
+    descriptionKey: "some longer description....some longer description....some longer description....",
     defaultValue: ExampleModel(someData: 5, modifiableData: <ExampleModel>[]),
     lazyLoaded: false,
     updateCallback: (ExampleModel? newModel) => Logger.verbose("got new model $newModel"),

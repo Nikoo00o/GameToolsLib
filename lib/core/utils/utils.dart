@@ -153,6 +153,7 @@ extension ColorExtension on Color {
       Color.from(alpha: 1.0, red: _shade(r, factor), green: _shade(g, factor), blue: _shade(b, factor));
 
   /// Returns a color that is blended into the [target] by the percentage [factor] 0.000001 to 0.999999
+  /// So 5% would be 0.05
   Color blend(Color target, double factor) => Color.from(
     alpha: 1.0,
     red: _shift(r, factor, target.r),

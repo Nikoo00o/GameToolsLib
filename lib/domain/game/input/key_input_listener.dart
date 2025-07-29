@@ -7,6 +7,8 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 base class KeyInputListener extends BaseInputListener<BoardKey> {
   KeyInputListener({
     required super.configLabel,
+    super.configLabelDescription,
+    super.eventCreateCondition,
     required super.createEventCallback,
     required super.alwaysCreateNewEvents,
     required super.defaultKey,
@@ -34,5 +36,5 @@ base class KeyInputListener extends BaseInputListener<BoardKey> {
   }
 
   @override
-  bool _getNewKeyState() => InputManager.isKeyDown(currentKey);
+  bool _getNewKeyState() => InputManager.isKeyDown(currentKey!);
 }

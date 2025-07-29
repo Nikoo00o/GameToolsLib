@@ -17,7 +17,10 @@ import 'package:provider/provider.dart';
 /// many sub classes. Or of course you can also manually use [SimpleCard], [SimpleTextField], etc.
 ///
 /// The current stored config values for rebuilds is provided with consumer and providers, but to changes something,
-/// [MutableConfigOption.setValue] should be used on the [configOption]
+/// [MutableConfigOption.setValue] should be used on the [configOption].
+///
+/// The [ConfigOptionHelperMixin] provides useful helper methods to build all of the different config options that
+/// may be needed! like [ConfigOptionHelperMixin.defaultContentTile], [ConfigOptionHelperMixin.buildBoolOption], etc.
 abstract base class ConfigOptionBuilder<T> with GTBaseWidget {
   /// Reference to the option that this is build for
   final MutableConfigOption<T> configOption;
@@ -41,18 +44,8 @@ abstract base class ConfigOptionBuilder<T> with GTBaseWidget {
   }
 
   /// Should build the right side ui for the config option content depending on the subclass.
-  /// For example look at [defaultContentTile]
+  /// For example look at [ConfigOptionHelperMixin.defaultContentTile]
   Widget buildContent(BuildContext context, T value);
-
-  /// Can be used in [buildContent] to build a list tile with the description and title if they are not null by using
-  /// [SimpleCard]!
-  Widget defaultContentTile(BuildContext context, Widget trailingWidget) {
-    return SimpleCard(
-      titleKey: configOption.titleKey,
-      descriptionKey: configOption.descriptionKey,
-      trailingActions: trailingWidget,
-    );
-  }
 
   /// Returns the cached value of the [configOption]
   T? get value => configOption.cachedValue();
@@ -64,7 +57,9 @@ abstract base class ConfigOptionBuilder<T> with GTBaseWidget {
 /// This also implements [GTGroupBuilderInterface], because it is the only config option builder that is directly
 /// used in the [GTSettingsPage]. This is one of [ConfigOptionBuilderCustom], [ConfigOptionBuilderModel] or
 /// [ConfigOptionBuilderGroup]
-abstract base class MultiConfigOptionBuilder<T> extends ConfigOptionBuilder<T> implements GTGroupBuilderInterface {
+abstract base class MultiConfigOptionBuilder<T> extends ConfigOptionBuilder<T>
+    with ConfigOptionHelperMixin<T>
+    implements GTGroupBuilderInterface {
   const MultiConfigOptionBuilder({
     required super.configOption,
   });
@@ -79,4 +74,7 @@ abstract base class MultiConfigOptionBuilder<T> extends ConfigOptionBuilder<T> i
       label: Text(translate(context, configOption.titleKey)),
     );
   }
+
+  @override
+  String get groupName => configOption.titleKey;
 }

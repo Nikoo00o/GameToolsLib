@@ -23,6 +23,9 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 ///
 /// You have to override [onStart], [onStop], [onUpdate], [onOpenChange], [onFocusChange], [onStateChange]!
 ///
+/// Don't initialize anything in the constructor of your sub class and instead use [onStart] so that you can also access
+/// the config, etc during your custom init!
+///
 /// For an example look at [ExampleGameManager].
 abstract base class GameManager<ConfigType extends GameToolsConfigBaseType> {
   /// Internal list of [BaseInputListener]'s that will be updated by the event loop.
@@ -109,10 +112,19 @@ abstract base class GameManager<ConfigType extends GameToolsConfigBaseType> {
   }
 
   /// Removes the [listener] from the internal list of input listeners (important: this does not include the
-  /// [LogInputListener]!)
-  void removeInputListener(BaseInputListener<dynamic> listener) {
-    _inputListeners.remove(listener);
-    Logger.verbose("Removed input listener $listener");
+  /// [LogInputListener]!) and returns if it was successful.
+  ///
+  /// Important: the [listener] must be a reference to the same object that was added with [addInputListener]!
+  /// This is rarely used, because you can also control the active status of a listener with
+  /// [BaseInputListener.eventCreateCondition] instead!
+  bool removeInputListener(BaseInputListener<dynamic> listener) {
+    final bool removed = _inputListeners.remove(listener);
+    if (removed) {
+      Logger.verbose("Removed input listener $listener");
+    } else {
+      Logger.warn("Did not find input listener to remove $listener");
+    }
+    return removed;
   }
 
   /// Returns an unmodifiable list of the current input listeners

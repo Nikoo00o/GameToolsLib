@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
+import 'package:game_tools_lib/core/exceptions/exceptions.dart';
+import 'package:game_tools_lib/domain/game/game_window.dart';
+import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_listener.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_notifier.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +19,8 @@ import 'package:provider/single_child_widget.dart';
 /// Or you can also listen to a stream of events with [streamListener] for the individual events, or
 /// [SimpleChangeListener] with [SimpleChangeStream] if you want to update related to the whole data and get notified
 /// when it changes (so lists of data are stored when navigating back and forward).
+///
+/// For listening to changes of the main window in the ui, look at [listenToMainWindowChange].
 abstract final class UIHelper {
   /// Build a provider for [option]. Important: you always have to use the same [ConfigOption] subclass type
   /// that you also use in your selector here! The value is then provided to [child] further down the widget tree!
@@ -160,4 +165,37 @@ abstract final class UIHelper {
       }
     },
   );
+
+  /// This can be used with one of either [onOpenChange], [onFocusChange], or [onRename] to listen to one of these
+  /// changes in the [GameWindow] from [GameToolsLib.mainGameWindow]!
+  static Widget listenToMainWindowChange({
+    Key? key,
+    // ignore: avoid_positional_boolean_parameters
+    Widget Function(BuildContext context, bool hasFocus, Widget? child)? onFocusChange,
+    // ignore: avoid_positional_boolean_parameters
+    Widget Function(BuildContext context, bool isOpen, Widget? child)? onOpenChange,
+    Widget Function(BuildContext context, String windowName, Widget? child)? onRename,
+    Widget? child,
+  }) {
+    if (onRename != null) {
+      if (onOpenChange != null || onFocusChange != null) {
+        throw const ConfigException(message: "UIHelper.listenToMainWindowChange may only be called with one builder!");
+      }
+      return Selector<GameWindow, String>(
+        selector: (BuildContext context, GameWindow window) => window.name,
+        key: key,
+        builder: onRename,
+        child: child,
+      );
+    }
+    if (onOpenChange == onFocusChange) {
+      throw const ConfigException(message: "UIHelper.listenToMainWindowChange may only be called with one builder!");
+    }
+    return Selector<GameWindow, bool>(
+      selector: (BuildContext context, GameWindow window) => onOpenChange != null ? window.isOpen : window.hasFocus,
+      key: key,
+      builder: onOpenChange ?? onFocusChange!,
+      child: child,
+    );
+  }
 }

@@ -153,6 +153,37 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
       );
     }
   }
+
+  static String _convertOption(MutableConfigOption<dynamic> option) {
+    if (option is MutableConfigOptionGroup) {
+      final String children = option
+          .cachedValueNotNull()
+          .map((MutableConfigOption<dynamic> option) => _convertOption(option))
+          .toList()
+          .join(", ");
+      return "${option.runtimeType}[$children]";
+    } else {
+      return "${option.runtimeType}(${option.titleKey})";
+    }
+  }
+
+  static void _printRunningLog() {
+    final List<String> listener = GameToolsLib.gameManager()._inputListeners.map((BaseInputListener<dynamic> listener) {
+      if (listener is KeyInputListener) {
+        return "Key(${listener.configLabel}: default=${listener.currentKey?.keyCombinationText})";
+      } else {
+        return "Mouse(${listener.configLabel}: default=${listener.currentKey})";
+      }
+    }).toList();
+    final List<String> options = MutableConfig.mutableConfig.configurableOptions
+        .map((MutableConfigOption<dynamic> option) => _convertOption(option))
+        .toList();
+    final String pretty = StringUtils.toStringPretty(GameToolsConfig._instance!.appTitle, <String, Object?>{
+      "hotkeys": listener,
+      "options": options,
+    });
+    Logger.debug("GameToolsLib is running with $pretty");
+  }
 }
 
 /// Currently no platform specific code with method channel, so everything is done in pure dart with ffi and native

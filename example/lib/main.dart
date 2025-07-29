@@ -53,33 +53,12 @@ final class ExamplePage extends GTNavigationPage {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              Text(windowText),
-              SizedBox(height: 5),
-              Text("Display Cursor Pos: ${InputManager.displayMousePos}"),
-              SizedBox(height: 5),
-              if (windowFound) Text("Window Cursor Pos: ${GameToolsLib.mainGameWindow.windowMousePos}"),
-              SizedBox(height: 5),
-              if (windowFound) Text("Pixel Colour: ${InputManager.getPixelAtCursor(GameToolsLib.mainGameWindow)}"),
               SizedBox(height: 5),
               FilledButton(onPressed: () => GameToolsLib.mainGameWindow.moveMouse(0, 0), child: Text("move mouse")),
               SizedBox(height: 5),
               FilledButton.tonal(onPressed: () => InputManager.keyPress(BoardKey.ctrlC), child: Text("copy to clip")),
               SizedBox(height: 5),
               OutlinedButton(onPressed: _testSomething, child: Text("Test Something")),
-              ElevatedButton(
-                onPressed: () {
-                  final BoolConfigOption darkTheme = MutableConfig.mutableConfig.useDarkTheme;
-                  darkTheme.setValue(!darkTheme.cachedValueNotNull());
-                },
-                child: Text("Change Dark theme"),
-              ),
-              TextButton(
-                onPressed: () {
-                  final LocaleConfigOption locale = MutableConfig.mutableConfig.currentLocale;
-                  locale.setValue(locale.activeLocale == Locale("de") ? Locale("en") : Locale("de"));
-                },
-                child: Text("Change Locale"),
-              ),
               SizedBox(height: 5),
               Text("oem1: ${InputManager.isKeyDown(BoardKey.oem1)}"),
               Text("oem2: ${InputManager.isKeyDown(BoardKey.oem2)}"),
@@ -88,8 +67,6 @@ final class ExamplePage extends GTNavigationPage {
               Text("oem5: ${InputManager.isKeyDown(BoardKey.oem5)}"),
               Text("oem6: ${InputManager.isKeyDown(BoardKey.oem6)}"),
               Text("oem7: ${InputManager.isKeyDown(BoardKey.oem7)}"),
-              SizedBox(height: 5),
-              Text("Was run from tests: ${FileUtils.wasRunFromTests}"),
               SizedBox(height: 5),
               Text("Translate 1: ${translate(context, "empty.1")}"),
               SizedBox(height: 5),
@@ -135,16 +112,16 @@ Future<void> main() async {
   }
   GameToolsLib.gameManager().addInputListener(
     KeyInputListener(
-      configLabel: "h",
-      createEventCallback: () => ExampleEvent(isInstant: false),
+      configLabel: "Example def h",
+      createEventCallback: () => ExampleEvent(isInstant: true),
       alwaysCreateNewEvents: true,
       defaultKey: BoardKey.h,
     ),
   );
   GameToolsLib.gameManager().addInputListener(
     KeyInputListener(
-      configLabel: "ctrlC",
-      createEventCallback: () => ExampleEvent(isInstant: false),
+      configLabel: "Copy with ctrlC",
+      createEventCallback: () => ExampleEvent(isInstant: true),
       alwaysCreateNewEvents: true,
       defaultKey: BoardKey.ctrlC,
     ),
@@ -161,17 +138,19 @@ Future<void> main() async {
 
   GameToolsLib.gameManager().addInputListener(
     KeyInputListener(
-      configLabel: "b",
+      configLabel: "Should be Key B",
+      configLabelDescription: "Must be set later. test test test test test test test test test test test test test "
+          "test test test test test test test test ",
       configGroupLabel: "test",
       createEventCallback: () => ExampleEvent(isInstant: false),
       alwaysCreateNewEvents: true,
-      defaultKey: BoardKey.b,
+      defaultKey: null,
     ),
   );
 
   GameToolsLib.gameManager().addInputListener(
     KeyInputListener(
-      configLabel: "c",
+      configLabel: "Some nice action",
       configGroupLabel: "test",
       createEventCallback: () => ExampleEvent(isInstant: false),
       alwaysCreateNewEvents: true,

@@ -2,6 +2,7 @@ import 'dart:math' show Point, min, max;
 import 'dart:ui' show Color;
 
 import 'package:flutter/services.dart' show Clipboard, ClipboardData, LogicalKeyboardKey, PlatformException;
+import 'package:flutter/widgets.dart';
 import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/enums/input/input_enums.dart';
@@ -13,6 +14,7 @@ import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/data/native/native_window.dart';
 import 'package:game_tools_lib/domain/entities/base/model.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
+import 'package:provider/provider.dart';
 
 part 'package:game_tools_lib/domain/game/input_manager.dart';
 
@@ -31,7 +33,10 @@ part 'package:game_tools_lib/core/enums/input/board_key.dart';
 /// Here you can only use the methods: [getPixelOfWindow], [isWithinWindow], [windowMousePos] and [moveMouse] for
 /// inputs and you can also check if the window [isOpen], or [hasFocus] (or if you don't want to wait for the loop,
 /// [updateAndGetOpen] and [updateAndGetFocus]).
-final class GameWindow {
+///
+/// UI App elements can also use this as a [ChangeNotifier] in a [ChangeNotifierProvider] to listen to changes from
+/// [name], [isOpen] and [hasFocus] updated from [rename], [updateOpen], [updateFocus]
+final class GameWindow with ChangeNotifier {
   /// This is set in the constructor only once and used to identify/find the window.
   /// Name Examples: "Path of Exile", "TL", "League of Legends".
   /// For Default windows it will be checked if the windowName is contained in the real name of the window
@@ -106,23 +111,32 @@ final class GameWindow {
       _name = newName;
     }
     _init();
+    notifyListeners();
     await Utils.delayMS(FixedConfig.fixedConfig.tinyDelayMS.y);
   }
 
   /// Updates the [isOpen] (needs to search the window handle for it) and returns if the open was different before
-  /// and has changed
+  /// and has changed. This is called periodically in the internal event loop!
   bool updateOpen() {
     final bool oldOpen = _isOpen;
     _isOpen = _nativeWindow.isWindowOpen(_windowID);
-    return oldOpen != _isOpen;
+    final bool wasChanged = oldOpen != _isOpen;
+    if (wasChanged) {
+      notifyListeners();
+    }
+    return wasChanged;
   }
 
   /// Updates the [hasFocus] (needs to search the window handle for it) and returns if the focus was different before
-  /// and has changed
+  /// and has changed. This is called periodically in the internal event loop!
   bool updateFocus() {
     final bool oldFocus = _hasFocus;
     _hasFocus = _nativeWindow.hasWindowFocus(_windowID);
-    return oldFocus != _hasFocus;
+    final bool wasChanged = oldFocus != _hasFocus;
+    if (wasChanged) {
+      notifyListeners();
+    }
+    return wasChanged;
   }
 
   /// Mainly used for testing, combines [updateOpen] and [isOpen]
