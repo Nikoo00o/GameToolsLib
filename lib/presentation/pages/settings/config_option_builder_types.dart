@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
+import 'package:game_tools_lib/domain/entities/base/entity.dart';
 import 'package:game_tools_lib/domain/entities/base/model.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder.dart';
+import 'package:game_tools_lib/presentation/pages/settings/config_option_helper_mixin.dart';
+import 'package:game_tools_lib/presentation/pages/settings/gt_list_editor.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/simple_card.dart';
-import 'package:game_tools_lib/presentation/widgets/helper/simple_drop_down_menu.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/simple_text_field.dart';
 
 /// This builds the menu label, but for the content each [ModelConfigOption] type needs its own subclass of this
@@ -14,6 +16,9 @@ import 'package:game_tools_lib/presentation/widgets/helper/simple_text_field.dar
 ///
 /// Of course you could also use [defaultContentTile] here, or also customize your own [SimpleCard]'s and
 /// [SimpleTextField] / [Switch] in a column, because you have the whole right side of the page available.
+///
+/// Remember that you might need to override [containsSearch] to only include your sub type config options instead of
+/// the title!
 abstract base class ConfigOptionBuilderModel<T extends Model> extends MultiConfigOptionBuilder<T> {
   const ConfigOptionBuilderModel({
     required ModelConfigOption<T> configOption,
@@ -27,18 +32,34 @@ final class ConfigOptionBuilderModelExample extends ConfigOptionBuilderModel<Exa
     required super.configOption,
   });
 
+  Widget buildModifiableDataEditor(BuildContext context, ExampleModel model) {
+    final List<int> initialList = model.modifiableData.map((ExampleEntity entity) => entity.someData ?? 0).toList();
+    return buildListOption(
+      title: "Modify some List",
+      description: "Some other description...",
+      elements: initialList,
+      onChange: () {
+        final List<ExampleEntity> mappedList = initialList
+            .map<ExampleEntity>((int element) => ExampleModel(someData: element, modifiableData: <ExampleEntity>[]))
+            .toList();
+        configOption.setValue(ExampleModel(someData: model.someData, modifiableData: mappedList));
+      },
+    );
+  }
+
   @override
   Widget buildContent(BuildContext context, ExampleModel model) {
     return buildMultiOptionsWithTitle(
       context: context,
       children: <Widget>[
         buildIntOption(
-          title: "Modify Some Data",
+          title: "Modify some Data",
           description: "Some info description...",
           initialData: model.someData ?? 0,
           onChanged: (int newValue) =>
               configOption.setValue(ExampleModel(someData: newValue, modifiableData: model.modifiableData)),
         ),
+        buildModifiableDataEditor(context, model),
       ],
     );
   }
@@ -48,18 +69,28 @@ final class ConfigOptionBuilderModelExample extends ConfigOptionBuilderModel<Exa
 /// In this case you have to supply the [buildContentCallback] as well that is used in [buildContent]!
 ///
 /// Of course you could also use [defaultContentTile] here, or also customize your own [SimpleCard]'s in a column,
-/// because you have the whole right side of the page available.
+/// because you have the whole right side of the page available. Also look at [containsSearchCallback].
 final class ConfigOptionBuilderCustom<T> extends MultiConfigOptionBuilder<T> {
   /// This is the [CustomConfigOption.buildCustomContentWidget] to build the ui
   final Widget Function(BuildContext context, T customData) buildContentCallback;
 
+  /// This should return true if your custom option should be shown for the [upperCaseSearchString] in the search bar.
+  /// If this is null it will compare against the title.
+  final bool Function(BuildContext context, String upperCaseSearchString)? containsSearchCallback;
+
   const ConfigOptionBuilderCustom({
     required CustomConfigOption<T> configOption,
     required this.buildContentCallback,
+    this.containsSearchCallback,
   }) : super(configOption: configOption);
 
   @override
   Widget buildContent(BuildContext context, T customData) => buildContentCallback.call(context, customData);
+
+  @override
+  bool containsSearch(BuildContext context, String upperCaseSearchString) =>
+      containsSearchCallback?.call(context, upperCaseSearchString) ??
+      super.containsSearch(context, upperCaseSearchString);
 }
 
 /// This is used to build the menu entries for config options of [TypeConfigOption]
@@ -120,148 +151,6 @@ final class ConfigOptionBuilderEnum<T> extends ConfigOptionBuilder<T> with Confi
       initialValue: configOption.cachedValueNotNull(),
       onValueChange: (T? newValue) => configOption.setValue(newValue as T),
       convertToTranslationKeys: enumOption.convertToTranslationKeys,
-    );
-  }
-}
-
-/// Provides useful helper methods to build the widgets of a [ConfigOptionBuilder] for the config options with for
-/// example [defaultContentTile], [buildBoolOption], etc
-base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
-  /// Can be used in [ConfigOptionBuilder.buildContent] to build a list tile with the description and title if they
-  /// are not null by using [SimpleCard] with the [configOption] and then adding additional methods on the right with
-  /// [trailingWidget]!
-  Widget defaultContentTile(Widget trailingWidget) {
-    return SimpleCard(
-      titleKey: configOption.titleKey,
-      descriptionKey: configOption.descriptionKey,
-      trailingActions: trailingWidget,
-    );
-  }
-
-  /// Builds a list tile with a bool option
-  Widget buildBoolOption({
-    required String title,
-    String? description,
-    required bool initialData,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return SimpleCard(
-      titleKey: title,
-      descriptionKey: description,
-      trailingActions: Switch(
-        value: initialData,
-        onChanged: onChanged,
-      ),
-    );
-  }
-
-  /// Builds a list tile with a string option
-  Widget buildStringOption({
-    required String title,
-    String? description,
-    required String initialData,
-    required ValueChanged<String> onChanged,
-  }) {
-    return SimpleCard(
-      titleKey: title,
-      descriptionKey: description,
-      trailingActions: SimpleTextField<String>(
-        width: 280,
-        initialValue: initialData,
-        onChanged: onChanged,
-      ),
-    );
-  }
-
-  /// Builds a list tile with an int option
-  Widget buildIntOption({
-    required String title,
-    String? description,
-    required int initialData,
-    required ValueChanged<int> onChanged,
-  }) {
-    return SimpleCard(
-      titleKey: title,
-      descriptionKey: description,
-      trailingActions: SimpleTextField<int>(
-        width: 140,
-        initialValue: initialData.toString(),
-        onChanged: (String newValue) => onChanged.call(int.parse(newValue)),
-      ),
-    );
-  }
-
-  /// Builds a list tile with a double option
-  Widget buildDoubleOption({
-    required String title,
-    String? description,
-    required double initialData,
-    required ValueChanged<double> onChanged,
-  }) {
-    return SimpleCard(
-      titleKey: title,
-      descriptionKey: description,
-      trailingActions: SimpleTextField<double>(
-        width: 140,
-        initialValue: initialData.toString(),
-        onChanged: (String newValue) => onChanged.call(double.parse(newValue.replaceAll(',', '.'))),
-      ),
-    );
-  }
-
-  /// Builds a list tile with an enum option
-  Widget buildEnumOption<ET>({
-    required String title,
-    String? description,
-    required List<ET> availableOptions,
-    required ET initialValue,
-    required void Function(ET? newValue) onValueChange,
-    required String Function(ET value)? convertToTranslationKeys,
-  }) {
-    return SimpleCard(
-      titleKey: title,
-      descriptionKey: description,
-      trailingActions: SimpleDropDownMenu<ET>(
-        height: 40,
-        maxWidth: 250,
-        values: availableOptions,
-        initialValue: initialValue,
-        onValueChange: onValueChange,
-        translationKeys: convertToTranslationKeys,
-      ),
-    );
-  }
-
-  /// Builds a column with the [MutableConfigOption.titleKey] from [configOption] as the title at the top
-  /// (optional [MutableConfigOption.descriptionKey] if not null as well) and the [children] as a list view below that.
-  Widget buildMultiOptionsWithTitle({
-    required BuildContext context,
-    required List<Widget> children,
-  }) {
-    return Column(
-      children: <Widget>[
-        Text(
-          translate(context, configOption.titleKey),
-          style: textTitleLarge(context).copyWith(color: colorPrimary(context)),
-          textAlign: TextAlign.center,
-        ),
-        if (configOption.descriptionKey != null)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 4, 8, 0),
-              child: Text(
-                translate(context, configOption.descriptionKey!),
-                textAlign: TextAlign.left,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: textBodyMedium(context).copyWith(color: colorSecondary(context)),
-              ),
-            ),
-          ),
-        const SizedBox(height: 25),
-        Expanded(child: ListView(children: children)),
-      ],
     );
   }
 }

@@ -9,12 +9,14 @@ final class SimpleTextField<T> extends StatefulWidget {
   final double height;
   final String initialValue;
   final void Function(String) onChanged;
+  final bool autofocus;
 
   const SimpleTextField({
     required this.width,
     this.height = 40,
     required this.initialValue,
     required this.onChanged,
+    this.autofocus = false,
   });
 
   @override
@@ -37,6 +39,7 @@ final class _SimpleTextFieldState<T> extends State<SimpleTextField<T>> with GTBa
       width: widget.width,
       height: widget.height,
       child: TextField(
+        autofocus: widget.autofocus,
         controller: _controller,
         maxLines: 1,
         keyboardType: T == String ? null : TextInputType.number,

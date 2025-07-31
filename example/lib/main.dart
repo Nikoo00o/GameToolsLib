@@ -11,21 +11,12 @@ import 'package:provider/provider.dart';
 
 // todo: create template with either template as prefix or "my" for the different overrides
 
-/// this should be unawaited, used for periodic tests
-Future<void> _constantRebuilds(StateSetter setState, int millisecondDelay) async {
-  while (true) {
-    await Utils.delay(Duration(milliseconds: millisecondDelay));
-    setState(() {});
-  }
-}
 
 /// Used for quick tests/debugging on button click
 Future<void> _testSomething() async {}
 
 final class ExamplePage extends GTNavigationPage {
-  Future<void>? _builder;
-
-  ExamplePage({
+  const ExamplePage({
     super.key,
     super.backgroundImage,
     super.backgroundColor,

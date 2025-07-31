@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_page.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigator.dart';
-import 'package:provider/provider.dart';
-import 'package:provider/single_child_widget.dart';
 
 /// The classes that depend on this are used in the [GTNavigator] and have a navigation rail displayed on the left of
 /// the screen and the [buildBody] of this is the expanded part of a row (only a divider and no padding in between)!
@@ -17,10 +15,13 @@ import 'package:provider/single_child_widget.dart';
 /// and no back button! And per default the default app bar is in the same color as the outer left navigation bar.
 /// And the same color is around the padded inner page with rounded borders.
 ///
+/// Important: [buildProviders] of this will be called from [GTNavigator.buildScaffold] so that it includes body and
+/// appbar of this!
+///
 /// Additionally [navigationLabel] must be overridden to provide info for the navigation rail together with
 /// [navigationSelectedIcon] and [navigationNotSelectedIcon].
 ///
-/// Also subclasses can control tabbing with [allowTabTraversal]
+/// Also subclasses can control tabbing with [allowTabTraversal].
 abstract base class GTNavigationPage extends GTBasePage {
   /// This is build around the [GTNavigationPage]
   static const EdgeInsets innerNavPadding = EdgeInsets.fromLTRB(8, 8, 8, 8);
@@ -45,11 +46,10 @@ abstract base class GTNavigationPage extends GTBasePage {
 
   @override
   Widget build(BuildContext context) {
-    final List<SingleChildWidget> providers = buildProviders(context);
     final Color backgroundColor = getBackgroundColor(context) ?? colorScaffoldBackground(context);
     final DecorationImage? backgroundImage = getBackgroundImage();
 
-    final Widget body = FocusTraversalGroup(
+    return FocusTraversalGroup(
       descendantsAreTraversable: allowTabTraversal,
       child: Container(
         margin: innerNavPadding,
@@ -64,12 +64,6 @@ abstract base class GTNavigationPage extends GTBasePage {
         child: buildBody(context),
       ),
     );
-
-    if (providers.isNotEmpty) {
-      return MultiProvider(providers: providers, child: body);
-    } else {
-      return body;
-    }
   }
 
   /// Must be overridden in sub classes to show a different label on the navigation rail bar to navigate to this!

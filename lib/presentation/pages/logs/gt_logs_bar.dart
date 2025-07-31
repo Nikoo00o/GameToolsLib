@@ -10,6 +10,7 @@ import 'package:game_tools_lib/presentation/base/ui_helper.dart';
 import 'package:game_tools_lib/presentation/pages/logs/gt_logs_page.dart';
 import 'package:game_tools_lib/presentation/pages/logs/gt_logs_view.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/simple_drop_down_menu.dart';
+import 'package:game_tools_lib/presentation/widgets/helper/simple_search_container.dart';
 
 /// The search + select bar for logs in the [GTLogsPage]
 final class GTLogsBar extends StatelessWidget with GTBaseWidget {
@@ -20,9 +21,9 @@ final class GTLogsBar extends StatelessWidget with GTBaseWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-          child: _buildSearchContainer(context),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(20, 4, 20, 4),
+          child: SimpleSearchContainer(hintTextKey: "page.logs.search"),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
@@ -58,25 +59,6 @@ final class GTLogsBar extends StatelessWidget with GTBaseWidget {
         }
       }
     }
-  }
-
-  Widget _buildSearchContainer(BuildContext context) {
-    return SizedBox(
-      width: 280,
-      height: 40,
-      child: TextField(
-        maxLines: 1,
-        onChanged: (String newSearchText) => UIHelper.modifySimpleValue<String>(context).value = newSearchText,
-        decoration: InputDecoration(
-          isDense: true,
-          prefixIcon: const Icon(Icons.search),
-          hintText: translate(context, "page.logs.search"),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(32)),
-          fillColor: colorSurfaceContainer(context),
-          filled: true,
-        ),
-      ),
-    );
   }
 
   Widget _buildFilterDropDown(BuildContext context) {

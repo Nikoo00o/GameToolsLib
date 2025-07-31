@@ -4,6 +4,7 @@ import 'package:game_tools_lib/presentation/base/gt_app.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_page.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_notifier.dart';
+import 'package:nested/nested.dart';
 import 'package:provider/provider.dart';
 
 // ignore_for_file: must_be_immutable
@@ -18,7 +19,9 @@ import 'package:provider/provider.dart';
 ///
 /// Per default this will build the right inner body of the [GTNavigationPage] in the [colorScaffoldBackground] color
 /// with a padding around it and everything else (like [buildAppBarDefaultTitle]) and the [buildCurrentNavRail] is in the
-/// [colorSurfaceContainer] color! Also the [GTNavigationPage]'s are padded with the [GTNavigationPage.getNavPadding]
+/// [colorSurfaceContainer] color! Also the [GTNavigationPage]'s are padded with the [GTNavigationPage.innerNavPadding]
+///
+/// The [buildScaffold] uses [GTNavigationPage.buildProviders]
 base class GTNavigator extends GTBasePage {
   /// List of [GTNavigationPage] pages that are the options to navigate to
   final List<GTNavigationPage> pages;
@@ -85,7 +88,9 @@ base class GTNavigator extends GTBasePage {
 
   Widget buildScaffold(BuildContext context, int index) {
     final GTNavigationPage page = pages.elementAt(index);
-    return Scaffold(
+    final List<SingleChildWidget> providers = page.buildProviders(context);
+
+    final Widget scaffold = Scaffold(
       body: Row(
         children: <Widget>[
           buildCurrentNavRail(context, index),
@@ -97,6 +102,12 @@ base class GTNavigator extends GTBasePage {
       bottomNavigationBar: page.buildBottomBar(context),
       backgroundColor: colorSurfaceContainer(context),
     );
+
+    if (providers.isNotEmpty) {
+      return MultiProvider(providers: providers, child: scaffold);
+    } else {
+      return scaffold;
+    }
   }
 
   @override

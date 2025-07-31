@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
+import 'package:game_tools_lib/presentation/base/ui_helper.dart';
 import 'package:game_tools_lib/presentation/pages/hotkeys/gt_hotkeys_page.dart';
 import 'package:game_tools_lib/presentation/pages/hotkeys/hotkey_group_builder.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder.dart';
 import 'package:game_tools_lib/presentation/pages/settings/gt_settings_page.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_notifier.dart';
+import 'package:game_tools_lib/presentation/widgets/helper/simple_search_container.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
@@ -33,6 +35,9 @@ abstract interface class GTGroupBuilderInterface {
   /// Should be overridden in the subclass to display the name (or translation key) that should be put on the
   /// navigation rail
   String get groupName;
+
+  /// Must be overridden to return if this builder should be shown when the user is searching [upperCaseSearchString]
+  bool containsSearch(BuildContext context, String upperCaseSearchString);
 }
 
 /// An extension for [GTNavigationPage] for config pages that have a sub navigation rail on the left of available
@@ -50,7 +55,8 @@ abstract interface class GTGroupBuilderInterface {
 /// and you have to override and create new object of it in [createIndexSubclass].
 ///
 /// This also changes the [pagePadding] so that it only applies to the right side of the body! (and not the next
-/// inner navigation rail! by overriding [getInnerPadding] to null).
+/// inner navigation rail! by overriding [getInnerPadding] to null). And this also provides a search bar per default
+/// which also uses the [navigationLabel] as translated hint!
 base mixin GTGroupedBuildersExtension<BT extends GTGroupBuilderInterface, IndexType extends GTGroupIndex>
     on GTNavigationPage {
   /// The list of builders which must be initialized only once in the constructor of the sub class!
@@ -71,8 +77,8 @@ base mixin GTGroupedBuildersExtension<BT extends GTGroupBuilderInterface, IndexT
 
   /// Builds the [NavigationRail] (with some settings) by calling [MultiConfigOptionBuilder.buildGroupLabel] which
   /// returns the [NavigationRailDestination] with the icons and translation keys. May be overridden in the sub class!
-  Widget buildGroupLabels(BuildContext context, int index) {
-    final List<NavigationRailDestination> destinations = builders
+  Widget buildGroupLabels(BuildContext context, List<BT> searchedBuilders, int index) {
+    final List<NavigationRailDestination> destinations = searchedBuilders
         .map((BT builder) => builder.buildGroupLabel(context))
         .toList();
     return LayoutBuilder(
@@ -98,6 +104,41 @@ base mixin GTGroupedBuildersExtension<BT extends GTGroupBuilderInterface, IndexT
     );
   }
 
+  Widget buildSearchState(BuildContext context, List<BT> searchedBuilders, int oldPos, BT oldBuilder) {
+    late int currentPos;
+    if (searchedBuilders.isEmpty) {
+      return Center(
+        child: Text(
+          translate(context, "input.search.not.found"),
+          style: textTitleLarge(context).copyWith(color: colorError(context)),
+        ),
+      );
+    } else if (searchedBuilders.length <= oldPos) {
+      currentPos = searchedBuilders.length - 1;
+    } else {
+      currentPos = oldPos;
+    }
+    BT? newBuilder = searchedBuilders.elementAt(currentPos);
+    if (newBuilder.groupName != oldBuilder.groupName) {
+      newBuilder = searchedBuilders.where((BT builder) => builder.groupName == newBuilder!.groupName).firstOrNull;
+      newBuilder ??= searchedBuilders.first;
+    }
+    if (newBuilder.groupName != oldBuilder.groupName) {
+      Logger.verbose("Inner Nav Tab changed because of search: ${newBuilder.groupName}");
+    }
+
+    return Row(
+      children: <Widget>[
+        const SizedBox(width: 8),
+        buildGroupLabels(context, searchedBuilders, currentPos),
+        const VerticalDivider(thickness: 1, width: 1),
+        Expanded(
+          child: Padding(padding: pagePadding, child: buildCurrentGroupOptions(context, newBuilder)),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget buildBody(BuildContext context) {
     return Consumer<IndexType>(
@@ -105,23 +146,40 @@ base mixin GTGroupedBuildersExtension<BT extends GTGroupBuilderInterface, IndexT
         final int pos = index.value;
         final BT builder = builders.elementAt(pos);
         Logger.verbose("Inner Nav Tab selected: ${builder.groupName}");
-        return Row(
-          children: <Widget>[
-            const SizedBox(width: 8),
-            buildGroupLabels(context, pos),
-            const VerticalDivider(thickness: 1, width: 1),
-            Expanded(
-              child: Padding(padding: pagePadding, child: buildCurrentGroupOptions(context, builder)),
-            ),
-          ],
+        return UIHelper.simpleConsumer<String>(
+          builder: (BuildContext context, String searchString, Widget? innerChild) {
+            final String upperCaseSearchString = searchString.toUpperCase();
+            late final List<BT> searchedBuilders;
+            if (searchString.isEmpty) {
+              searchedBuilders = builders;
+            } else {
+              searchCallback(BT builder) => builder.containsSearch(context, upperCaseSearchString);
+              searchedBuilders = builders.where(searchCallback).toList();
+            }
+            return buildSearchState(context, searchedBuilders, pos, builder);
+          },
         );
       },
     );
   }
 
   @override
+  PreferredSizeWidget? buildAppBar(BuildContext context) => buildAppBarDefaultTitle(
+    key: ValueKey<String>(navigationLabel),
+    context,
+    navigationLabel,
+    actions: <Widget>[
+      SimpleSearchContainer(
+        hintTextKey: "${translate(context, "input.search")} ${translate(context, navigationLabel)}",
+      ),
+      const SizedBox(width: 20),
+    ],
+  );
+
+  @override
   List<SingleChildWidget> buildProviders(BuildContext context) => <SingleChildWidget>[
     ChangeNotifierProvider<IndexType>(create: createIndexSubclass),
+    UIHelper.simpleProvider(createValue: (_) => ""),
   ];
 
   /// Must be overridden to create a new object of a unique subclass type of [GTGroupIndex]!

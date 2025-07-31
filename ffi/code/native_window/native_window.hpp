@@ -6,7 +6,7 @@
 
 /// Simple integer to detect dll library mismatches. Has to be incremented when native code is modified!
 /// Also Modify the version in native_window.dart!
-# define _NATIVE_CODE_VERSION 6
+# define _NATIVE_CODE_VERSION 7
 
 /// Simple integer to detect dll library mismatches. Has to be incremented when native code is modified!
 /// Also Modify the version in native_window.dart!

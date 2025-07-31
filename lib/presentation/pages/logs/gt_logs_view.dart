@@ -22,9 +22,9 @@ final class GTLogsView extends StatelessWidget with GTBaseWidget {
   }
 
   Widget listCallback(BuildContext context, List<LogMessage> logMessages, Widget? outerChild) {
-    return UIHelper.simpleConsumer(
+    return UIHelper.simpleConsumer<LogLevel>(
       builder: (BuildContext context, LogLevel maxLogLevel, Widget? innerChild) {
-        return UIHelper.simpleConsumer(
+        return UIHelper.simpleConsumer<String>(
           builder: (BuildContext context, String searchString, Widget? innerChild) {
             return buildInnerList(context, logMessages, maxLogLevel, searchString);
           },

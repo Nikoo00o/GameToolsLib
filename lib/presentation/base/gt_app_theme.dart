@@ -103,8 +103,6 @@ final class GTAppTheme {
   }
 
   /// Returns the parsed [ColorScheme] from the base material colors.
-  ///
-  /// [brightness] can be light, or dark for light, or dark themes!
   ColorScheme getColorScheme({required bool darkTheme, required GTContrast contrast}) {
     final Brightness brightness = darkTheme ? Brightness.dark : Brightness.light;
     if (baseSecondaryColor == null || baseTertiaryColor == null || baseNeutralColor == null || baseErrorColor == null) {

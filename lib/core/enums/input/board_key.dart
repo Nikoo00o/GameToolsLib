@@ -101,8 +101,11 @@ final class BoardKey implements Model {
   }
 
   /// Special Key combinations
+  /// Important: this is non restrictive (it would also trigger if shift, or alt would be down as well)
   static const BoardKey ctrlC = BoardKey(LogicalKeyboardKey.keyC, withControl: true);
+  /// Important: this is non restrictive (it would also trigger if shift, or alt would be down as well)
   static const BoardKey ctrlV = BoardKey(LogicalKeyboardKey.keyV, withControl: true);
+  /// Important: this is non restrictive (it would also trigger if shift, or alt would be down as well)
   static const BoardKey ctrlA = BoardKey(LogicalKeyboardKey.keyA, withControl: true);
 
   /// Modifier keys themself (don't use the general modifier key to press it manually!)

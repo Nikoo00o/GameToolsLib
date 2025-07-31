@@ -98,8 +98,10 @@ abstract base class GTBasePage extends StatelessWidget with GTBaseWidget {
     String titleKey, {
     bool buildBackButton = false,
     List<Widget>? actions,
+    Key? key,
   }) {
     return AppBar(
+      key: key,
       leading: buildBackButton ? const BackButton() : null,
       backgroundColor: colorSurfaceContainer(context),
       title: Text(

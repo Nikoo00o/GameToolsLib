@@ -143,6 +143,7 @@ inline HDC _getMainDisplay()
 }
 
 #define _SRCCOPY 0x00CC0020ul
+#define _BI_RGB 0L
 #define _DIB_RGB_COLORS 0
 
 /// Returns an image of the main display from the top left corner
@@ -151,7 +152,7 @@ inline unsigned char *_getImage(int x, int y, int width, int height)
     HDC deviceContext = _getMainDisplay();
     HDC memoryDeviceContext = CreateCompatibleDC(deviceContext);
     HBITMAP bitmap = CreateCompatibleBitmap(deviceContext, width, height);
-    SelectObject(memoryDeviceContext, bitmap);
+    HGDIOBJ oldObject = SelectObject(memoryDeviceContext, bitmap);
     BitBlt(memoryDeviceContext, 0, 0, width, height, deviceContext, x, y, _SRCCOPY); // now image data is in bitmap
 
     BITMAPINFOHEADER bi; // format on how the bitmap is interpreted for opencv
@@ -160,7 +161,7 @@ inline unsigned char *_getImage(int x, int y, int width, int height)
     bi.biHeight = -height;
     bi.biPlanes = 1;
     bi.biBitCount = 32; // RGBA
-    bi.biCompression = BI_RGB; // no compression
+    bi.biCompression = _BI_RGB; // no compression
     bi.biSizeImage = 0; // because no compression
     bi.biXPelsPerMeter = 1; // irrelevant
     bi.biYPelsPerMeter = 1; // irrelevant
@@ -172,6 +173,7 @@ inline unsigned char *_getImage(int x, int y, int width, int height)
     GetDIBits(memoryDeviceContext, bitmap, 0, height, array, (BITMAPINFO * ) & bi, _DIB_RGB_COLORS);
     // copy into buffer: 0 start, height = lines, mat.data is buffer, bitmapinfo, rgba info
 
+    SelectObject(memoryDeviceContext, oldObject);
     DeleteObject(bitmap);
     DeleteDC(memoryDeviceContext); // delete dc
     return array;

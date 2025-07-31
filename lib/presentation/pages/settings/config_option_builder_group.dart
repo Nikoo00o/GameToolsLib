@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
+import 'package:game_tools_lib/presentation/base/ui_helper.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder.dart';
 import 'package:game_tools_lib/presentation/pages/settings/gt_settings_page.dart';
 
@@ -34,8 +35,7 @@ final class ConfigOptionBuilderGroup extends MultiConfigOptionBuilder<List<Mutab
     }).toList();
   }
 
-  @override
-  Widget buildProviderWithContent(BuildContext context) {
+  Widget buildChildren(List<ConfigOptionBuilder<dynamic>> builders) {
     return ListView.builder(
       itemCount: builders.length,
       itemBuilder: (BuildContext context, int index) {
@@ -46,7 +46,35 @@ final class ConfigOptionBuilderGroup extends MultiConfigOptionBuilder<List<Mutab
   }
 
   @override
+  Widget buildProviderWithContent(BuildContext context) {
+    return UIHelper.simpleConsumer<String>(
+      builder: (BuildContext context, String searchString, Widget? innerChild) {
+        final String upperCaseSearchString = searchString.toUpperCase();
+        late final List<ConfigOptionBuilder<dynamic>> searchedBuilders;
+        if (searchString.isEmpty) {
+          searchedBuilders = builders;
+        } else {
+          searchedBuilders = builders
+              .where((ConfigOptionBuilder<dynamic> builder) => builder.containsSearch(context, upperCaseSearchString))
+              .toList();
+        }
+        return buildChildren(searchedBuilders);
+      },
+    );
+  }
+
+  @override
   Widget buildContent(BuildContext context, List<MutableConfigOption<dynamic>> value) {
     throw UnimplementedError(); // this will never be called
+  }
+
+  @override
+  bool containsSearch(BuildContext context, String upperCaseSearchString) {
+    for (final ConfigOptionBuilder<dynamic> builder in builders) {
+      if (builder.containsSearch(context, upperCaseSearchString)) {
+        return true;
+      }
+    }
+    return false;
   }
 }

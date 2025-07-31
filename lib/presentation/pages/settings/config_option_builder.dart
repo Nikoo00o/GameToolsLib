@@ -4,6 +4,7 @@ import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_grouped_builders_extension.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder_group.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder_types.dart';
+import 'package:game_tools_lib/presentation/pages/settings/config_option_helper_mixin.dart';
 import 'package:game_tools_lib/presentation/pages/settings/gt_settings_page.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/simple_card.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/simple_text_field.dart';
@@ -49,6 +50,11 @@ abstract base class ConfigOptionBuilder<T> with GTBaseWidget {
 
   /// Returns the cached value of the [configOption]
   T? get value => configOption.cachedValue();
+
+  /// Per default to test if this should be shown for a user search, just test if its contained (case doesn't matter)
+  /// in the translated [MutableConfigOption.titleKey]
+  bool containsSearch(BuildContext context, String upperCaseSearchString) =>
+      translate(context, configOption.titleKey).toUpperCase().contains(upperCaseSearchString);
 }
 
 /// Subclasses of this are only for the custom and model config options, or for config option groups to also build

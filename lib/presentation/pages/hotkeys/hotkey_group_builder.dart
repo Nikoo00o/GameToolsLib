@@ -4,6 +4,7 @@ import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
+import 'package:game_tools_lib/presentation/base/ui_helper.dart';
 import 'package:game_tools_lib/presentation/pages/hotkeys/gt_hotkey_field.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_grouped_builders_extension.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/simple_card.dart';
@@ -70,12 +71,11 @@ base class HotkeyGroupBuilder with GTBaseWidget implements GTGroupBuilderInterfa
     );
   }
 
-  @override
-  Widget buildProviderWithContent(BuildContext context) {
+  Widget buildChildren(List<BaseInputListener<dynamic>> listeners) {
     return ListView.builder(
-      itemCount: inputListener.length,
+      itemCount: listeners.length,
       itemBuilder: (BuildContext context, int index) {
-        final BaseInputListener<dynamic> listener = inputListener.elementAt(index);
+        final BaseInputListener<dynamic> listener = listeners.elementAt(index);
         if (listener is KeyInputListener) {
           return buildKeyInputListener(context, listener);
         } else if (listener is MouseInputListener) {
@@ -84,6 +84,40 @@ base class HotkeyGroupBuilder with GTBaseWidget implements GTGroupBuilderInterfa
         throw ConfigException(message: "Error, wrong listener type $listener");
       },
     );
+  }
+
+  @override
+  Widget buildProviderWithContent(BuildContext context) {
+    return UIHelper.simpleConsumer<String>(
+      builder: (BuildContext context, String searchString, Widget? innerChild) {
+        final String upperCaseSearchString = searchString.toUpperCase();
+        late final List<BaseInputListener<dynamic>> searchedListeners;
+        if (searchString.isEmpty) {
+          searchedListeners = inputListener;
+        } else {
+          searchCallback(BaseInputListener<dynamic> listener) =>
+              listenerContainsUpperCaseSearchString(context, listener, upperCaseSearchString);
+          searchedListeners = inputListener.where(searchCallback).toList();
+        }
+        return buildChildren(searchedListeners);
+      },
+    );
+  }
+
+  bool listenerContainsUpperCaseSearchString(
+    BuildContext context,
+    BaseInputListener<dynamic> listener,
+    String upperCaseSearchString,
+  ) => translate(context, listener.configLabel).toUpperCase().contains(upperCaseSearchString);
+
+  @override
+  bool containsSearch(BuildContext context, String upperCaseSearchString) {
+    for (final BaseInputListener<dynamic> listener in inputListener) {
+      if (listenerContainsUpperCaseSearchString(context, listener, upperCaseSearchString)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @override

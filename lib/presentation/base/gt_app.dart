@@ -12,7 +12,7 @@ import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/base/gt_overlay_switcher.dart';
 import 'package:game_tools_lib/presentation/base/ui_helper.dart';
-import 'package:game_tools_lib/presentation/pages/gt_home_page.dart';
+import 'package:game_tools_lib/presentation/pages/home/gt_home_page.dart';
 import 'package:game_tools_lib/presentation/pages/hotkeys/gt_hotkeys_page.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigator.dart';
@@ -75,7 +75,7 @@ base class GTApp extends StatelessWidget {
                   Logger.verbose(
                     "Displaying $runtimeType with ${darkTheme ? "dark" : "light"} theme and locale $locale",
                   );
-                  return _buildApp(context, theme, locale);
+                  return buildApp(context, theme, locale);
                 },
               );
             },
@@ -85,7 +85,7 @@ base class GTApp extends StatelessWidget {
     );
   }
 
-  Widget _buildApp(BuildContext context, ThemeData theme, Locale locale) {
+  Widget buildApp(BuildContext context, ThemeData theme, Locale locale) {
     return MaterialApp(
       title: _baseConfig.appTitle,
       theme: theme,
