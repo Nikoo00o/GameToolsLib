@@ -1,6 +1,8 @@
 import 'dart:ffi' show Pointer, UnsignedChar, Void;
 import 'dart:math' show min, max;
-import 'dart:ui' show Color;
+import 'dart:ui' show Color, Image, PixelFormat, decodeImageFromPixels;
+import 'package:flutter/material.dart'
+    show showDialog, BuildContext, AlertDialog, Text, Widget, RawImage, Navigator, TextButton;
 import 'package:game_tools_lib/core/enums/native_image_type.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/utils/Bounds.dart';
@@ -8,6 +10,7 @@ import 'package:game_tools_lib/core/utils/file_utils.dart';
 import 'package:game_tools_lib/data/native/native_window.dart' show NativeWindow;
 import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
+import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:opencv_dart/opencv.dart' as cv;
 
 part 'base_native_image.dart';
@@ -24,6 +27,8 @@ part 'base_native_image.dart';
 /// for example [resize] or [changeTypeAsync].
 ///
 /// [NativeImage.nativeSync] and [NativeImage.nativeAsync] are used internally in [GameWindow] to create images.
+///
+/// For debugging you can also show this image in the ui with [showImageDialog]
 final class NativeImage extends BaseNativeImage {
   /// Used for pixel comparison how high the total R, G, B value difference may be until a pixel is counted as invalid
   static int defaultPixelValueThreshold = 75;
@@ -217,6 +222,30 @@ final class NativeImage extends BaseNativeImage {
     } else {
       throw ImageException(message: "cant get SubImage from $this at $x, $y, $width, $height");
     }
+  }
+
+  /// Displays this in the ui by using [getDartImage]!
+  Future<void> showImageDialog(BuildContext outerContext) async {
+    final Image dartImage = await getDartImage();
+    if (outerContext.mounted) {
+      await showDialog<void>(
+        context: outerContext,
+        barrierDismissible: true,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            title: Text(GTBaseWidget.translateS(dialogContext, "input.image", listen: true)),
+            content: RawImage(image: dartImage),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(GTBaseWidget.translateS(dialogContext, "input.ok", listen: true)),
+              ),
+            ],
+          );
+        },
+      );
+    }
+    dartImage.dispose();
   }
 
   /// 100% equality, calls [equals] with pixelRGBThreshold=1 and maxAmountOfPixelsNotEqual=0.

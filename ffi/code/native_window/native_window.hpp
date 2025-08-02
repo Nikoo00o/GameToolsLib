@@ -15,10 +15,12 @@ EXPORT int nativeCodeVersion();
 /// This must be called first to initialize the windowName (also resets the handle).
 /// The windowID starts at 0 and has to be used for the other functions (only numbers 0 >= windowID < 100 )
 /// Name Examples: "Path of Exile", "TL", "League of Legends"
+EXPORT bool initWindow(int windowID, const char *windowName);
+
 /// For Default windows it will be checked if the windowName is contained in the real name of the window
 /// This can be disabled by setting "alwaysMatchEqual" to true
-/// For Debugging printWindowNames can be set to true (otherwise this should be false)
-EXPORT bool initWindow(int windowID, const char *windowName, bool alwaysMatchEqual, bool printWindowNames);
+/// For Debugging the printCallback will be set (not null) to log from c++ code into dart code
+EXPORT void initConfig(bool alwaysMatchEqual, void (*printCallback)(const char *, int));
 
 /// initWindow must be called first
 EXPORT bool isWindowOpen(int windowID);

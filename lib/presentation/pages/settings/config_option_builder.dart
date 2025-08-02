@@ -11,7 +11,8 @@ import 'package:game_tools_lib/presentation/widgets/helper/simple_text_field.dar
 import 'package:provider/provider.dart';
 
 /// Use subclasses of this to build the menu structure for the different classes of [MutableConfigOption] in the
-/// [GTSettingsPage].
+/// [GTSettingsPage]. [T] will be the type of the data stored in [MutableConfigOption]. If you want to use nullable
+/// types, use an explicit "[T]?"!
 ///
 /// Subclasses need to override [buildContent] which will be called in the subtree of [buildProviderWithContent]
 /// (this will be called automatically like a default build method!). For example [defaultContentTile] is used in
@@ -33,20 +34,24 @@ abstract base class ConfigOptionBuilder<T> with GTBaseWidget {
   /// Builds a [ChangeNotifierProvider] provider around for the [configOption] and also directly consumes it and
   /// calls [buildContent] every time the listeners are notified to build the right side of the ui!
   /// (this is called automatically)
-  Widget buildProviderWithContent(BuildContext context) {
+  Widget buildProviderWithContent(BuildContext context, {required bool calledFromInnerGroup}) {
     return ChangeNotifierProvider<MutableConfigOption<T>>.value(
       value: configOption,
       child: Consumer<MutableConfigOption<T>>(
         builder: (BuildContext context, MutableConfigOption<T> option, Widget? child) {
-          return buildContent(context, option.cachedValueNotNull());
+          return buildContent(context, option.cachedValueNotNull(), calledFromInnerGroup: calledFromInnerGroup);
         },
       ),
     );
   }
 
-  /// Should build the right side ui for the config option content depending on the subclass.
+  /// Should build the right side ui for the config option content depending on the subclass which should contain
+  /// some toggle/etc to represent the state of the config option!
   /// For example look at [ConfigOptionHelperMixin.defaultContentTile]
-  Widget buildContent(BuildContext context, T value);
+  ///
+  /// [value] is the current data of the [MutableConfigOption] of type [T] and [calledFromInnerGroup] can be used to
+  /// decide if a title should be build on the page itself, or if its in the app bar instead!
+  Widget buildContent(BuildContext context, T value, {required bool calledFromInnerGroup});
 
   /// Returns the cached value of the [configOption]
   T? get value => configOption.cachedValue();
@@ -70,7 +75,19 @@ abstract base class MultiConfigOptionBuilder<T> extends ConfigOptionBuilder<T>
     required super.configOption,
   });
 
-  /// Builds a Menu structure to the left of the [buildContent]!
+  /// Special behaviour for [ConfigOptionBuilderCustom] and [ConfigOptionBuilderModel] ([ConfigOptionBuilderGroup]
+  /// has its own override)!
+  @override
+  Widget buildProviderWithContent(BuildContext context, {required bool calledFromInnerGroup}) {
+    if (calledFromInnerGroup) {
+      return buildNewPageOption(configOption, context);
+    } else {
+      return super.buildProviderWithContent(context, calledFromInnerGroup: calledFromInnerGroup);
+    }
+  }
+
+  /// This should build a Menu structure to the left of the [buildProviderWithContent] and is called from
+  /// [GTGroupedBuildersExtension.buildGroupLabels] when building the menu entries.
   @override
   NavigationRailDestination buildGroupLabel(BuildContext context) {
     return NavigationRailDestination(

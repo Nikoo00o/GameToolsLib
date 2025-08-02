@@ -1,6 +1,7 @@
 #include "native_window.hpp"
 #include <string>
 #include <stdbool.h>
+#include <stdio.h>
 
 struct _WindowHelper
 {
@@ -10,33 +11,26 @@ struct _WindowHelper
 
 /// Caches the handles and names for all used windows (set in init, handles may be reset in _getWindowHandle)
 _WindowHelper _windows[1000]{};
-/// Debug Variable used to print all window names (set in init)
-bool _printWindowNames = false;
+
+/// Used for debugging / logging into dart code and is initialized in
+void (*_printToDart)(const char *, int);
 
 bool _alwaysMatchEqual = false;
 /// Caches the main display (reset in _getWindowHandle)
 HDC _mainDisplay = 0;
 
-/// If the source can be split by "- ", then it will only compare the last part to the targetname and return true.
-/// otherwise false. always false if the target name contains "- "
+/// If the source can be split by "- ", then it will only compare the last part to the target name and return true.
+/// otherwise false.
 inline bool _isLastPartEqualTo(const char *source, const char *targetName)
 {
     size_t srcLength = strlen(source);
     size_t targetLength = strlen(targetName);
-    // check if delimitters are in target (dont check last char, because 1 char ahead is checked)
-    for ( size_t i = 0; i < targetLength - 1; ++i )
-    {
-        if ( targetName[i] == '-' && targetName[i + 1] == ' ' )
-        {
-            return false;
-        }
-    }
     size_t startPos = 0;
     for ( size_t i = 0; i < srcLength - 1; ++i )
     {
-        if ( source[i] == '-' && source[i + 1] == ' ' )
+        if ( (source[i] == '-' || source[i] == -106)  && source[i + 1] == ' ' )
         {
-            startPos = i + 2; // start at the character after the 2 delimitters
+            startPos = i + 2; // start at the character after the 2 delimiters
         }
     }
     // now if startPos was set and the remaining of source is same length as target, just default string compare them
@@ -54,6 +48,28 @@ inline bool _isLastPartEqualTo(const char *source, const char *targetName)
     return false;
 }
 
+/// Returns true if only the source, but not the target contains a " - " delimiter which is used for browser, etc
+inline bool _onlyCompareLastPart(const char *source, const char *targetName)
+{
+    size_t srcLength = strlen(source);
+    size_t targetLength = strlen(targetName);
+    for ( size_t i = 1; i < targetLength - 1; ++i )
+    {
+        if (targetName[i - 1] == ' ' && (targetName[i] == '-' || targetName[i] == -106) && targetName[i + 1] == ' ' )
+        {
+            return false;
+        }
+    }
+    for ( size_t i = 1; i < srcLength - 1; ++i )
+    {
+        if (source[i - 1] == ' ' && (source[i] == '-' || source[i] == -106) && source[i + 1] == ' ' )
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 /// Helper method that will be called with every open window handle
 int __stdcall _enumWindows(HWND hwnd, LPARAM lParam)
 {
@@ -63,21 +79,22 @@ int __stdcall _enumWindows(HWND hwnd, LPARAM lParam)
     {
         char *windowTitle = new char[length + 1];
         bool isEqual = false;
-        bool written = GetWindowTextA(hwnd, windowTitle, length + 1);
-        if ( written && IsWindowVisible(hwnd))
+        int written = GetWindowTextA(hwnd, windowTitle, length + 1);
+        if ( written > 1 && IsWindowVisible(hwnd))
         {
-            if ( _printWindowNames )
+            if ( _printToDart != 0 )
             {
-                printf("Window: %s\n", windowTitle);
+                _printToDart(windowTitle, 1); // 1 is used for window names
             }
             if ( windowTitle[1] == ':' && windowTitle[2] == '\\' )
             {
                 // special case: windows explorer.exe (must be equal here)
                 isEqual = strcmp(windowTitle, helper->name) == 0;
-            } else if ( _isLastPartEqualTo(windowTitle, helper->name))
+            } else if ( _onlyCompareLastPart(windowTitle, helper->name) )
             {
+                // todo: better use wchar to be able to compare correctly!
                 // special case: discord, or browser like firefox, etc (must be equal to last part here)
-                isEqual = true;
+                isEqual = _isLastPartEqualTo(windowTitle, helper->name);
             } else
             {
                 if ( _alwaysMatchEqual )
@@ -129,6 +146,21 @@ inline HWND _getWindowHandle(int windowID)
         return 0;
     }
     EnumWindows(_enumWindows, (LPARAM) helper);
+    if ( _printToDart != 0 )
+    {
+        if ( helper->handle != 0 )
+        {
+            DWORD affinity;
+            GetWindowDisplayAffinity(helper->handle, &affinity);
+            char str[20];
+            sprintf_s(str, "%d", (int) affinity);
+            _printToDart(str, 2); // 2 is used for end of window names with window affinity
+        } else
+        {
+            const char *noHandle = "No handle";
+            _printToDart(noHandle, 2); // 2 is used for end of window names with window affinity
+        }
+    }
     return helper->handle;
 }
 
@@ -179,22 +211,68 @@ inline unsigned char *_getImage(int x, int y, int width, int height)
     return array;
 }
 
+// todo: not working for directx / opengl windows
+inline unsigned char *_getFullWindowImageOld(int windowID)
+{
+    HWND handle = _getWindowHandle(windowID);
+    if ( handle == 0 )
+    {
+        return 0;
+    }
+    RECT bounds = getWindowBounds(windowID);
+    HDC winDc = GetDC(handle);
+    int width = bounds.right - bounds.left;
+    int height = bounds.bottom - bounds.top;
+
+    BITMAPINFOHEADER bi; // format on how the bitmap is interpreted for opencv
+    bi.biSize = sizeof(BITMAPINFOHEADER);
+    bi.biWidth = width;
+    bi.biHeight = -height;
+    bi.biPlanes = 1;
+    bi.biBitCount = 32; // RGBA
+    bi.biCompression = _BI_RGB; // no compression
+    bi.biSizeImage = 0; // because no compression
+    bi.biXPelsPerMeter = 1; // irrelevant
+    bi.biYPelsPerMeter = 1; // irrelevant
+    bi.biClrUsed = 3; // irrelevant
+    bi.biClrImportant = 4; // irrelevant
+
+    HDC memoryDC = CreateCompatibleDC(winDc);
+    HBITMAP bitmap = CreateCompatibleBitmap(winDc, width, height);
+    HGDIOBJ oldObject = SelectObject(memoryDC, bitmap);
+
+    // RGBA: 8 uint with 4 channels, and dimensions
+    unsigned char *array = (unsigned char *) malloc(height * width * 4 * sizeof(unsigned char));
+    BitBlt(memoryDC, 0, 0, width, height, winDc, 0, 0, _SRCCOPY | CAPTUREBLT);
+    GetDIBits(memoryDC, bitmap, 0, height, array,(BITMAPINFO * ) & bi, _DIB_RGB_COLORS);
+
+    SelectObject(memoryDC, oldObject);
+    DeleteObject(bitmap);
+    DeleteDC(memoryDC);
+    ReleaseDC(handle, winDc);
+    return array;
+}
+
 EXPORT int nativeCodeVersion()
 {
     return _NATIVE_CODE_VERSION;
 }
 
-EXPORT bool initWindow(int windowID, const char *windowName, bool alwaysMatchEqual, bool printWindowNames)
+EXPORT bool initWindow(int windowID, const char *windowName)
 {
     if ( windowID < 0 || windowID > 99 )
     {
-        _printWindowNames = printWindowNames;
-        _alwaysMatchEqual = alwaysMatchEqual;
         return false;
     }
     _windows[windowID].name = windowName;
     _windows[windowID].handle = 0;
     return true;
+}
+
+EXPORT void initConfig(bool alwaysMatchEqual, void (*printCallback)(const char *, int))
+{
+    _printToDart = printCallback;
+    _alwaysMatchEqual = alwaysMatchEqual;
 }
 
 EXPORT bool isWindowOpen(int windowID)

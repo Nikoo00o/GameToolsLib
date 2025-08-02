@@ -4,13 +4,14 @@ import 'package:game_tools_lib/presentation/base/gt_app.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_page.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_notifier.dart';
-import 'package:nested/nested.dart';
 import 'package:provider/provider.dart';
+import 'package:provider/single_child_widget.dart';
 
 // ignore_for_file: must_be_immutable
 
 /// The navigator of the [GTApp] building the current [GTNavigationPage] at the [GTNavIndex] which starts at
-/// [startIndex] of the [pages] (which should be set in the constructor!).
+/// [startIndex] of the [pages] (which should be set in the constructor!). Also it provides the [GTNavIndex] which
+/// can be accessed in [Consumer]'s further down.
 ///
 /// This does not override / use any of the methods of [GTBasePage].
 ///

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
+import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/domain/game/helper/example/example_event.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
@@ -10,7 +11,6 @@ import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.
 import 'package:provider/provider.dart';
 
 // todo: create template with either template as prefix or "my" for the different overrides
-
 
 /// Used for quick tests/debugging on button click
 Future<void> _testSomething() async {}
@@ -47,7 +47,15 @@ final class ExamplePage extends GTNavigationPage {
               SizedBox(height: 5),
               FilledButton(onPressed: () => GameToolsLib.mainGameWindow.moveMouse(0, 0), child: Text("move mouse")),
               SizedBox(height: 5),
-              FilledButton.tonal(onPressed: () => InputManager.keyPress(BoardKey.ctrlC), child: Text("copy to clip")),
+              FilledButton.tonal(
+                onPressed: () async {
+                  final NativeImage img = await GameToolsLib.mainGameWindow.getFullImage();
+                  if (context.mounted) {
+                    await img.showImageDialog(context);
+                  }
+                },
+                child: Text("Screenshot"),
+              ),
               SizedBox(height: 5),
               OutlinedButton(onPressed: _testSomething, child: Text("Test Something")),
               SizedBox(height: 5),
@@ -130,7 +138,8 @@ Future<void> main() async {
   GameToolsLib.gameManager().addInputListener(
     KeyInputListener(
       configLabel: "Should be Key B",
-      configLabelDescription: "Must be set later. test test test test test test test test test test test test test "
+      configLabelDescription:
+          "Must be set later. test test test test test test test test test test test test test "
           "test test test test test test test test ",
       configGroupLabel: "test",
       createEventCallback: () => ExampleEvent(isInstant: false),

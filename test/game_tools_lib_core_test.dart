@@ -93,9 +93,17 @@ void _testInit() {
   }, initDefaultGameToolsLib: false);
 }
 
+final class _LogTestOpt extends EnumConfigOption<LogLevel?> {
+  _LogTestOpt({
+    required super.titleKey,
+    super.updateCallback,
+    super.defaultValue,
+  }) : super(availableOptions: LogLevel.values);
+}
+
 void _testConfigDB() {
   testO("testing database cache", () async {
-    LogLevelConfigOption logLevel = LogLevelConfigOption(titleKey: "logLevel", defaultValue: LogLevel.VERBOSE);
+    _LogTestOpt logLevel = _LogTestOpt(titleKey: "logLevel", defaultValue: LogLevel.VERBOSE);
     expect(logLevel.cachedValue(), LogLevel.VERBOSE, reason: "cache is initially set to default");
     await logLevel.setValue(LogLevel.INFO);
     expect(logLevel.cachedValue(), LogLevel.INFO, reason: "cache is updated after set");
@@ -105,16 +113,16 @@ void _testConfigDB() {
     expect(logLevel.cachedValueNotNull(), LogLevel.VERBOSE, reason: "non null method still returns default");
     await logLevel.deleteValue();
     expect(logLevel.cachedValue(), LogLevel.VERBOSE, reason: "after delete cache is back to default");
-    logLevel = LogLevelConfigOption(titleKey: "logLevel");
+    logLevel = _LogTestOpt(titleKey: "logLevel");
     expect(logLevel.cachedValue(), null, reason: "with no default, cache is initially null");
-    logLevel = LogLevelConfigOption(titleKey: "logLevel", defaultValue: LogLevel.DEBUG);
+    logLevel = _LogTestOpt(titleKey: "logLevel", defaultValue: LogLevel.DEBUG);
     await logLevel.setValue(null);
     expect(logLevel.cachedValue(), null, reason: "set to null returns null");
     expect(await logLevel.getValue(), null, reason: "normal get correctly returns null");
   });
 
   testO("testing database get/set", () async {
-    LogLevelConfigOption logLevel = LogLevelConfigOption(titleKey: "logLevel", defaultValue: LogLevel.VERBOSE);
+    _LogTestOpt logLevel = _LogTestOpt(titleKey: "logLevel", defaultValue: LogLevel.VERBOSE);
     expect(await logLevel.getValue(), LogLevel.VERBOSE, reason: "return default with null");
     await logLevel.setValue(LogLevel.INFO);
     expect(await logLevel.getValue(), LogLevel.INFO, reason: "return updated after set");
@@ -124,26 +132,26 @@ void _testConfigDB() {
     expect(await logLevel.getValue(), LogLevel.VERBOSE, reason: "return default after delete");
     await logLevel.setValue(null);
     expect(await logLevel.getValue(), null, reason: "return null after explicit set to null");
-    logLevel = LogLevelConfigOption(titleKey: "logLevel");
+    logLevel = _LogTestOpt(titleKey: "logLevel");
     expect(await logLevel.getValue(), null, reason: "return null with no default");
     await logLevel.setValue(LogLevel.INFO);
     await logLevel.deleteValue();
     expect(await logLevel.getValue(), null, reason: "still return null after set and delete");
     await logLevel.setValue(LogLevel.ERROR);
-    logLevel = LogLevelConfigOption(titleKey: "logLevel", defaultValue: LogLevel.VERBOSE);
+    logLevel = _LogTestOpt(titleKey: "logLevel", defaultValue: LogLevel.VERBOSE);
     expect(logLevel.cachedValue(), LogLevel.VERBOSE, reason: "first stored cannot be loaded from cache -> default");
     expect(await logLevel.getValue(), LogLevel.ERROR, reason: "but then load stored from data");
     await logLevel.setValue(null);
-    logLevel = LogLevelConfigOption(titleKey: "logLevel", defaultValue: LogLevel.VERBOSE);
+    logLevel = _LogTestOpt(titleKey: "logLevel", defaultValue: LogLevel.VERBOSE);
     expect(await logLevel.getValue(), null, reason: "now save explicit null");
     await logLevel.deleteValue();
-    logLevel = LogLevelConfigOption(titleKey: "logLevel", defaultValue: LogLevel.VERBOSE);
+    logLevel = _LogTestOpt(titleKey: "logLevel", defaultValue: LogLevel.VERBOSE);
     expect(await logLevel.getValue(), LogLevel.VERBOSE, reason: "now default after delete");
   });
 
   testO("testing config update callback and null cases", () async {
     bool called = false;
-    LogLevelConfigOption logLevel = LogLevelConfigOption(
+    _LogTestOpt logLevel = _LogTestOpt(
       titleKey: "logLevel",
       defaultValue: LogLevel.VERBOSE,
       updateCallback: (_) async {
@@ -164,7 +172,7 @@ void _testConfigDB() {
     logLevel.onlyUpdateCachedValue(null);
     await Utils.delay(const Duration(milliseconds: 50)); // longer wait than the callback takes!
     expect(called, true, reason: "async call after update cached value only with delay");
-    logLevel = LogLevelConfigOption(
+    logLevel = _LogTestOpt(
       titleKey: "logLevel",
       defaultValue: LogLevel.VERBOSE,
       updateCallback: (_) => called = true,
@@ -178,7 +186,7 @@ void _testConfigDB() {
     await logLevel.setValue(null);
     expect(called, true, reason: "but call on explicit null set");
     called = false;
-    logLevel = LogLevelConfigOption(
+    logLevel = _LogTestOpt(
       titleKey: "logLevel",
       defaultValue: LogLevel.VERBOSE,
       updateCallback: (_) => called = true,
@@ -216,7 +224,7 @@ void _testConfigDB() {
       reason: "new object from json should be equal",
     );
 
-    ModelConfigOption<ExampleModel> option = ModelConfigOption<ExampleModel>(
+    ModelConfigOption<ExampleModel?> option = ModelConfigOption<ExampleModel?>(
       titleKey: "somethingNew",
       lazyLoaded: false,
       createNewModelInstance: ModelConfigOption.createNewExampleModelInstance,
@@ -224,13 +232,23 @@ void _testConfigDB() {
     );
     expect(await option.getValue(), null, reason: "first null with no value");
     await option.setValue(someModel);
-    option = ModelConfigOption<ExampleModel>(
+    option = ModelConfigOption<ExampleModel?>(
       titleKey: "somethingNew",
       lazyLoaded: false,
       createNewModelInstance: ModelConfigOption.createNewExampleModelInstance,
       createModelBuilder: null,
     );
     expect(await option.getValue(), someModel, reason: "now should be the specific model from db");
+
+    // creating a non nullable option without a default value should throw!
+    expect(() {
+      option = ModelConfigOption<ExampleModel>(
+        titleKey: "somethingNew",
+        lazyLoaded: false,
+        createNewModelInstance: ModelConfigOption.createNewExampleModelInstance,
+        createModelBuilder: null,
+      );
+    }, throwsA(predicate((Object e) => e is ConfigException)));
   });
 
   testO("test real example config", () async {

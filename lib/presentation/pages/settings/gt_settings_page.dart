@@ -6,10 +6,12 @@ import 'package:game_tools_lib/presentation/pages/navigation/gt_grouped_builders
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder_group.dart';
+import 'package:provider/provider.dart';
 
 /// A [GTNavigationPage] that contains all config options from [MutableConfig.getConfigurableOptions] by using
 /// [GTGroupedBuildersExtension] with [MultiConfigOptionBuilder]\<dynamic\> as the type to use the builders for the
-/// config options and [GTSettingsGroupIndex] for the index!
+/// config options and [GTSettingsGroupIndex] for the index which is also provided for [Consumer]'s further down the
+/// widget tree!
 ///
 /// This builds an internal config group navigation bar to navigate through the [MutableConfigOptionGroup],
 /// [ModelConfigOption] and [CustomConfigOption] of [MutableConfig.getConfigurableOptions] in [buildBody]'s

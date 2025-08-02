@@ -101,27 +101,27 @@ class _GTDebugStatusState extends State<GTDebugStatus> with GTBaseWidget {
     _updateColorText(color);
     return Column(
       children: <Widget>[
-        Text("Main GameWindow: ${window.name} at pos ${window.getWindowBounds().toStringAsPos()}"),
+        Text("Main GameWindow: ${window.name} at pos ${isOpen ? window.getWindowBounds().toStringAsPos() : "null"}"),
         Text("Is Open: $isOpen"),
         Text("Has Focus: ${window.hasFocus}"),
         Text("Display Cursor Pos: ${InputManager.displayMousePos}"),
         Text("Window Cursor Pos: ${isOpen ? window.windowMousePos : "null"}"),
         _buildColorWidget(context, color),
-        const SizedBox(height: 5),
+        const SizedBox(height: 15),
         Text(
           "Recognized test dir (should only be true when debugging from IDE): ${FileUtils.wasRunFromTests} and "
           "test database (should always be false): ${GameToolsLib.database is HiveDatabaseMock}",
         ),
         Text("Current database dir: ${config.databaseFolder}"),
-        const SizedBox(height: 5),
+        const SizedBox(height: 2),
         Text(
           "Current locale directories (from asset folders from all packages and self) for ${GTApp.currentLocale?.fileName}:",
         ),
         Text(config.localeFolders.join("\n")),
-        const SizedBox(height: 5),
+        const SizedBox(height: 2),
         Text("Press \"A\" and this should be true: ${InputManager.isKeyDown(BoardKey.a)}"),
         Text("And if you press \"CTRL+A\" to test event and clipboard, this should be true: $didEventAndClipboardWork"),
-        const SizedBox(height: 5),
+        const SizedBox(height: 15),
       ],
     );
   }

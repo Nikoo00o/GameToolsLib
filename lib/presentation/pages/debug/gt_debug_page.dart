@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:game_tools_lib/core/enums/gt_contrast.dart';
-import 'package:game_tools_lib/game_tools_lib.dart';
+import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_page.dart';
 import 'package:game_tools_lib/presentation/pages/debug/gt_debug_status.dart';
 
@@ -18,6 +17,20 @@ base class GTDebugPage extends GTBasePage {
     return Column(
       children: <Widget>[
         const GTDebugStatus(),
+        Padding(
+          padding: const EdgeInsetsGeometry.symmetric(horizontal: 120),
+          child: MutableConfig.mutableConfig.alwaysMatchGameWindowNamesEqual.builder.buildProviderWithContent(
+            context,
+            calledFromInnerGroup: false,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsetsGeometry.symmetric(horizontal: 120),
+          child: MutableConfig.mutableConfig.debugPrintGameWindowNames.builder.buildProviderWithContent(
+            context,
+            calledFromInnerGroup: false,
+          ),
+        ),
         const Spacer(),
         Row(
           children: <Widget>[
@@ -39,12 +52,15 @@ base class GTDebugPage extends GTBasePage {
       buildAppBarDefaultTitle(context, "page.debug.title", buildBackButton: true);
 
   Widget _materialThemedContainer(bool isDark) {
+    return Container();
+
+    /*
     return Theme(
       data: GameToolsConfig.baseConfig.appColors.getTheme(darkTheme: isDark, contrast: GTContrast.DEFAULT),
       child: Builder(
         builder: (BuildContext context) => _materialButtons(context, isDark ? "dark" : "light"),
       ),
-    );
+    );*/
   }
 
   Widget _materialButtons(BuildContext context, String theme) {

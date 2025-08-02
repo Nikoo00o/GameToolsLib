@@ -4,7 +4,7 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// class to return new objects which store config variables that may change either at compile time, or run time.
 ///
 /// Constant config values that are only unique per application and won't change can be stored inside of this (like
-/// [appTitle], or [appColors]).
+/// [appTitle]).
 ///
 /// Sub classes should also use extend with the custom types for [FixedConfigType] and [MutableConfigType], but
 /// sub classes of this should not have any dynamic member variables and the getters should always return const objects!
@@ -27,10 +27,6 @@ base class GameToolsConfig<FixedConfigType extends FixedConfig, MutableConfigTyp
 
   /// You should override this to display the name of your tool in your app!
   String get appTitle => "GameToolsLib";
-
-  /// You should override this to customize the colors of your app in regards to the material 3 theme!
-  /// https://m3.material.io/styles/color/system/how-the-system-works#094adbe5-d41e-49b4-8dff-906d6094668d
-  GTAppTheme get appColors => const GTAppTheme.seed(seedColor: Color(0xff004A95), baseSuccessColor: Colors.green);
 
   /// Absolute path to the stored log files
   String get logFolder => FileUtils.combinePath(<String>[resourceFolderPath, "logs"]);

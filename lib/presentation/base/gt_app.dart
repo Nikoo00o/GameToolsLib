@@ -4,11 +4,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:game_tools_lib/core/config/locale_config_option.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
-import 'package:game_tools_lib/core/enums/gt_contrast.dart';
 import 'package:game_tools_lib/core/utils/file_utils.dart';
 import 'package:game_tools_lib/core/utils/locale_extension.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
+import 'package:game_tools_lib/presentation/base/gt_app_theme.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/base/gt_overlay_switcher.dart';
 import 'package:game_tools_lib/presentation/base/ui_helper.dart';
@@ -19,8 +20,10 @@ import 'package:game_tools_lib/presentation/pages/navigation/gt_navigator.dart';
 import 'package:game_tools_lib/presentation/pages/settings/gt_settings_page.dart';
 import 'package:provider/provider.dart';
 
-// todo: doc comment
-/// The top level widget that builds the app itself with the widget subtree
+// todo: doc comments
+/// The top level widget that builds the app itself with the widget subtree. It provides [UIHelper.configProvider] for
+/// [MutableConfig.currentLocale], [MutableConfig.appColors] and [MutableConfig.useDarkTheme] which can be accessed in
+/// [UIHelper.configConsumer] further down the widget tree!
 base class GTApp extends StatelessWidget {
   /// This may be used to provide additional pages to display as options in the navigation rail of [GTNavigator].
   /// But you can also override [buildNavigator] instead for more options.
@@ -31,6 +34,7 @@ base class GTApp extends StatelessWidget {
   List<ChangeNotifierProvider<dynamic>> buildProvider() {
     return <ChangeNotifierProvider<dynamic>>[
       UIHelper.configProvider(option: _mutableConfig.currentLocale),
+      UIHelper.configProvider(option: _mutableConfig.appColors),
       UIHelper.configProvider(option: _mutableConfig.useDarkTheme),
     ];
   }
@@ -54,6 +58,26 @@ base class GTApp extends StatelessWidget {
     return buildOverlaySwitcher(context, buildNavigator(context));
   }
 
+  /// Is called from [build] to build the app with the theme config options and then call [buildApp]
+  Widget buildThemeWithLocale(Locale locale) {
+    return UIHelper.configConsumer(
+      option: _mutableConfig.appColors,
+      builder: (BuildContext context, GTAppTheme gtAppTheme, Widget? child) {
+        return UIHelper.configConsumer(
+          option: _mutableConfig.useDarkTheme,
+          builder: (BuildContext context, bool darkTheme, Widget? child) {
+            final ThemeData theme = gtAppTheme.getTheme(darkTheme: darkTheme);
+            _setSystemStatusBar(isDarkTheme: theme.brightness == Brightness.dark);
+            Logger.verbose(
+              "Displaying $runtimeType with ${darkTheme ? "dark" : "light"} theme and locale $locale",
+            );
+            return buildApp(context, theme, locale);
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -64,20 +88,7 @@ base class GTApp extends StatelessWidget {
             selector: (_, LocaleConfigOption option) => option.activeLocale,
             builder: (BuildContext context, Locale locale, Widget? child) {
               _loadLocale(locale);
-              return UIHelper.configConsumer(
-                option: _mutableConfig.useDarkTheme,
-                builder: (BuildContext context, bool darkTheme, Widget? child) {
-                  final ThemeData theme = _baseConfig.appColors.getTheme(
-                    darkTheme: darkTheme,
-                    contrast: GTContrast.DEFAULT,
-                  );
-                  _setSystemStatusBar(isDarkTheme: theme.brightness == Brightness.dark);
-                  Logger.verbose(
-                    "Displaying $runtimeType with ${darkTheme ? "dark" : "light"} theme and locale $locale",
-                  );
-                  return buildApp(context, theme, locale);
-                },
-              );
+              return buildThemeWithLocale(locale);
             },
           );
         },
@@ -85,6 +96,7 @@ base class GTApp extends StatelessWidget {
     );
   }
 
+  /// Builds the [MaterialApp] with the home being [buildHome]
   Widget buildApp(BuildContext context, ThemeData theme, Locale locale) {
     return MaterialApp(
       title: _baseConfig.appTitle,

@@ -2,8 +2,8 @@ part of 'package:game_tools_lib/core/config/mutable_config.dart';
 
 /// Config option that is stored in a file for usage in [MutableConfig]
 ///
-/// Values of type [T] may also be [null], but if [defaultValue] is set and explicit null is saved in the database,
-/// then [cachedValue] will incorrectly return the default value and not null! Use the async [getValue] in that case!
+/// Important: if [T] is not nullable ("[T]?"), then [setValue] can not be used with [null] and [defaultValue] may
+/// not be [null]!
 ///
 /// Use [getValue], [valueNotNull], [setValue], [deleteValue] to interact with the value.
 /// You can also use the [_updateCallback] to get updates after [setValue] before the other listeners from the
@@ -38,9 +38,9 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   /// [cachedValue] (which may be null depending on what is stored and the default)!
   final FutureOr<void> Function(T?)? _updateCallback;
 
-  /// Optional default value that will be used if saved data is null (if [setValue] is called with [null], or
-  /// [deleteValue] is called, then this will also be set to [null]
-  T? defaultValue;
+  /// Optional default value that will be used if saved data is null (if [setValue] is called with [null] then this
+  /// will be ignored until [deleteValue] is called). Important: if [T] is not nullable, then this is required!
+  final T? defaultValue;
 
   /// For larger data sets this should be [true] to only load the data into memory on demand when its used.
   /// Defaults to [false] where all data is always kept in memory since the start of the program when the database is
@@ -72,7 +72,11 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
     Future<void> Function(MutableConfigOption<dynamic> configOption)? onInit,
   }) : _updateCallback = updateCallback,
        _lazyLoaded = lazyLoaded,
-       _onInit = onInit;
+       _onInit = onInit{
+    if(defaultValue == null && Utils.isNullableType<T>() == false){
+      throw ConfigException(message: "$this had a not nullable type $T, but no default value!");
+    }
+  }
 
   /// Calls the [_onInit] which is an optional callback that will be called once at the end of
   /// [GameToolsLib.initGameToolsLib] on startup for the config values contained in
@@ -92,7 +96,8 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   }
 
   /// This has to be overridden in sub classes to return a subclass of [ConfigOptionBuilder] with a reference to this
-  /// that will build the UI for the config option.
+  /// that will build the UI for the config option. [ConfigOptionBuilder.buildProviderWithContent] is then used to
+  /// build the ui to configure this option!
   ///
   /// A subclass may also return null here, but then it may not be included in [MutableConfig.getConfigurableOptions]!
   ConfigOptionBuilder<T>? get builder;
@@ -183,14 +188,14 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
 
   /// Mostly only used for testing without any other purpose (this can also not be used for deleting).
   /// Only sets the cached [_value] and calls [_onValueChange] (unawaited!), but does not call [_write] to storage.
-  void onlyUpdateCachedValue(T? data) {
+  void onlyUpdateCachedValue(T data) {
     unawaited(_onValueChange(data, true)); // updates cache
   }
 
   /// Converts and writes the value and calls [_onValueChange] afterwards. And also updates the [_value].
-  /// Can also explicitly set the stored [_value] to [null] so that null is returned instead of the [defaultValue].
-  /// To then have [cachedValue] return the [defaultValue] again, use [deleteValue] in the future.
-  Future<void> setValue(T? data) async {
+  /// Can also explicitly set the stored [_value] to [null] (if [T] is nullable) so that null is returned instead of
+  /// the [defaultValue]. To then have [cachedValue] return the [defaultValue] again, use [deleteValue] in the future.
+  Future<void> setValue(T data) async {
     await onInit();
     await _write(_dataToString(data));
     await _onValueChange(data, true); // updates cache
@@ -214,7 +219,14 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   ///
   /// Remember that this can also throw the exceptions of the [_updateCallback] if its set!
   Future<void> _onValueChange(T? data, bool exists) async {
-    final bool changed = _exists != exists || _value != data;
+    late final bool changed;
+    if (exists && !_exists) {
+      changed = data != defaultValue;
+    } else if (!exists && _exists) {
+      changed = _value != defaultValue;
+    } else {
+      changed = _value != data;
+    }
     _value = data; // first change data
     _exists = exists;
     if (changed) {

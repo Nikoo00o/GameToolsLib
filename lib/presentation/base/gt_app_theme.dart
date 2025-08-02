@@ -20,6 +20,8 @@ import 'package:game_tools_lib/presentation/base/gt_app_theme_extension.dart';
 /// build (for example look at https://material-foundation.github.io/material-theme-builder/ )
 ///
 /// The generated flutter theme will be provided inside of [getTheme].
+/// For reference the detailed baseline color tokens are listed for every configuration in
+/// https://m3.material.io/styles/color/static/baseline#b5a485b5-ee5f-4890-b7a2-ead284121e37
 final class GTAppTheme {
   /// Used for all most important key components across the UI (FAB, tint of elevated surface, etc).
   ///
@@ -51,7 +53,12 @@ final class GTAppTheme {
   /// the theme itself is green! See [GTAppThemeExtension.success]
   final Color baseSuccessColor;
 
-  /// Converts the base colors to their tonal palettes
+  /// The contrast mode which affects the colors of the theme (the default would be [GTContrast.DEFAULT] ). Dark vs
+  /// light theme will be decided in [getTheme].
+  final GTContrast contrast;
+
+  /// Converts the base colors to their tonal palettes. [baseSecondaryColor], etc are non nullable params for
+  /// [GTAppTheme.baseSecondaryColor], etc
   const GTAppTheme.colors({
     required this.basePrimaryColor,
     required Color baseSecondaryColor,
@@ -60,13 +67,14 @@ final class GTAppTheme {
     required Color baseErrorColor,
     this.baseNeutralVariantColor,
     required this.baseSuccessColor,
+    required this.contrast,
   }) : baseSecondaryColor = baseSecondaryColor,
        baseTertiaryColor = baseTertiaryColor,
        baseNeutralColor = baseNeutralColor,
        baseErrorColor = baseErrorColor;
 
   /// Builds internal colors from the seed color
-  const GTAppTheme.seed({required Color seedColor, required this.baseSuccessColor})
+  const GTAppTheme.seed({required Color seedColor, required this.baseSuccessColor, this.contrast = GTContrast.DEFAULT})
     : basePrimaryColor = seedColor,
       baseSecondaryColor = null,
       baseTertiaryColor = null,
@@ -77,7 +85,7 @@ final class GTAppTheme {
   /// Returns the material 3 theme data for this theme with the generated [ColorScheme].
   ///
   /// Depending on [darkTheme] either a dark, or light theme will be returned!
-  ThemeData getTheme({required bool darkTheme, required GTContrast contrast}) {
+  ThemeData getTheme({required bool darkTheme}) {
     final MaterialColor success = convertColor(baseSuccessColor);
     final List<int> tone = _defaultTone(contrast: contrast, isDarkTheme: darkTheme);
     final List<int> fTone = _fixedTone(contrast: contrast, isDarkTheme: darkTheme);
@@ -93,7 +101,7 @@ final class GTAppTheme {
       onSuccessFixedVariant: _transform(success, fTone),
     );
     return ThemeData(
-      colorScheme: getColorScheme(darkTheme: darkTheme, contrast: contrast),
+      colorScheme: getColorScheme(darkTheme: darkTheme),
       useMaterial3: true,
       scrollbarTheme: ScrollbarThemeData(
         thumbVisibility: WidgetStateProperty.all<bool>(true),
@@ -103,7 +111,7 @@ final class GTAppTheme {
   }
 
   /// Returns the parsed [ColorScheme] from the base material colors.
-  ColorScheme getColorScheme({required bool darkTheme, required GTContrast contrast}) {
+  ColorScheme getColorScheme({required bool darkTheme}) {
     final Brightness brightness = darkTheme ? Brightness.dark : Brightness.light;
     if (baseSecondaryColor == null || baseTertiaryColor == null || baseNeutralColor == null || baseErrorColor == null) {
       return ColorScheme.fromSeed(seedColor: basePrimaryColor, brightness: brightness);

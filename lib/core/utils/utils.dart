@@ -104,6 +104,16 @@ abstract final class Utils {
   /// Returns if [S] is a subtype of [T] (has to be used in generic methods, because the "is" operator does not work on
   /// template types! Use it with your generic type as [S] and then test against different parent types with [T].
   static bool isSubtype<S, T>() => <S>[] is List<T>;
+
+  /// Returns if the first type [S] is a nullable version of the type [T] or the same type!
+  /// [T] should be the static type to check against and never be a nullable type! And [S] is your dynamic template
+  /// type that you want to check!
+  ///
+  /// This would NOT return true if [S] is a nullable subclass type of a parent class [T] (use [isNullableType] instead)
+  static bool isSameOrNullableType<S, T>() => S == T || (!isNullableType<T>() && isSameOrNullableType<S, T?>());
+
+  /// Returns true if [T] is any nullable type
+  static bool isNullableType<T>() => null is T;
 }
 
 /// Helper methods for [Color] to compare equality (also has different getters for different color representations)

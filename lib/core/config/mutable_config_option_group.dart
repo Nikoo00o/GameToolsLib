@@ -1,6 +1,6 @@
 part of 'package:game_tools_lib/core/config/mutable_config.dart';
 
-/// This is a special case used to build the group menu entries for the [configOptions] grouped with this.
+/// This is a special case used to build the group menu entries for the [MutableConfigOption]'s grouped with this.
 ///
 /// This is not a normal config option that can be used!!! And [onInit] and [getValue] do custom work for the
 /// initialisation at the end of [GameToolsLib.initGameToolsLib] to load all children
@@ -8,8 +8,8 @@ final class MutableConfigOptionGroup extends MutableConfigOption<List<MutableCon
   MutableConfigOptionGroup({
     required super.titleKey,
     required List<MutableConfigOption<dynamic>> configOptions,
-  }) : super(onInit: _callInitForValues) {
-    _value = configOptions;
+  }) : super(onInit: _callInitForValues, defaultValue: configOptions) {
+    _value = configOptions; // same as default value, just always return the list of options!
     _exists = true; // config option groups always exist, because they are not saved to storage
   }
 

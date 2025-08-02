@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:game_tools_lib/core/config/mutable_config.dart';
+import 'package:game_tools_lib/core/config/locale_config_option.dart';
 import 'package:game_tools_lib/presentation/base/gt_app.dart';
 import 'package:game_tools_lib/presentation/base/gt_app_theme_extension.dart';
 import 'package:provider/provider.dart';

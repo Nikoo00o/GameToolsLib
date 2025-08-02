@@ -72,16 +72,11 @@ abstract base class GTBasePage extends StatelessWidget with GTBaseWidget {
     final Color? backgroundColor = getBackgroundColor(context);
     final DecorationImage? backgroundImage = getBackgroundImage();
     final Widget scaffold = Scaffold(
-      body: Container(
-        padding: pagePadding,
-        decoration: backgroundColor != null || backgroundImage != null
-            ? BoxDecoration(image: backgroundImage, color: backgroundColor)
-            : null,
-        child: buildBody(context),
-      ),
+      body: buildPaddedBody(context, backgroundColor, backgroundImage),
       appBar: buildAppBar(context),
       drawer: buildMenuDrawer(context),
       bottomNavigationBar: buildBottomBar(context),
+      backgroundColor: getScaffoldBackgroundColor(context),
     );
     if (providers.isNotEmpty) {
       return MultiProvider(providers: providers, child: scaffold);
@@ -89,6 +84,22 @@ abstract base class GTBasePage extends StatelessWidget with GTBaseWidget {
       return scaffold;
     }
   }
+
+  /// Used in [build] to build the body of the [Scaffold] including the [buildBody] part! Also look at
+  /// [getScaffoldBackgroundColor]!
+  Widget buildPaddedBody(BuildContext context, Color? backgroundColor, DecorationImage? backgroundImage) {
+    return Container(
+      padding: pagePadding,
+      decoration: backgroundColor != null || backgroundImage != null
+          ? BoxDecoration(image: backgroundImage, color: backgroundColor)
+          : null,
+      child: buildBody(context),
+    );
+  }
+
+  /// Per default this returns null and this should only be overridden together with [buildPaddedBody] if you plan to
+  /// build some custom padding and colors.
+  Color? getScaffoldBackgroundColor(BuildContext context) => null;
 
   /// Can be used in the [buildAppBar] to build a default app bar translating and showing the [titleKey] together
   /// with the [GameToolsConfig.appTitle]. And [buildBackButton] is false per default, but can be used to build a
@@ -126,9 +137,9 @@ abstract base class GTBasePage extends StatelessWidget with GTBaseWidget {
   /// The returned providers will be put into a [MultiProvider]!
   List<SingleChildWidget> buildProviders(BuildContext context) => <SingleChildWidget>[];
 
-  /// builds the body of the page.
+  /// This builds the body of the page which needs to be overridden in sub classes!
   ///
-  /// Needs to be overridden in sub classes
+  /// If you also want custom borders or backgrounds, override [buildPaddedBody] instead of this!
   Widget buildBody(BuildContext context);
 
   /// pops the current page if one was added on top of the routes with [pushPage].

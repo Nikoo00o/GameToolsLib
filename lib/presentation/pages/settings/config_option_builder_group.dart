@@ -24,11 +24,11 @@ final class ConfigOptionBuilderGroup extends MultiConfigOptionBuilder<List<Mutab
               "Config Option $option did not contain a builder, "
               "but was used in MutableConfig.getConfigurableOptions",
         );
-      } else if (builder is MultiConfigOptionBuilder<dynamic>) {
+      } else if (builder is ConfigOptionBuilderGroup) {
         throw ConfigException(
           message:
               "Config Option $option returned builder ${builder.runtimeType} in a group! "
-              "Remember to not use any nested group, model, or custom config option!",
+              "Remember to not use any nested group config options!",
         );
       }
       return builder;
@@ -40,13 +40,16 @@ final class ConfigOptionBuilderGroup extends MultiConfigOptionBuilder<List<Mutab
       itemCount: builders.length,
       itemBuilder: (BuildContext context, int index) {
         final ConfigOptionBuilder<dynamic> builder = builders.elementAt(index);
-        return builder.buildProviderWithContent(context);
+        return builder.buildProviderWithContent(context, calledFromInnerGroup: true);
       },
     );
   }
 
   @override
-  Widget buildProviderWithContent(BuildContext context) {
+  Widget buildProviderWithContent(BuildContext context, {required bool calledFromInnerGroup}) {
+    if (calledFromInnerGroup) {
+      throw ConfigException(message: "$configOption group was called from inner group");
+    }
     return UIHelper.simpleConsumer<String>(
       builder: (BuildContext context, String searchString, Widget? innerChild) {
         final String upperCaseSearchString = searchString.toUpperCase();
@@ -64,8 +67,8 @@ final class ConfigOptionBuilderGroup extends MultiConfigOptionBuilder<List<Mutab
   }
 
   @override
-  Widget buildContent(BuildContext context, List<MutableConfigOption<dynamic>> value) {
-    throw UnimplementedError(); // this will never be called
+  Widget buildContent(BuildContext context, List<MutableConfigOption<dynamic>> value, {required bool calledFromInnerGroup}) {
+    throw UnimplementedError(); // this will never be called, because groups can not be in groups themselves
   }
 
   @override

@@ -40,7 +40,6 @@ final class GTAppThemeExtension extends ThemeExtension<GTAppThemeExtension> {
     required this.onSuccess,
     required this.successContainer,
     required this.onSuccessContainer,
-
     required this.successFixed,
     required this.onSuccessFixed,
     required this.successFixedDim,

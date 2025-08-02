@@ -48,8 +48,12 @@ final class _Point extends Struct {
 typedef versionFuncN = Int Function();
 typedef versionFuncD = int Function();
 
-typedef initWindowN = Bool Function(Int, Pointer<Utf8>, Bool, Bool);
-typedef initWindowD = bool Function(int, Pointer<Utf8>, bool, bool);
+typedef initConfigN = Void Function(Bool, Pointer<NativeFunction<printFromNativeN>>);
+typedef initConfigD = void Function(bool, Pointer<NativeFunction<printFromNativeN>>);
+typedef printFromNativeN = Void Function(Pointer<Utf8>, Int);
+
+typedef initWindowN = Bool Function(Int, Pointer<Utf8>);
+typedef initWindowD = bool Function(int, Pointer<Utf8>);
 
 typedef isWindowOpenN = Bool Function(Int);
 typedef isWindowOpenD = bool Function(int);
@@ -120,11 +124,12 @@ typedef isKeyToggledD = bool Function(int);
 
 /// Wrapper class for native c/c++ functions to interact with a game window, or the screen.
 ///
-/// Before using any methods that need a window id, [initWindow] has to be called once!
-/// The constructor looks up the api and functions.
+/// Before using any methods that need a window id, [initWindow] has to be called once! And also [initConfig] will be
+/// called once in the startup of [GameToolsLib.initGameToolsLib]. The constructor looks up the api and functions.
 /// This class should only be used in [GameWindow]!
 final class NativeWindow {
-  late DynamicLibrary _api;
+  static DynamicLibrary? _api;
+  static initConfigD? _initConfig;
   late initWindowD _initWindow;
   late isWindowOpenD _isWindowOpen;
   late hasWindowFocusD _hasWindowFocus;
@@ -156,51 +161,114 @@ final class NativeWindow {
   /// Afterwards create methods with the same name that calls the private member function pointer
   /// Can throw an exception if the function was not found
   NativeWindow._() {
-    _api = FFILoader.api;
-    _initWindow = _api.lookupFunction<initWindowN, initWindowD>("initWindow");
-    _isWindowOpen = _api.lookupFunction<isWindowOpenN, isWindowOpenD>("isWindowOpen");
-    _hasWindowFocus = _api.lookupFunction<hasWindowFocusN, hasWindowFocusD>("hasWindowFocus");
-    _setWindowFocus = _api.lookupFunction<setWindowFocusN, setWindowFocusD>("setWindowFocus");
-    _getWindowBounds = _api.lookupFunction<getWindowBoundsN, getWindowBoundsD>("getWindowBounds");
-    _getMainDisplayWidth = _api.lookupFunction<getMainDisplayWidthN, getMainDisplayWidthD>("getMainDisplayWidth");
-    _getMainDisplayHeight = _api.lookupFunction<getMainDisplayHeightN, getMainDisplayHeightD>("getMainDisplayHeight");
-    _closeWindow = _api.lookupFunction<closeWindowN, closeWindowD>("closeWindow");
-    _cleanupMemory = _api.lookupFunction<cleanupMemoryN, cleanupMemoryD>("cleanupMemory");
-    _getFullMainDisplay = _api.lookupFunction<getFullMainDisplayN, getFullMainDisplayN>("getFullMainDisplay");
-    _getFullWindow = _api.lookupFunction<getFullWindowN, getFullWindowD>("getFullWindow");
-    _getImageOfWindow = _api.lookupFunction<getImageOfWindowN, getImageOfWindowD>("getImageOfWindow");
-    _getPixelOfWindow = _api.lookupFunction<getPixelOfWindowN, getPixelOfWindowD>("getPixelOfWindow");
-    _getDisplayMousePos = _api.lookupFunction<getDisplayMousePosN, getDisplayMousePosN>("getDisplayMousePos");
-    _getWindowMousePos = _api.lookupFunction<getWindowMousePosN, getWindowMousePosD>("getWindowMousePos");
-    _setDisplayMousePos = _api.lookupFunction<setDisplayMousePosN, setDisplayMousePosD>("setDisplayMousePos");
-    _setWindowMousePos = _api.lookupFunction<setWindowMousePosN, setWindowMousePosD>("setWindowMousePos");
-    _moveMouse = _api.lookupFunction<moveMouseN, moveMouseD>("moveMouse");
-    _scrollMouse = _api.lookupFunction<scrollMouseN, scrollMouseD>("scrollMouse");
-    _sendMouseEvent = _api.lookupFunction<sendMouseEventN, sendMouseEventD>("sendMouseEvent");
-    _sendKeyEvent = _api.lookupFunction<sendKeyEventN, sendKeyEventD>("sendKeyEvent");
-    _sendKeyEvents = _api.lookupFunction<sendKeyEventsN, sendKeyEventsD>("sendKeyEvents");
-    _isKeyDown = _api.lookupFunction<isKeyDownN, isKeyDownD>("isKeyDown");
-    _isKeyToggled = _api.lookupFunction<isKeyToggledN, isKeyToggledD>("isKeyToggled");
+    if (_api == null) {
+      throw const ConfigException(message: "NativeWindow: initConfig has to be called at least once first!");
+    }
+    _initWindow = _api!.lookupFunction<initWindowN, initWindowD>("initWindow");
+    _isWindowOpen = _api!.lookupFunction<isWindowOpenN, isWindowOpenD>("isWindowOpen");
+    _hasWindowFocus = _api!.lookupFunction<hasWindowFocusN, hasWindowFocusD>("hasWindowFocus");
+    _setWindowFocus = _api!.lookupFunction<setWindowFocusN, setWindowFocusD>("setWindowFocus");
+    _getWindowBounds = _api!.lookupFunction<getWindowBoundsN, getWindowBoundsD>("getWindowBounds");
+    _getMainDisplayWidth = _api!.lookupFunction<getMainDisplayWidthN, getMainDisplayWidthD>("getMainDisplayWidth");
+    _getMainDisplayHeight = _api!.lookupFunction<getMainDisplayHeightN, getMainDisplayHeightD>("getMainDisplayHeight");
+    _closeWindow = _api!.lookupFunction<closeWindowN, closeWindowD>("closeWindow");
+    _cleanupMemory = _api!.lookupFunction<cleanupMemoryN, cleanupMemoryD>("cleanupMemory");
+    _getFullMainDisplay = _api!.lookupFunction<getFullMainDisplayN, getFullMainDisplayN>("getFullMainDisplay");
+    _getFullWindow = _api!.lookupFunction<getFullWindowN, getFullWindowD>("getFullWindow");
+    _getImageOfWindow = _api!.lookupFunction<getImageOfWindowN, getImageOfWindowD>("getImageOfWindow");
+    _getPixelOfWindow = _api!.lookupFunction<getPixelOfWindowN, getPixelOfWindowD>("getPixelOfWindow");
+    _getDisplayMousePos = _api!.lookupFunction<getDisplayMousePosN, getDisplayMousePosN>("getDisplayMousePos");
+    _getWindowMousePos = _api!.lookupFunction<getWindowMousePosN, getWindowMousePosD>("getWindowMousePos");
+    _setDisplayMousePos = _api!.lookupFunction<setDisplayMousePosN, setDisplayMousePosD>("setDisplayMousePos");
+    _setWindowMousePos = _api!.lookupFunction<setWindowMousePosN, setWindowMousePosD>("setWindowMousePos");
+    _moveMouse = _api!.lookupFunction<moveMouseN, moveMouseD>("moveMouse");
+    _scrollMouse = _api!.lookupFunction<scrollMouseN, scrollMouseD>("scrollMouse");
+    _sendMouseEvent = _api!.lookupFunction<sendMouseEventN, sendMouseEventD>("sendMouseEvent");
+    _sendKeyEvent = _api!.lookupFunction<sendKeyEventN, sendKeyEventD>("sendKeyEvent");
+    _sendKeyEvents = _api!.lookupFunction<sendKeyEventsN, sendKeyEventsD>("sendKeyEvents");
+    _isKeyDown = _api!.lookupFunction<isKeyDownN, isKeyDownD>("isKeyDown");
+    _isKeyToggled = _api!.lookupFunction<isKeyToggledN, isKeyToggledD>("isKeyToggled");
   }
 
   /// Has to be called once for each [windowName] to initialize it with its [windowID] which is then used to call the
   /// functions below.
+  /// This only prepares native code, it does not lookup the window yet.
+  /// Calling this multiple times for the same window, will reset the window handle
+  bool initWindow({required int windowID, required String windowName}) {
+    Logger.verbose("Init Native Window windowID: $windowID, windowName: $windowName");
+    return _initWindow.call(windowID, windowName.toNativeUtf8());
+  }
+
   /// [alwaysMatchEqual] controls how the window names will be matched ([false] = the window title only has to
   /// contain the [windowName]. Otherwise if [true] it has to be exactly the same)
   /// [printWindowNames] is a debug variable to print out all opened windows if set to true
   /// This only prepares native code, it does not lookup the window yet.
-  /// Calling this multiple times for the same window, will reset the window handle
-  bool initWindow({
-    required int windowID,
-    required String windowName,
+  static void initConfig({
     required bool alwaysMatchEqual,
     required bool printWindowNames,
   }) {
+    _api ??= FFILoader.api;
     Logger.verbose(
-      "Init Native window windowID: $windowID, windowName: $windowName, "
-      "alwaysMatchEqual:$alwaysMatchEqual, printWindowNames:$printWindowNames",
+      "Static Native Window Config alwaysMatchEqual: $alwaysMatchEqual, printWindowNames:$printWindowNames",
     );
-    return _initWindow.call(windowID, windowName.toNativeUtf8(), alwaysMatchEqual, printWindowNames);
+    _initConfig ??= _api!.lookupFunction<initConfigN, initConfigD>("initConfig");
+    if (printWindowNames) {
+      final Pointer<NativeFunction<printFromNativeN>> print = Pointer.fromFunction<printFromNativeN>(_printFromNative);
+      _initConfig!.call(alwaysMatchEqual, print);
+    } else {
+      _initConfig!.call(alwaysMatchEqual, nullptr); // explicit null!
+    }
+  }
+
+  static final StringBuffer _windowLog = StringBuffer();
+  static final SpamIdentifier _logSpam = SpamIdentifier(const Duration(seconds: 30));
+
+  static void _printFromNative(Pointer<Utf8> ptr, int id) {
+    final String msg = ptr.toDartString();
+    if (id == 1) {
+      _windowLog.write("\n");
+      _windowLog.write(msg); // // 1 is used for window names
+    } else if (id == 2) {
+      if(msg == "No handle" ){
+        Logger.spamPeriodic(_logSpam, "NativeWindow affinity ", msg, " found open windows:", _windowLog.toString());
+      } else {
+        Logger.spam("NativeWindow affinity ", msg, " found open windows:", _windowLog.toString());
+      }
+      _windowLog.clear(); // 2 is used for end of window names with affinity
+    }
+  }
+
+  /// Called automatically from [GameToolsLib.initGameToolsLib] to init the [_nativeWindowInstance]
+  /// Multiple calls have no effect. Also calls [initConfig] once after getting the config for the static init!
+  /// Can also throw [ConfigException] if the config is corrupt.
+  ///
+  /// Should not be called from anywhere else! Returns if the guard function still works (and the library was
+  /// unchanged since last time)
+  static Future<bool> initNativeWindow() async {
+    if (_nativeWindowInstance == null) {
+      late final versionFuncD fun;
+      try {
+        _api ??= FFILoader.api;
+        fun = _api!.lookupFunction<versionFuncN, versionFuncD>("nativeCodeVersion");
+      } catch (e, s) {
+        Logger.warn("initNativeWindow fail details:", e, s);
+        return false;
+      }
+      final int version = fun.call();
+      if (version != _nativeCodeVersion) {
+        Logger.warn("Native code has version $version and dart code has version $_nativeCodeVersion");
+        return false;
+      }
+      final bool? matchEqual = await MutableConfig.mutableConfig.alwaysMatchGameWindowNamesEqual.getValue(
+        updateListeners: false,
+      );
+      final bool? printNames = await MutableConfig.mutableConfig.debugPrintGameWindowNames.getValue(
+        updateListeners: false,
+      );
+      initConfig(alwaysMatchEqual: matchEqual!, printWindowNames: printNames!);
+      _nativeWindowInstance = NativeWindow._();
+    }
+    return true;
   }
 
   /// Searches a window with the [name] and returns if it was found
@@ -392,36 +460,6 @@ final class NativeWindow {
 
   /// Returns [_nativeWindowInstance] not nullable (only works after [initNativeWindow])
   static NativeWindow get instance => _nativeWindowInstance!;
-
-  /// Called automatically from [GameToolsLib.initGameToolsLib] to init the [_nativeWindowInstance]
-  /// Multiple calls have no effect. Also calls [GameWindow.updateConfigVariables] once after getting the config
-  /// async variables to test the native code!
-  /// Can also throw [ConfigException] if the config is corrupt.
-  ///
-  /// Should not be called from anywhere else! Returns if the guard function still works (and the library was
-  /// unchanged since last time)
-  static Future<bool> initNativeWindow() async {
-    if (_nativeWindowInstance == null) {
-      late final versionFuncD fun;
-      try {
-        _nativeWindowInstance = NativeWindow._();
-        fun = _nativeWindowInstance!._api.lookupFunction<versionFuncN, versionFuncD>("nativeCodeVersion");
-      } catch (e, s) {
-        Logger.warn("initNativeWindow fail details:", e, s);
-        return false;
-      }
-      final int version = fun.call();
-      if (version != _nativeCodeVersion) {
-        Logger.warn("Native code has version $version and dart code has version $_nativeCodeVersion");
-        return false;
-      }
-      GameWindow.updateConfigVariables(
-        alwaysMatchEqual: await MutableConfig.mutableConfig.alwaysMatchGameWindowNamesEqual.valueNotNull(),
-        printWindowNames: await MutableConfig.mutableConfig.debugPrintGameWindowNames.valueNotNull(),
-      );
-    }
-    return true;
-  }
 
   static const int _INVALID_VALUE = 999999999;
 

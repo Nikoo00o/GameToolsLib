@@ -87,7 +87,7 @@ base class HotkeyGroupBuilder with GTBaseWidget implements GTGroupBuilderInterfa
   }
 
   @override
-  Widget buildProviderWithContent(BuildContext context) {
+  Widget buildProviderWithContent(BuildContext context, {required bool calledFromInnerGroup}) {
     return UIHelper.simpleConsumer<String>(
       builder: (BuildContext context, String searchString, Widget? innerChild) {
         final String upperCaseSearchString = searchString.toUpperCase();

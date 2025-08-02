@@ -22,7 +22,7 @@ final class ExampleFixedConfig extends FixedConfig {
 /// with a different key, but the same default value spam
 final class ExampleMutableConfig extends MutableConfig {
   /// For showcase this does not use a translation key here!
-  final ModelConfigOption<ExampleModel> somethingNew = ModelConfigOption<ExampleModel>(
+  final ModelConfigOption<ExampleModel?> somethingNew = ModelConfigOption<ExampleModel?>(
     titleKey: "Example Model",
     descriptionKey: "some longer description....some longer description....some longer description....",
     defaultValue: ExampleModel(someData: 5, modifiableData: <ExampleModel>[]),

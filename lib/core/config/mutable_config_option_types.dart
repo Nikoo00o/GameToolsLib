@@ -31,11 +31,12 @@ typedef StringConfigOption = TypeConfigOption<String>;
 /// to an object [availableOptions] needs to be supplied with the enum values which will be compared as string!
 ///
 /// Of course you could also use this with any custom class that has its [toString] method overridden if you supply a
-/// list of values that should be compared against!
+/// list of values that should be compared against! Or you can extend from this and override [stringToData] and
+/// [dataToString] for custom conversion of the enum type! For example look at [LocaleConfigOption]!
 ///
 /// For building the ui, you can also use [convertToTranslationKeys] in the constructor to convert the
 /// values of the enums to some translation keys (instead of using raw strings).
-final class EnumConfigOption<EnumType> extends MutableConfigOption<EnumType> {
+base class EnumConfigOption<EnumType> extends MutableConfigOption<EnumType> {
   /// The list of enum values [EnumType.values]!
   final List<EnumType> availableOptions;
 
@@ -53,7 +54,12 @@ final class EnumConfigOption<EnumType> extends MutableConfigOption<EnumType> {
   });
 
   @override
-  EnumType? _stringToData(String? str) {
+  EnumType? _stringToData(String? str) => stringToData(str);
+
+  @override
+  String? _dataToString(EnumType? data) => dataToString(data);
+
+  EnumType? stringToData(String? str) {
     for (final EnumType value in availableOptions) {
       if (value.toString() == str) {
         return value;
@@ -62,8 +68,7 @@ final class EnumConfigOption<EnumType> extends MutableConfigOption<EnumType> {
     return null;
   }
 
-  @override
-  String? _dataToString(EnumType? data) => data?.toString();
+  String? dataToString(EnumType? data) => data?.toString();
 
   @override
   ConfigOptionBuilder<EnumType> get builder => ConfigOptionBuilderEnum<EnumType>(configOption: this);
@@ -77,8 +82,11 @@ final class EnumConfigOption<EnumType> extends MutableConfigOption<EnumType> {
 /// As An example look at [createNewExampleModelInstance].
 ///
 /// Important: you also have to use [createModelBuilder] if this is included in [MutableConfig.getConfigurableOptions]
-/// or otherwise leave it at null. For an example of that look at [createExampleModelBuilder]
-final class ModelConfigOption<T extends Model> extends MutableConfigOption<T> {
+/// or otherwise leave it at null. For an example of that look at [createExampleModelBuilder].
+///
+/// Normally you would directly create instances of this with callbacks, but of course you could also create a
+/// subclass which passes static callbacks!
+base class ModelConfigOption<T extends Model?> extends MutableConfigOption<T> {
   /// function that creates a new instance of [T] by calling its fromJson factory constructor
   final T Function(Map<String, dynamic> json) _createNewModelInstance;
 
@@ -88,9 +96,10 @@ final class ModelConfigOption<T extends Model> extends MutableConfigOption<T> {
   /// This may also be null if this model option is not contained in [MutableConfig.getConfigurableOptions]
   final ConfigOptionBuilderModel<T> Function(ModelConfigOption<T> option)? createModelBuilder;
 
+  /// [createNewModelInstance] function that creates a new instance of [T] by calling its fromJson factory constructor
   /// [updateCallback] Optional update callback that is called after [setValue] to update data references elsewhere.
   /// [lazyLoaded] For big data this should be [true] to load on demand. Defaults to [false] (all data is kept in memory)
-  /// [createNewModelInstance] function that creates a new instance of [T] by calling its fromJson factory constructor
+  /// [onInit] and [defaultValue] are also optional for initialisation
   ModelConfigOption({
     required T Function(Map<String, dynamic> json) createNewModelInstance,
     required super.titleKey,
@@ -126,7 +135,7 @@ final class ModelConfigOption<T extends Model> extends MutableConfigOption<T> {
   static ExampleModel createNewExampleModelInstance(Map<String, dynamic> json) => ExampleModel.fromJson(json);
 
   /// Example for how [createModelBuilder] functions should look with [ConfigOptionBuilderModelExample] and [ExampleModel]
-  static ConfigOptionBuilderModelExample createExampleModelBuilder(ModelConfigOption<ExampleModel> option) =>
+  static ConfigOptionBuilderModelExample createExampleModelBuilder(ModelConfigOption<ExampleModel?> option) =>
       ConfigOptionBuilderModelExample(configOption: option);
 
   @override
@@ -134,42 +143,79 @@ final class ModelConfigOption<T extends Model> extends MutableConfigOption<T> {
 }
 
 /// Custom Config option where you have the freedom of deciding how to convert a string into your data of type [T] by
-/// using the [_createNewInstance] callback.
-///
-/// For the other way around, [toString] will just be called on your object of type [T].
+/// using the [createNewInstance] callback. The other way around is optional with [convertInstanceToString] or
+/// otherwise [toString] will just be called on the object of type [T].
 ///
 /// Important: you also have to pass the [buildCustomContentWidget] if this is included in
 /// [MutableConfig.getConfigurableOptions] or otherwise null.
-final class CustomConfigOption<T> extends MutableConfigOption<T> {
-  /// function that creates a new instance of [T] (or return null)
-  final T? Function(String? str) _createNewInstance;
+///
+/// Normally you would directly create instances of this with callbacks, but of course you could also create a
+/// subclass which passes static callbacks!
+base class CustomConfigOption<T> extends MutableConfigOption<T> {
+  /// Callback Function that creates a new instance of [T] (or return null) from a stored string (or null if it was
+  /// explicitly stored that way)
+  final T? Function(String? str) createNewInstance;
+
+  /// Callback Function that converts an instance of [T] to a string that should be stored (or null if it should
+  /// explicitly be stored that way). If this callback itself is null, then [data?.toString] will be called instead!
+  final String? Function(T? data)? convertInstanceToString;
 
   /// If this is not null (and this is included in [MutableConfig.getConfigurableOptions]), then it is used to build
   /// the ui for this config option! It will be notified when this config option changes and has the current internal
   /// data in [customData].
-  final Widget Function(BuildContext context, T customData)? buildCustomContentWidget;
+  ///
+  /// The [builder] can be used to build helper functions like [ConfigOptionHelperMixin.buildIntOption] or to access
+  /// [CustomConfigOption.titleKey], or translate, etc
+  final Widget Function(
+    BuildContext context,
+    T customData,
+    ConfigOptionBuilderCustom<T> builder, {
+    required bool calledFromInnerGroup,
+  })?
+  buildCustomContentWidget;
 
+  /// This should return true if your custom option should be shown for the [upperCaseSearchString] in the search bar
+  /// for the ui. If this is null it will compare against the title of this config option.
+  ///
+  /// Only use this if [buildCustomContentWidget] is also not null!
+  final bool Function(BuildContext context, String upperCaseSearchString)? containsSearchCallback;
+
+  /// [createNewInstance] function that creates a new instance of [T] (or return null)
   /// [updateCallback] Optional update callback that is called after [setValue] to update data references elsewhere.
   /// [lazyLoaded] For big data this should be [true] to load on demand. Defaults to [false] (all data is kept in memory)
-  /// [createNewInstance] function that creates a new instance of [T] (or return null)
+  /// [onInit] and [defaultValue] are also optional for initialisation
   CustomConfigOption({
-    required T? Function(String? str) createNewInstance,
+    required this.createNewInstance,
+    this.convertInstanceToString,
     required this.buildCustomContentWidget,
+    this.containsSearchCallback,
     required super.titleKey,
     super.descriptionKey,
     super.updateCallback,
     super.defaultValue,
     super.lazyLoaded,
     super.onInit,
-  }) : _createNewInstance = createNewInstance;
+  }) {
+    if (buildCustomContentWidget == null && containsSearchCallback != null) {
+      throw ConfigException(message: "$this had a containsSearchCallback, but no buildCustomContentWidget callback");
+    }
+  }
 
   @override
-  T? _stringToData(String? str) => _createNewInstance.call(str);
+  T? _stringToData(String? str) => createNewInstance.call(str);
+
+  @override
+  String? _dataToString(T? data) =>
+      convertInstanceToString == null ? data?.toString() : convertInstanceToString!.call(data);
 
   @override
   ConfigOptionBuilder<T>? get builder => buildCustomContentWidget == null
       ? null
-      : ConfigOptionBuilderCustom<T>(configOption: this, buildContentCallback: buildCustomContentWidget!);
+      : ConfigOptionBuilderCustom<T>(
+          configOption: this,
+          buildContentCallback: buildCustomContentWidget!,
+          containsSearchCallback: containsSearchCallback,
+        );
 }
 
 /// Special case: [LogLevel] as a enum config option.
@@ -181,43 +227,4 @@ final class LogLevelConfigOption extends EnumConfigOption<LogLevel> {
     super.defaultValue,
     super.onInit,
   }) : super(availableOptions: LogLevel.values);
-}
-
-/// Special case: [Locale] as a config option which provides another getter [activeLocale].
-///
-/// This is a nullable [EnumConfigOption] and has some methods overridden!
-final class LocaleConfigOption extends EnumConfigOption<Locale?> {
-  LocaleConfigOption({
-    required super.titleKey,
-    super.descriptionKey,
-    super.defaultValue,
-  }) : super(
-         availableOptions: <Locale?>[],
-         updateCallback: null,
-         convertToTranslationKeys: _localeToKey,
-         onInit: _addSupportedLocales,
-       );
-
-  /// callback used in added to add support locales during init, because a constructor could not directly access
-  /// the fixed config when its not already initialized. and can also not access instance members during constructor.
-  static Future<void> _addSupportedLocales(MutableConfigOption<dynamic> configOption) async {
-    final LocaleConfigOption localeConfigOption = configOption as LocaleConfigOption;
-    localeConfigOption.availableOptions.addAll(FixedConfig.fixedConfig.supportedLocales);
-  }
-
-  /// callback used for translation keys in ui builder
-  static String _localeToKey(Locale? locale) => locale?.translationKey ?? "locale.system";
-
-  /// Returns the currently active locale which can be the current [_value], but also the default system locale, but
-  /// also the first locale of the locale list!
-  Locale get activeLocale {
-    final Locale? locale = cachedValue() ?? LocaleExtension.getSupportedSystemLocale();
-    return locale ?? availableOptions.first!;
-  }
-
-  @override
-  Locale? _stringToData(String? str) => LocaleExtension.getLocaleByName(str);
-
-  @override
-  String? _dataToString(Locale? data) => data?.toLanguageTag();
 }

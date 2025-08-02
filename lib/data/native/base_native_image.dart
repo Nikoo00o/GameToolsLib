@@ -140,6 +140,31 @@ sealed class BaseNativeImage {
   /// If you want to modify, or access the internal opencv mat directly (should rarely be needed)
   cv.Mat? getRawData() => _data;
 
+  /// Converts the data of this into a dart [Image] which can be displayed in the ui! Throws [ImageException] if
+  /// null! That image can now be displayed in a [RawImage] flutter widget, but after it is no longer needed, you
+  /// should call [Image.dispose] on it.
+  Future<Image> getDartImage() async {
+    if (_data == null || type == NativeImageType.NONE) {
+      throw ImageException(message: "Cannot show empty flutter image $this");
+    }
+    final NativeImage rgba = await clone(onlyAsReference: true);
+    await rgba.changeTypeAsync(NativeImageType.RGBA);
+    Image? image;
+    decodeImageFromPixels(rgba._data!.data, width, height, PixelFormat.bgra8888, (Image result) {
+      image = result;
+    });
+    for (int i = 0; i < 200; ++i) {
+      await Future<void>.delayed(const Duration(milliseconds: 4));
+      if (image != null) {
+        break;
+      }
+    }
+    if (image == null) {
+      throw ImageException(message: "Could not convert image $this to flutter image");
+    }
+    return image!;
+  }
+
   /// If [_data] is null, this returns 0. this would be the columns of the mat
   int get width => _data?.width ?? 0;
 

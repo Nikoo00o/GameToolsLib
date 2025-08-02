@@ -13,10 +13,18 @@ final class SimpleCard extends StatelessWidget with GTBaseWidget {
   /// This contains the card specific actions at the right side
   final Widget trailingActions;
 
+  /// Optional callback that is called when user clicks on this
+  final VoidCallback? onTap;
+
+  /// If not null, then this tile will at least be that tall!
+  final double? minimumHeight;
+
   const SimpleCard({
     required this.titleKey,
     this.descriptionKey,
     required this.trailingActions,
+    this.onTap,
+    this.minimumHeight,
   });
 
   @override
@@ -25,6 +33,8 @@ final class SimpleCard extends StatelessWidget with GTBaseWidget {
     return Card(
       key: ValueKey<String>(titleKey),
       child: ListTile(
+        minTileHeight: minimumHeight,
+        onTap: onTap,
         dense: false,
         contentPadding: const EdgeInsets.fromLTRB(10, 0, 8, 0),
         leading: null,

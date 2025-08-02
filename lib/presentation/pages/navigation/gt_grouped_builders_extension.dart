@@ -30,7 +30,7 @@ abstract interface class GTGroupBuilderInterface {
 
   /// This should build the content of the children of this on the right side. Optionally a provider and consumer
   /// can be used to update when some config state changes
-  Widget buildProviderWithContent(BuildContext context);
+  Widget buildProviderWithContent(BuildContext context, {required bool calledFromInnerGroup});
 
   /// Should be overridden in the subclass to display the name (or translation key) that should be put on the
   /// navigation rail
@@ -72,7 +72,10 @@ base mixin GTGroupedBuildersExtension<BT extends GTGroupBuilderInterface, IndexT
   /// the content of the [MultiConfigOptionBuilder] (which is just the list of config options on the right part of the
   /// page)! May be overridden in sub classes!
   Widget buildCurrentGroupOptions(BuildContext context, BT builder) {
-    return FocusTraversalGroup(descendantsAreTraversable: false, child: builder.buildProviderWithContent(context));
+    return FocusTraversalGroup(
+      descendantsAreTraversable: false,
+      child: builder.buildProviderWithContent(context, calledFromInnerGroup: false),
+    );
   }
 
   /// Builds the [NavigationRail] (with some settings) by calling [MultiConfigOptionBuilder.buildGroupLabel] which

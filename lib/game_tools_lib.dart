@@ -256,8 +256,8 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     final ExampleFixedConfig fixedConfig = GameToolsLib.config<ExampleGameToolsConfig>().fixed; // using sub types
     final ExampleMutableConfig mutableConfig = GameToolsLib.config<ExampleGameToolsConfig>().mutable;
     final GameToolsConfigBaseType baseAccess = GameToolsLib.baseConfig; // using base type
-    final ExampleModel newValue = await mutableConfig.somethingNew.valueNotNull();
-    return !fixedConfig.logIntoStorage && (newValue.someData ?? 1) >= 0 && !baseAccess.fixed.logIntoStorage;
+    final ExampleModel? newValue = await mutableConfig.somethingNew.valueNotNull();
+    return !fixedConfig.logIntoStorage && (newValue?.someData ?? 1) >= 0 && !baseAccess.fixed.logIntoStorage;
   }
 
   GameToolsLib._();

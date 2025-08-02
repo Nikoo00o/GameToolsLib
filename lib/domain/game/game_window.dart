@@ -1,5 +1,4 @@
 import 'dart:math' show Point, min, max;
-import 'dart:ui' show Color;
 
 import 'package:flutter/services.dart' show Clipboard, ClipboardData, LogicalKeyboardKey, PlatformException;
 import 'package:flutter/widgets.dart';
@@ -25,7 +24,7 @@ part 'package:game_tools_lib/core/enums/input/board_key.dart';
 /// which can be accessed with for example [GameToolsLib.mainGameWindow], or the list of windows!
 /// You can have multiple instances of this, but you can also change the [name] by calling [rename] to find a
 /// different window. Remember that objects of this only work if they have been passed to the
-/// [GameToolsLib.initGameToolsLib] method as a parameter!
+/// [GameToolsLib.initGameToolsLib] method as a parameter (and [init] and [updateConfigVariables] will be called for them!
 ///
 /// To interact with the input of the game in more detail, look at [InputManager] with for example
 /// [InputManager.leftClick], [InputManager.keyPress], [InputManager.isKeyDown], [InputManager.isMouseDown].
@@ -72,7 +71,7 @@ final class GameWindow with ChangeNotifier {
   static NativeWindow get _nativeWindow => NativeWindow.instance;
 
   /// Can throw [WindowClosedException] if the id is over [_maxWindowID]
-  /// The initializing is done in [_init] which is called when this object is passed to [GameToolsLib.initGameToolsLib]
+  /// The initializing is done in [init] which is called when this object is passed to [GameToolsLib.initGameToolsLib]
   GameWindow({
     required String name,
   }) : _name = name {
@@ -89,19 +88,14 @@ final class GameWindow with ChangeNotifier {
   /// automatically in [GameToolsLib.initGameToolsLib]).
   /// Can also throw [ConfigException] if the config is corrupt.
   /// Afterwards all other member methods of this may be called!
-  void _init() {
-    final bool initResult = _nativeWindow.initWindow(
-      windowID: _windowID,
-      windowName: _name,
-      alwaysMatchEqual: MutableConfig.mutableConfig.alwaysMatchGameWindowNamesEqual.cachedValueNotNull(),
-      printWindowNames: MutableConfig.mutableConfig.debugPrintGameWindowNames.cachedValueNotNull(),
-    ); // also logs verbose that its initialized
+  void init() {
+    final bool initResult = _nativeWindow.initWindow(windowID: _windowID, windowName: _name); // verbose log init
     if (initResult == false) {
       throw WindowClosedException(message: "could not prepare $_name for native window with id $_windowID");
     }
   }
 
-  /// Changes the name of this window and also initializes it again by calling [_init] to find a different window!
+  /// Changes the name of this window and also initializes it again by calling [init] to find a different window!
   /// Of course this will also unset the window handle and it has to be searched again (which is done automatically
   /// in the other functions). This should never throw a [WindowClosedException] at this point in theory.
   /// Also waits [FixedConfig.tinyDelayMS] maximum afterwards!
@@ -109,10 +103,9 @@ final class GameWindow with ChangeNotifier {
     if (newName != _name) {
       Logger.verbose("Renaming $this to $newName");
       _name = newName;
+      init();
+      await Utils.delayMS(FixedConfig.fixedConfig.tinyDelayMS.y);
     }
-    _init();
-    notifyListeners();
-    await Utils.delayMS(FixedConfig.fixedConfig.tinyDelayMS.y);
   }
 
   /// Updates the [isOpen] (needs to search the window handle for it) and returns if the open was different before
@@ -158,7 +151,7 @@ final class GameWindow with ChangeNotifier {
   Future<void> setWindowFocus() async {
     final bool success = _nativeWindow.setWindowFocus(_windowID);
     if (success == false) {
-      throw WindowClosedException(message: "Cant set window focus: $_windowID:");
+      throw WindowClosedException(message: "Cant set window focus for $this");
     }
     await Utils.delayMS(FixedConfig.fixedConfig.tinyDelayMS.y);
   }
@@ -172,7 +165,7 @@ final class GameWindow with ChangeNotifier {
   Bounds<int> getWindowBounds() {
     final Bounds<int>? bounds = _nativeWindow.getWindowBounds(_windowID);
     if (bounds == null) {
-      throw WindowClosedException(message: "Cant get window bounds: $_windowID:");
+      throw WindowClosedException(message: "Cant get window bounds for $this");
     }
     return bounds;
   }
@@ -202,7 +195,7 @@ final class GameWindow with ChangeNotifier {
   ]) async {
     final NativeImage? image = await _nativeWindow.getImageOfWindow(_windowID, x, y, width, height, type);
     if (image == null) {
-      throw WindowClosedException(message: "Cant get image of window $_windowID: $x, $y, $width, $height");
+      throw WindowClosedException(message: "Cant get image of window $this: $x, $y, $width, $height");
     }
     return image;
   }
@@ -217,7 +210,7 @@ final class GameWindow with ChangeNotifier {
   Future<NativeImage> getFullImage([NativeImageType type = NativeImageType.RGBA]) async {
     final NativeImage? image = await _nativeWindow.getFullWindow(_windowID, type);
     if (image == null) {
-      throw WindowClosedException(message: "Cant get full image of window: $_windowID:");
+      throw WindowClosedException(message: "Cant get full image of window: $this");
     }
     return image;
   }
@@ -238,7 +231,7 @@ final class GameWindow with ChangeNotifier {
   Color? getPixelOfWindow(int x, int y) {
     final Color? color = _nativeWindow.getPixelOfWindow(_windowID, x, y);
     if (color == null) {
-      throw WindowClosedException(message: "Cant get pixel of window $_windowID: $x, $y");
+      throw WindowClosedException(message: "Cant get pixel of window $this: $x, $y");
     }
     if (isWithinWindow(Point<int>(x, y)) == false) {
       return null;
@@ -300,7 +293,7 @@ final class GameWindow with ChangeNotifier {
   void closeWindow() {
     final bool success = _nativeWindow.closeWindow(_windowID);
     if (success == false) {
-      throw WindowClosedException(message: "Cant close window: $_windowID:");
+      throw WindowClosedException(message: "Cant close window: $this");
     }
   }
 
@@ -325,12 +318,9 @@ final class GameWindow with ChangeNotifier {
   /// [alwaysMatchEqual] controls how the window names will be matched ([false] = the window title only has to
   /// contain the [GameWindow.name]. Otherwise if [true] it has to be exactly the same)
   /// [printWindowNames] is a debug variable to print out all opened windows if set to true
+  ///
+  /// This is also called automatically once before the first [init] in [GameToolsLib.initGameToolsLib]
   static void updateConfigVariables({required bool alwaysMatchEqual, required bool printWindowNames}) {
-    _nativeWindow.initWindow(
-      windowID: _maxWindowID,
-      windowName: "USED_FOR_CONFIG",
-      alwaysMatchEqual: alwaysMatchEqual,
-      printWindowNames: printWindowNames,
-    );
+    NativeWindow.initConfig(alwaysMatchEqual: alwaysMatchEqual, printWindowNames: printWindowNames);
   }
 }

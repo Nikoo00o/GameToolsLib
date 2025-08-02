@@ -3,12 +3,12 @@ import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:provider/provider.dart';
 
-// todo: doc comment
-/// Provides the widgets below with changes if main window focus or open status changed
-/// Per default only uses the main window
+// todo: doc comments
+/// Provides the widgets below with changes if main window focus or open status changed which can be accessed with a
+/// [Consumer] of [GameWindow], but per default only uses the main window!
 ///
-/// at this point if the target main game window was open (this will never build with false and same goes for the
-/// focus!)
+/// At this point if the target main game window was open, then this will never build with false and same goes for the
+/// focus!
 base class GTOverlaySwitcher extends StatelessWidget {
   final Widget navigatorChild;
 

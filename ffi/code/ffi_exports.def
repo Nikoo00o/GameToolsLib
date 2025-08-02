@@ -2,6 +2,7 @@ LIBRARY    game_tools_lib_plugin
 EXPORTS
     nativeCodeVersion
     initWindow
+    initConfig
     isWindowOpen
     hasWindowFocus
     setWindowFocus

@@ -1,19 +1,25 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:collection/collection.dart';
+import 'package:flutter/material.dart' show Colors;
 import 'package:flutter/widgets.dart';
+import 'package:game_tools_lib/core/config/app_colors_config_option.dart';
 import 'package:game_tools_lib/core/config/fixed_config.dart';
+import 'package:game_tools_lib/core/config/locale_config_option.dart';
 import 'package:game_tools_lib/core/enums/log_level.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
-import 'package:game_tools_lib/core/utils/locale_extension.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/domain/entities/base/model.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/domain/game/helper/example/example_config.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
+import 'package:game_tools_lib/presentation/base/gt_app_theme.dart';
+import 'package:game_tools_lib/presentation/pages/debug/gt_debug_page.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder_group.dart';
+import 'package:game_tools_lib/presentation/pages/settings/config_option_builder_model_example.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder_types.dart';
+import 'package:game_tools_lib/presentation/pages/settings/config_option_helper_mixin.dart';
 
 part 'package:game_tools_lib/core/config/mutable_config_option.dart';
 
@@ -56,17 +62,25 @@ base class MutableConfig {
   /// Important: use [LocaleConfigOption.activeLocale] to access the locale that is used in the app!
   final LocaleConfigOption currentLocale = LocaleConfigOption(titleKey: "config.currentLocale");
 
+  /// You should override this to customize the colors of your app in regards to the material 3 theme!
+  /// https://m3.material.io/styles/color/system/how-the-system-works#094adbe5-d41e-49b4-8dff-906d6094668d
+  final AppColorsConfigOption appColors = AppColorsConfigOption(
+    defaultValue: const GTAppTheme.seed(seedColor: Color(0xff004A95), baseSuccessColor: Colors.green),
+  );
+
   /// Controls how the window names will be matched ([false] = window title only has to contain the [GameWindow.name].
   /// Otherwise if [true] it has to be exactly the same). Used for [GameWindow], default is [false].
+  /// Per default this is only included in the [GTDebugPage] and not in [getConfigurableOptions]!
   final BoolConfigOption alwaysMatchGameWindowNamesEqual = BoolConfigOption(
     titleKey: "config.alwaysMatchGameWindowNamesEqual",
     descriptionKey: "config.alwaysMatchGameWindowNamesEqual.description",
-    defaultValue: false,
+    defaultValue: true,
     updateCallback: _updateGameWindowConfigValues,
   );
 
   /// This is a debug variable to print out all opened windows if set to true. Used for [GameWindow], default is
   /// [false].
+  /// Per default this is only included in the [GTDebugPage] and not in [getConfigurableOptions]!
   final BoolConfigOption debugPrintGameWindowNames = BoolConfigOption(
     titleKey: "config.debugPrintGameWindowNames",
     descriptionKey: "config.debugPrintGameWindowNames.description",
@@ -98,6 +112,7 @@ base class MutableConfig {
         logLevel,
         useDarkTheme,
         currentLocale,
+        appColors,
       ],
     ),
   ];

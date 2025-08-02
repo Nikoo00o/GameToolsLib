@@ -39,8 +39,8 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
       }
       final HiveDatabase database = GameToolsLib.database;
       await database._init();
-      await GameToolsLib.baseConfig.mutable.logLevel.getValue(); // important: cache data once so that logger gets
-      // correct log level!
+      await GameToolsLib.baseConfig.mutable.logLevel.getValue(updateListeners: false); // important: cache data once so
+      // that logger gets correct log level!
       Logger.verbose(
         "Initialized GameToolsLib DataBase from path ${database.basePath}, Logger ${Logger._instance.runtimeType} "
         "with LogLevel ${Logger.currentLogLevel} and config ${GameToolsConfig.config().runtimeType}",
@@ -54,14 +54,14 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
 
   static Future<bool> _initNativeCode({required bool isCalledFromTesting}) async {
     try {
-      final bool unChanged = await NativeWindow.initNativeWindow(); // first init native window
+      final bool unChanged = await NativeWindow.initNativeWindow(); // first init native window (this also calls
+      // NativeWindow.initConfig / GameWindow.updateConfigVariables )
       if (unChanged == false) {
         Logger.error("Error, copy new Native C/C++ library file to ${FileUtils.absolutePath(FFILoader.apiPath)}");
         return false;
       }
       for (final GameWindow gameWindow in GameToolsLib.gameWindows) {
-        // now init all game windows by calling init on them once
-        unawaited(gameWindow.rename(gameWindow.name)); // don't need to await delay in first init
+        gameWindow.init(); // now init all game windows once
       }
       Logger.verbose("Native C/C++ Part of GameToolsLib loaded from ${FileUtils.absolutePath(FFILoader.apiPath)}");
 
