@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 
 /// This can be used to get text values from a text field with [T] being either [int], [double], or [String] and
@@ -51,7 +52,7 @@ final class _SimpleTextFieldState<T> extends State<SimpleTextField<T>> with GTBa
               ],
         onChanged: widget.onChanged,
         decoration: InputDecoration(
-          hintText: translate(context, hintKey),
+          hintText: translate(TranslationString(hintKey), context),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           isDense: true,
           filled: true,

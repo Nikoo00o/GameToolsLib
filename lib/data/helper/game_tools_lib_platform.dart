@@ -163,7 +163,7 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
           .join(", ");
       return "${option.runtimeType}[$children]";
     } else {
-      return "${option.runtimeType}(${option.titleKey})";
+      return "${option.runtimeType}(${option.title})";
     }
   }
 

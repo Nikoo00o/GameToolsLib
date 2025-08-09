@@ -3,6 +3,7 @@ import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/enums/log_level.dart';
 import 'package:game_tools_lib/core/logger/custom_logger.dart';
 import 'package:game_tools_lib/core/logger/log_message.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
@@ -23,7 +24,7 @@ final class GTLogsBar extends StatelessWidget with GTBaseWidget {
       children: <Widget>[
         const Padding(
           padding: EdgeInsets.fromLTRB(20, 4, 20, 4),
-          child: SimpleSearchContainer(hintTextKey: "page.logs.search"),
+          child: SimpleSearchContainer(hintText: TS("page.logs.search")),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
@@ -32,7 +33,7 @@ final class GTLogsBar extends StatelessWidget with GTBaseWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
           child: IconButton(
-            tooltip: translate(context, "page.logs.copy.to.clipboard"),
+            tooltip: translate(const TS("page.logs.copy.to.clipboard"), context),
             onPressed: () => _onCopyToClipboard(context),
             icon: const Icon(Icons.copy),
           ),
@@ -55,7 +56,7 @@ final class GTLogsBar extends StatelessWidget with GTBaseWidget {
         }
         await InputManager.setClipboard(data.toString());
         if (context.mounted) {
-          showToast(context, "page.logs.copy.to.clipboard.done");
+          showToast(const TS("page.logs.copy.to.clipboard.done"), context);
         }
       }
     }
@@ -63,7 +64,7 @@ final class GTLogsBar extends StatelessWidget with GTBaseWidget {
 
   Widget _buildFilterDropDown(BuildContext context) {
     return SimpleDropDownMenu<LogLevel>(
-      label: "page.logs.level",
+      label: const TS("page.logs.level"),
       values: LogLevel.values,
       initialValue: FixedConfig.fixedConfig.defaultUiLogLevel,
       onValueChange: (LogLevel? newLogLevel) {

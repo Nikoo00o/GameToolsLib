@@ -2,6 +2,7 @@ import 'dart:ui' show Locale;
 import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/utils/locale_extension.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 
 /// Special case: [Locale] as a config option which provides another getter [activeLocale].
 ///
@@ -9,8 +10,8 @@ import 'package:game_tools_lib/core/utils/locale_extension.dart';
 /// Because null should be stored to represent the system locale!
 final class LocaleConfigOption extends EnumConfigOption<Locale?> {
   LocaleConfigOption({
-    required super.titleKey,
-    super.descriptionKey,
+    required super.title,
+    super.description,
     super.defaultValue,
   }) : super(
          availableOptions: <Locale?>[],
@@ -27,7 +28,7 @@ final class LocaleConfigOption extends EnumConfigOption<Locale?> {
   }
 
   /// callback used for translation keys in ui builder
-  static String _localeToKey(Locale? locale) => locale?.translationKey ?? "locale.system";
+  static TranslationString _localeToKey(Locale? locale) => TS(locale?.translationKey ?? "locale.system");
 
   /// Returns the currently active locale which can be the current [_value], but also the default system locale, but
   /// also the first locale of the locale list!

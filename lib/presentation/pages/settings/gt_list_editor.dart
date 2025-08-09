@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/simple_text_field.dart';
@@ -18,10 +19,10 @@ base class GTListEditor<T> extends StatefulWidget {
 
   /// Translation key for the title of this list editor displayed over all elements on the other side of the
   /// add/expand buttons
-  final String titleKey;
+  final TranslationString title;
 
-  /// Optional description under the [titleKey]
-  final String? descriptionKey;
+  /// Optional description under the [title]
+  final TranslationString? description;
 
   /// If this is false, then the edit button will not be build for each element of [elements].
   /// This should be the case if your [buildElement] function also has some part that can edit the element!
@@ -56,8 +57,8 @@ base class GTListEditor<T> extends StatefulWidget {
     super.key,
     required this.elements,
     this.onChange,
-    required this.titleKey,
-    this.descriptionKey,
+    required this.title,
+    this.description,
     this.buildEditButtons = true,
     this.buildElement,
     required this.buildCreateOrEditDialog,
@@ -80,23 +81,24 @@ base class _GTListEditorState<T> extends State<GTListEditor<T>> with GTBaseWidge
       context: outerContext,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
+        final String titleKey = oldElement != null ? "input.edit.element" : "input.create.element";
         return AlertDialog(
-          title: Text(
-            translate(
-              dialogContext,
-              oldElement != null ? "input.edit.element" : "input.create.element",
-              keyParams: <String>[elementNumber.toString()],
-            ),
-          ),
+          title: Text(translate(TS(titleKey, <String>[elementNumber.toString()]), dialogContext)),
           content: widget.buildCreateOrEditDialog(dialogContext, oldElement, elementNumber, onElementUpdate),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(translate(dialogContext, "input.cancel"), style: TextStyle(color: colorError(dialogContext))),
+              child: Text(
+                translate(const TS("input.cancel"), dialogContext),
+                style: TextStyle(color: colorError(dialogContext)),
+              ),
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text(translate(dialogContext, "input.ok"), style: TextStyle(color: colorSuccess(dialogContext))),
+              child: Text(
+                translate(const TS("input.ok"), dialogContext),
+                style: TextStyle(color: colorSuccess(dialogContext)),
+              ),
             ),
           ],
         );
@@ -138,7 +140,7 @@ base class _GTListEditorState<T> extends State<GTListEditor<T>> with GTBaseWidge
   Widget buildElement(T element, int index) {
     final int number = index + 1;
     return widget.buildElement?.call(element, number) ??
-        Text(translate(context, "input.show.element", keyParams: <String>[number.toString(), element.toString()]));
+        Text(translate(TS("input.show.element", <String>[number.toString(), element.toString()]), context));
   }
 
   List<Widget> buildChildren(BuildContext context) {
@@ -191,14 +193,15 @@ base class _GTListEditorState<T> extends State<GTListEditor<T>> with GTBaseWidge
   @override
   Widget build(BuildContext context) {
     return Card(
+      key: ValueKey<String>(widget.title.identifier),
       child: ExpansionTile(
         collapsedShape: const ContinuousRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
         shape: const ContinuousRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
         childrenPadding: const EdgeInsets.fromLTRB(10, 5, 10, 10),
-        title: Text(translate(context, widget.titleKey), style: textTitleMedium(context)),
-        subtitle: widget.descriptionKey != null
+        title: Text(translate(widget.title, context), style: textTitleMedium(context)),
+        subtitle: widget.description != null
             ? Text(
-                translate(context, widget.descriptionKey!),
+                translate(widget.description!, context),
                 style: textBodySmall(context).copyWith(color: colorOnSurfaceVariant(context)),
               )
             : null,
@@ -236,8 +239,8 @@ final class GTListEditorInt extends GTListEditor<int> {
     super.key,
     required super.elements,
     super.onChange,
-    required super.titleKey,
-    super.descriptionKey,
+    required super.title,
+    super.description,
     super.buildEditButtons,
   }) : super(
          buildCreateOrEditDialog:
@@ -258,8 +261,8 @@ final class GTListEditorString extends GTListEditor<String> {
     super.key,
     required super.elements,
     super.onChange,
-    required super.titleKey,
-    super.descriptionKey,
+    required super.title,
+    super.description,
     super.buildEditButtons,
   }) : super(
          buildCreateOrEditDialog:

@@ -1,6 +1,7 @@
 import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/enums/log_level.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/domain/entities/base/model.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 
@@ -23,8 +24,8 @@ final class ExampleFixedConfig extends FixedConfig {
 final class ExampleMutableConfig extends MutableConfig {
   /// For showcase this does not use a translation key here!
   final ModelConfigOption<ExampleModel?> somethingNew = ModelConfigOption<ExampleModel?>(
-    titleKey: "Example Model",
-    descriptionKey: "some longer description....some longer description....some longer description....",
+    title: TS.raw("Example Model"),
+    description: TS.raw("some longer description....some longer description....some longer description...."),
     defaultValue: ExampleModel(someData: 5, modifiableData: <ExampleModel>[]),
     lazyLoaded: false,
     updateCallback: (ExampleModel? newModel) => Logger.verbose("got new model $newModel"),
@@ -35,7 +36,7 @@ final class ExampleMutableConfig extends MutableConfig {
   /// Private member instance is needed to supply different value to the overridden getter below!
   /// This translation key is only for showcase and not contained in the translation files!
   final LogLevelConfigOption _logLevelInstance = LogLevelConfigOption(
-    titleKey: "config.example.logLevel",
+    title: const TS("config.example.logLevel"),
     defaultValue: LogLevel.SPAM,
   );
 
@@ -45,7 +46,7 @@ final class ExampleMutableConfig extends MutableConfig {
 
   /// New option used above in [ExampleFixedConfig] to override the long periodic spam delay and set it to 0 per
   /// default (so all periodic spam logs are always logged)
-  IntConfigOption get mutableDelay => IntConfigOption(titleKey: "Mutable Delay", defaultValue: 0);
+  IntConfigOption get mutableDelay => IntConfigOption(title: TS.raw("Mutable Delay"), defaultValue: 0);
 
   /// Important: also pass all new config options to the ui! (no translation key used for the group in this example
   /// and the last log level instance config option will be duplicated and put in the "other" group as well to test it)
@@ -53,7 +54,7 @@ final class ExampleMutableConfig extends MutableConfig {
   getConfigurableOptions() => <MutableConfigOption<dynamic>>[
     ...super.getConfigurableOptions(),
     MutableConfigOptionGroup(
-      titleKey: "Example Group",
+      title: TS.raw("Example Group"),
       configOptions: <MutableConfigOption<dynamic>>[mutableDelay],
     ),
     somethingNew,

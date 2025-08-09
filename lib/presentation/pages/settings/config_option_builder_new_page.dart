@@ -13,7 +13,7 @@ import 'package:game_tools_lib/presentation/pages/settings/config_option_helper_
 /// It is used for [ConfigOptionBuilderCustom] and [ConfigOptionBuilderModel] when they are used inside of a
 /// [ConfigOptionBuilderGroup]!
 ///
-/// Per default this also overrides [buildAppBar] to show the [MutableConfigOption.titleKey] and a back button!
+/// Per default this also overrides [buildAppBar] to show the [MutableConfigOption.title] and a back button!
 /// And this overrides [buildPaddedBody] to build the content with different padding!
 base class ConfigOptionBuilderNewPage<CT> extends GTBasePage {
   /// The config option for which the new page is build
@@ -29,7 +29,7 @@ base class ConfigOptionBuilderNewPage<CT> extends GTBasePage {
 
   @override
   PreferredSizeWidget? buildAppBar(BuildContext context) =>
-      buildAppBarDefaultTitle(context, configOption.titleKey, buildBackButton: true);
+      buildAppBarDefaultTitle(configOption.title, context, buildBackButton: true);
 
   @override
   Widget buildBody(BuildContext context) {
@@ -60,5 +60,5 @@ base class ConfigOptionBuilderNewPage<CT> extends GTBasePage {
   Color? getScaffoldBackgroundColor(BuildContext context) => colorSurfaceContainer(context);
 
   @override
-  String get pageName => configOption.titleKey;
+  String get pageName => configOption.title.identifier;
 }

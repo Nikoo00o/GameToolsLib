@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/ui_helper.dart';
 import 'package:game_tools_lib/presentation/pages/hotkeys/gt_hotkeys_page.dart';
@@ -33,8 +34,8 @@ abstract interface class GTGroupBuilderInterface {
   Widget buildProviderWithContent(BuildContext context, {required bool calledFromInnerGroup});
 
   /// Should be overridden in the subclass to display the name (or translation key) that should be put on the
-  /// navigation rail
-  String get groupName;
+  /// inner navigation rail on the left side
+  TranslationString get groupName;
 
   /// Must be overridden to return if this builder should be shown when the user is searching [upperCaseSearchString]
   bool containsSearch(BuildContext context, String upperCaseSearchString);
@@ -62,24 +63,33 @@ base mixin GTGroupedBuildersExtension<BT extends GTGroupBuilderInterface, IndexT
   /// The list of builders which must be initialized only once in the constructor of the sub class!
   late final List<BT> builders;
 
+  /// Only used for logging
+  int _debugCurIndex = 0;
+
   @override
   bool get allowTabTraversal => true;
 
   @override
   EdgeInsetsGeometry? getInnerPadding() => null;
 
-  /// Calls [ConfigOptionBuilder.buildProviderWithContent] which then calls [ConfigOptionBuilder.buildContent] to build
-  /// the content of the [MultiConfigOptionBuilder] (which is just the list of config options on the right part of the
-  /// page)! May be overridden in sub classes!
-  Widget buildCurrentGroupOptions(BuildContext context, BT builder) {
-    return FocusTraversalGroup(
-      descendantsAreTraversable: false,
-      child: builder.buildProviderWithContent(context, calledFromInnerGroup: false),
+  /// Calls [ConfigOptionBuilder.buildProviderWithContent] inside of a builder which then calls
+  /// [ConfigOptionBuilder.buildContent] to build the content of the [MultiConfigOptionBuilder] (which is just the
+  /// list of config options on the right part of the page)! May be overridden in sub classes! Used in
+  /// [buildSearchState]
+  Widget buildCurrentGroupOptions(BT builder) {
+    return Builder(
+      builder: (BuildContext context) {
+        return FocusTraversalGroup(
+          descendantsAreTraversable: false,
+          child: builder.buildProviderWithContent(context, calledFromInnerGroup: false),
+        );
+      },
     );
   }
 
   /// Builds the [NavigationRail] (with some settings) by calling [MultiConfigOptionBuilder.buildGroupLabel] which
   /// returns the [NavigationRailDestination] with the icons and translation keys. May be overridden in the sub class!
+  /// Used in [buildSearchState]
   Widget buildGroupLabels(BuildContext context, List<BT> searchedBuilders, int index) {
     final List<NavigationRailDestination> destinations = searchedBuilders
         .map((BT builder) => builder.buildGroupLabel(context))
@@ -107,12 +117,13 @@ base mixin GTGroupedBuildersExtension<BT extends GTGroupBuilderInterface, IndexT
     );
   }
 
+  /// Used in [buildBody]
   Widget buildSearchState(BuildContext context, List<BT> searchedBuilders, int oldPos, BT oldBuilder) {
     late int currentPos;
     if (searchedBuilders.isEmpty) {
       return Center(
         child: Text(
-          translate(context, "input.search.not.found"),
+          translate(const TS("input.search.not.found"), context),
           style: textTitleLarge(context).copyWith(color: colorError(context)),
         ),
       );
@@ -136,19 +147,22 @@ base mixin GTGroupedBuildersExtension<BT extends GTGroupBuilderInterface, IndexT
         buildGroupLabels(context, searchedBuilders, currentPos),
         const VerticalDivider(thickness: 1, width: 1),
         Expanded(
-          child: Padding(padding: pagePadding, child: buildCurrentGroupOptions(context, newBuilder)),
+          child: Padding(padding: pagePadding, child: buildCurrentGroupOptions(newBuilder)),
         ),
       ],
     );
   }
 
   @override
-  Widget buildBody(BuildContext context) {
+  Widget buildBody(BuildContext _) {
     return Consumer<IndexType>(
-      builder: (BuildContext context, IndexType index, Widget? child) {
+      builder: (BuildContext _, IndexType index, Widget? child) {
         final int pos = index.value;
         final BT builder = builders.elementAt(pos);
-        Logger.verbose("Inner Nav Tab selected: ${builder.groupName}");
+        if (pos != _debugCurIndex) {
+          Logger.verbose("Inner Nav Tab selected: ${builder.groupName}");
+        }
+        _debugCurIndex = pos;
         return UIHelper.simpleConsumer<String>(
           builder: (BuildContext context, String searchString, Widget? innerChild) {
             final String upperCaseSearchString = searchString.toUpperCase();
@@ -168,12 +182,12 @@ base mixin GTGroupedBuildersExtension<BT extends GTGroupBuilderInterface, IndexT
 
   @override
   PreferredSizeWidget? buildAppBar(BuildContext context) => buildAppBarDefaultTitle(
-    key: ValueKey<String>(navigationLabel),
-    context,
+    key: ValueKey<String>(navigationLabel.identifier),
     navigationLabel,
+    context,
     actions: <Widget>[
       SimpleSearchContainer(
-        hintTextKey: "${translate(context, "input.search")} ${translate(context, navigationLabel)}",
+        hintText: TS.combine(<TS>[const TS("input.search"), TS.raw(" "), navigationLabel], context),
       ),
       const SizedBox(width: 20),
     ],

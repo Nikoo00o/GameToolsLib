@@ -22,11 +22,13 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 abstract base class BaseInputListener<DataType> {
   /// If this is empty, then this listener will not get any ui build to be able to modify it! Otherwise it should
   /// display a info label text (or translation key), but it will also be used as the database storage key (for the
-  /// editable stored [_key]). Also look at [configGroupLabel] if you want to group up some listeners.
-  final String configLabel;
+  /// editable stored [_key]). Also look at [configGroupLabel] if you want to group up some listeners. See
+  /// [isConfigurable]. You can explicitly set this to empty with [TranslationString.empty] (or just use an empty
+  /// string)!
+  final TranslationString configLabel;
 
   /// Optional additional smaller text for the ui in addition to [configLabel] (null by default).
-  final String? configLabelDescription;
+  final TranslationString? configLabelDescription;
 
   /// This will be called before to only execute [createEventCallback] if this returns true!
   /// The default is [onlyWhenMainWindowHasFocus] to only create events when the main window is open and has focus!
@@ -56,7 +58,7 @@ abstract base class BaseInputListener<DataType> {
   /// If the [configLabel] is not empty, then this may also be set to group up multiple input listeners in
   /// config groups by matching the group labels! In the config menu the labels will also be translated.
   /// But this is optional and null by default!
-  final String? configGroupLabel;
+  final TranslationString? configGroupLabel;
 
   /// The current hotkey which is loaded/saved in storage, but initially null (and default is used before)
   DataType? _key;
@@ -76,7 +78,7 @@ abstract base class BaseInputListener<DataType> {
   /// Added to the [configLabel] internally in the storage
   static const String KEY_PREFIX = "LISTENER_";
 
-  String get _transformedKey => "$KEY_PREFIX$configLabel";
+  String get _transformedKey => "$KEY_PREFIX${configLabel.identifier}";
 
   BaseInputListener({
     required this.configLabel,
@@ -87,7 +89,7 @@ abstract base class BaseInputListener<DataType> {
     required this.defaultKey,
     this.configGroupLabel,
   }) {
-    if (configLabel.isEmpty && configGroupLabel != null) {
+    if (isConfigurable == false && configGroupLabel != null) {
       throw ConfigException(
         message: "Used config group label $configGroupLabel when configLabel was null for default key $defaultKey",
       );
@@ -123,7 +125,7 @@ abstract base class BaseInputListener<DataType> {
   }
 
   /// If this is modifiable in the ui
-  bool get isConfigurable => configLabel.isNotEmpty;
+  bool get isConfigurable => configLabel.identifier.isNotEmpty;
 
   /// This is called internally in [_update] only once at the first event loop run, so from the outside the sync
   /// [currentKey] access can always be used!

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_page.dart';
 import 'package:game_tools_lib/presentation/pages/debug/gt_debug_status.dart';
 
@@ -49,7 +50,7 @@ base class GTDebugPage extends GTBasePage {
 
   @override
   PreferredSizeWidget? buildAppBar(BuildContext context) =>
-      buildAppBarDefaultTitle(context, "page.debug.title", buildBackButton: true);
+      buildAppBarDefaultTitle(const TS("page.debug.title"), context, buildBackButton: true);
 
   Widget _materialThemedContainer(bool isDark) {
     return Container();

@@ -51,11 +51,12 @@ base class GTNavigator extends GTBasePage {
     this.alignment = -1.0,
   }) : _debugCurIndex = startIndex;
 
-  /// Build the current [page]
-  Widget buildCurrentPage(BuildContext context, GTNavigationPage page) {
-    return page.build(context);
+  /// Build the current right side [page] inside of a builder for [buildScaffold]
+  Widget buildCurrentPage(GTNavigationPage page) {
+    return Builder(builder: (BuildContext context) => page.build(context));
   }
 
+  /// Builds the left side menu of [buildScaffold]
   Widget buildCurrentNavRail(BuildContext context, int index) {
     final List<NavigationRailDestination> destinations = pages.map(
       (GTNavigationPage page) {
@@ -63,7 +64,7 @@ base class GTNavigator extends GTBasePage {
           padding: const EdgeInsets.symmetric(vertical: 4),
           icon: Icon(page.navigationNotSelectedIcon),
           selectedIcon: Icon(page.navigationSelectedIcon),
-          label: Text(translate(context, page.navigationLabel)),
+          label: Text(translate(page.navigationLabel, context)),
         );
       },
     ).toList();
@@ -87,21 +88,26 @@ base class GTNavigator extends GTBasePage {
     );
   }
 
+  /// Called from [build] to build the current content
   Widget buildScaffold(BuildContext context, int index) {
     final GTNavigationPage page = pages.elementAt(index);
     final List<SingleChildWidget> providers = page.buildProviders(context);
 
-    final Widget scaffold = Scaffold(
-      body: Row(
-        children: <Widget>[
-          buildCurrentNavRail(context, index),
-          Expanded(child: buildCurrentPage(context, page)),
-        ],
-      ),
-      appBar: page.buildAppBar(context),
-      drawer: page.buildMenuDrawer(context),
-      bottomNavigationBar: page.buildBottomBar(context),
-      backgroundColor: colorSurfaceContainer(context),
+    final Widget scaffold = Builder(
+      builder: (BuildContext context) {
+        return Scaffold(
+          body: Row(
+            children: <Widget>[
+              buildCurrentNavRail(context, index),
+              Expanded(child: buildCurrentPage(page)),
+            ],
+          ),
+          appBar: page.buildAppBar(context),
+          drawer: page.buildMenuDrawer(context),
+          bottomNavigationBar: page.buildBottomBar(context),
+          backgroundColor: colorSurfaceContainer(context),
+        );
+      },
     );
 
     if (providers.isNotEmpty) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/presentation/base/gt_app.dart';
 import 'package:game_tools_lib/presentation/pages/debug/gt_debug_page.dart';
 import 'package:game_tools_lib/presentation/pages/home/gt_window_status.dart';
@@ -18,7 +19,7 @@ base class GTHomePage extends GTNavigationPage {
 
   @override
   Widget buildBody(BuildContext context) {
-    final String open = translate(context, "page.home.open");
+    final String open = translate(const TS("page.home.open"), context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -30,7 +31,7 @@ base class GTHomePage extends GTNavigationPage {
             onPressed: () {
               pushPage(context, const GTDebugPage());
             },
-            child: Text("$open ${translate(context, "page.debug.title")}"),
+            child: Text("$open ${translate(const TS("page.debug.title"), context)}"),
           ),
           const SizedBox(height: 10),
           FilledButton(
@@ -47,7 +48,7 @@ base class GTHomePage extends GTNavigationPage {
             onPressed: () {
               pushPage(context, const GTLogsPage());
             },
-            child: Text("$open ${translate(context, "page.logs.title")}"),
+            child: Text("$open ${translate(const TS("page.logs.title"), context)}"),
           ),
           const SizedBox(height: 10),
         ],
@@ -59,7 +60,7 @@ base class GTHomePage extends GTNavigationPage {
   String get pageName => "GTHomePage";
 
   @override
-  String get navigationLabel => "page.home.title";
+  TranslationString get navigationLabel => const TS("page.home.title");
 
   @override
   IconData get navigationNotSelectedIcon => Icons.home_outlined;

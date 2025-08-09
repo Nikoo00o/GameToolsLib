@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/utils/locale_extension.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/domain/game/helper/example/example_event.dart';
@@ -141,7 +142,7 @@ class _GTDebugStatusState extends State<GTDebugStatus> with GTBaseWidget {
   }
 
   static final KeyInputListener listener = KeyInputListener(
-    configLabel: "page.debug.status.test.listener",
+    configLabel: const TS("page.debug.status.test.listener"),
     createEventCallback: () => ExampleEvent(isInstant: false, additionalWorkInStep1: _testEventAndClipboard),
     alwaysCreateNewEvents: true,
     defaultKey: BoardKey.ctrlA,

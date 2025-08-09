@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 
@@ -75,14 +76,14 @@ class _GTHotkeyFieldState extends State<GTHotkeyField> with GTBaseWidget {
   Widget buildTextForState(BuildContext context) {
     if (isInputting) {
       return Text(
-        translate(context, "page.hotkeys.clear.esc"),
+        translate(const TS("page.hotkeys.clear.esc"), context),
         style: textLabelSmall(context).copyWith(color: colorOnPrimary(context)),
       );
     } else if (boardKey != null) {
       return Text(boardKey!.keyCombinationText, style: textBodyMedium(context).copyWith(fontWeight: FontWeight.bold));
     } else {
       return Text(
-        translate(context, "page.hotkeys.not.set"),
+        translate(const TS("page.hotkeys.not.set"), context),
         style: textBodyMedium(context).copyWith(color: colorError(context)).copyWith(fontWeight: FontWeight.bold),
       );
     }

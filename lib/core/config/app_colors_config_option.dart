@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/enums/gt_contrast.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_app_theme.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder_types.dart';
-import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_notifier.dart';
 
 /// This is an example on how to use the [CustomConfigOption] here with the [GTAppTheme] as a new class.
 ///
@@ -21,17 +21,13 @@ final class AppColorsConfigOption extends CustomConfigOption<GTAppTheme> {
          lazyLoaded: false,
          onInit: null,
          updateCallback: null,
-         titleKey: "config.appColors",
-         descriptionKey: "config.appColors.description",
+         title: const TS("config.appColors"),
+         description: const TS("config.appColors.description"),
        );
 
-  static GTAppTheme? _createNewInstance(String? str) {
-    return null; // todo: implement all
-  }
+  static GTAppTheme? _createNewInstance(String? str) => str != null ? GTAppTheme.fromString(str) : null;
 
-  static String? _convertInstanceToString(GTAppTheme? data) {
-    return null;
-  }
+  static String? _convertInstanceToString(GTAppTheme? data) => data?.toString();
 
   static List<WrappedBool> testList = <WrappedBool>[
     WrappedBool(false),
@@ -63,25 +59,33 @@ final class AppColorsConfigOption extends CustomConfigOption<GTAppTheme> {
     return ListView(
       children: <Widget>[
         builder.buildEnumSliderOption<GTContrast>(
-          title: "config.appColors.contrast",
+          title: const TS("config.appColors.contrast"),
           availableOptions: GTContrast.values,
           initialValue: data.contrast,
-          onValueChange: (GTContrast newValue) {
-            Logger.verbose("Contrast: $newValue");
-            // todo: set config value with config from builder with copywidth and replacing
-          },
-          convertToTranslationKeys: (GTContrast contrast) => switch (contrast) {
+          onValueChange: (GTContrast newContrast) =>
+              _option.setValue(_option.cachedValueNotNull().copyWith(newContrast: newContrast)),
+          convertToTranslationKeys: (GTContrast contrast) => TS(switch (contrast) {
             GTContrast.DEFAULT => "input.default",
             GTContrast.MEDIUM => "input.medium",
             GTContrast.HIGH => "input.high",
-          },
+          }),
         ),
-
+        Row(
+          children: <Widget>[
+            FilledButton(
+              onPressed: () {},
+              child: Text(builder.translate(const TS("input.adjust", <String>["primary"]), context)),
+            ),
+            FilledButton(
+              onPressed: () => _option.deleteValue(),
+              child: Text(builder.translate(const TS("input.reset.to.default"), context)),
+            ),
+          ],
+        ),
         builder.buildMultiSelection<WrappedBool>(
-          title: "test",
+          title: TS.raw("test"),
           entries: testList,
-          rows: 3,
-          convertToTranslationKeys: (WrappedBool entry) => testList.indexOf(entry).toString(),
+          convertToTranslationKeys: (WrappedBool entry) => TS.raw(testList.indexOf(entry).toString()),
           isEntrySelected: (WrappedBool entry) => entry.value,
           onSelectionChanged: (WrappedBool entry, {required bool isNowSelected}) {
             entry.value = isNowSelected;
@@ -94,6 +98,8 @@ final class AppColorsConfigOption extends CustomConfigOption<GTAppTheme> {
   static bool _containsSearchCallback(BuildContext context, String upperCaseSearchString) {
     return true;
   }
+
+  static AppColorsConfigOption get _option => MutableConfig.mutableConfig.appColors;
 }
 
 class WrappedBool {

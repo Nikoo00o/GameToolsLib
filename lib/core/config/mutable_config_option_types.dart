@@ -4,8 +4,8 @@ part of 'package:game_tools_lib/core/config/mutable_config.dart';
 /// [IntConfigOption], [DoubleConfigOption], [StringConfigOption] and don't use this with any other type [T]!
 final class TypeConfigOption<T> extends MutableConfigOption<T> {
   TypeConfigOption({
-    required super.titleKey,
-    super.descriptionKey,
+    required super.title,
+    super.description,
     super.updateCallback,
     super.defaultValue,
     super.onInit,
@@ -41,11 +41,11 @@ base class EnumConfigOption<EnumType> extends MutableConfigOption<EnumType> {
   final List<EnumType> availableOptions;
 
   /// Should return a translation key for a given [EnumType]'s [value]. Can also be null to just use [toString] on them.
-  final String Function(EnumType value)? convertToTranslationKeys;
+  final TranslationString Function(EnumType value)? convertToTranslationKeys;
 
   EnumConfigOption({
-    required super.titleKey,
-    super.descriptionKey,
+    required super.title,
+    super.description,
     super.updateCallback,
     super.defaultValue,
     required this.availableOptions,
@@ -102,9 +102,9 @@ base class ModelConfigOption<T extends Model?> extends MutableConfigOption<T> {
   /// [onInit] and [defaultValue] are also optional for initialisation
   ModelConfigOption({
     required T Function(Map<String, dynamic> json) createNewModelInstance,
-    required super.titleKey,
+    required super.title,
     required this.createModelBuilder,
-    super.descriptionKey,
+    super.description,
     super.updateCallback,
     super.defaultValue,
     super.lazyLoaded,
@@ -165,7 +165,7 @@ base class CustomConfigOption<T> extends MutableConfigOption<T> {
   /// data in [customData].
   ///
   /// The [builder] can be used to build helper functions like [ConfigOptionHelperMixin.buildIntOption] or to access
-  /// [CustomConfigOption.titleKey], or translate, etc
+  /// [CustomConfigOption.title], or translate, etc
   final Widget Function(
     BuildContext context,
     T customData,
@@ -189,8 +189,8 @@ base class CustomConfigOption<T> extends MutableConfigOption<T> {
     this.convertInstanceToString,
     required this.buildCustomContentWidget,
     this.containsSearchCallback,
-    required super.titleKey,
-    super.descriptionKey,
+    required super.title,
+    super.description,
     super.updateCallback,
     super.defaultValue,
     super.lazyLoaded,
@@ -221,8 +221,8 @@ base class CustomConfigOption<T> extends MutableConfigOption<T> {
 /// Special case: [LogLevel] as a enum config option.
 final class LogLevelConfigOption extends EnumConfigOption<LogLevel> {
   LogLevelConfigOption({
-    required super.titleKey,
-    super.descriptionKey,
+    required super.title,
+    super.description,
     super.updateCallback,
     super.defaultValue,
     super.onInit,

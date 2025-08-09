@@ -18,17 +18,18 @@ part of 'package:game_tools_lib/core/config/mutable_config.dart';
 /// You can also access the cached value in a sync way with [cachedValue] (But [getValue] needs to be called at least
 /// once before!)
 ///
-/// Remember for the ui the [builder] has to be overridden and also [titleKey] and [descriptionKey] are needed if
+/// Remember for the ui the [builder] has to be overridden and also [title] and [description] are needed if
 /// this option is included in [MutableConfig.getConfigurableOptions]!
 sealed class MutableConfigOption<T> with ChangeNotifier {
-  /// The key to locate this saved value in the database (must be a unique identifier string).
-  /// But also the identifier label text (or translation key) for the ui (if this config option is editable in ui)
-  final String titleKey;
+  /// The [TranslationString.identifier] is used to locate this saved value in the database (must be a unique
+  /// identifier string). But this translation string is also used as the identifier label text (or translation
+  /// key) for the ui (if this config option / is editable in ui)
+  final TranslationString title;
 
-  /// Optional description text for the ui to display in addition to the [titleKey]
-  final String? descriptionKey;
+  /// Optional description text for the ui to display in addition to the [title]
+  final TranslationString? description;
 
-  /// Added to the [titleKey] internally in the storage
+  /// Added to the [title.identifier] internally in the storage
   static const String KEY_PREFIX = "CONFIG_";
 
   /// Cached Value loaded from storage and saved to storage
@@ -64,16 +65,16 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   /// initialized yet when the constructor is called.
   /// You have to cast the [configOption] to your type in the callback manually!
   MutableConfigOption({
-    required this.titleKey,
-    this.descriptionKey,
+    required this.title,
+    this.description,
     FutureOr<void> Function(T?)? updateCallback,
     this.defaultValue,
     bool lazyLoaded = false,
     Future<void> Function(MutableConfigOption<dynamic> configOption)? onInit,
   }) : _updateCallback = updateCallback,
        _lazyLoaded = lazyLoaded,
-       _onInit = onInit{
-    if(defaultValue == null && Utils.isNullableType<T>() == false){
+       _onInit = onInit {
+    if (defaultValue == null && Utils.isNullableType<T>() == false) {
       throw ConfigException(message: "$this had a not nullable type $T, but no default value!");
     }
   }
@@ -102,7 +103,7 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   /// A subclass may also return null here, but then it may not be included in [MutableConfig.getConfigurableOptions]!
   ConfigOptionBuilder<T>? get builder;
 
-  String get _transformedKey => "$KEY_PREFIX$titleKey";
+  String get _transformedKey => "$KEY_PREFIX${title.identifier}";
 
   String get _dataBase => _lazyLoaded ? HiveDatabase.LAZY_DATABASE : HiveDatabase.INSTANT_DATABASE;
 
@@ -237,7 +238,7 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   }
 
   @override
-  String toString() => "$runtimeType(key: $titleKey, value: $_value)";
+  String toString() => "$runtimeType(key: $title, value: $_value)";
 
   /// Loads from storage
   Future<String?> _read() async {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
@@ -67,9 +68,9 @@ final class ExamplePage extends GTNavigationPage {
               Text("oem6: ${InputManager.isKeyDown(BoardKey.oem6)}"),
               Text("oem7: ${InputManager.isKeyDown(BoardKey.oem7)}"),
               SizedBox(height: 5),
-              Text("Translate 1: ${translate(context, "empty.1")}"),
+              Text("Translate 1: ${translate(TS("empty.1"), context)}"),
               SizedBox(height: 5),
-              Text("Translate 2: ${translate(context, "empty.3")}"),
+              Text("Translate 2: ${translate(TS("empty.3"), context)}"),
               TextButton(
                 onPressed: () {
                   pushPage(context, GTLogsPage());
@@ -84,7 +85,7 @@ final class ExamplePage extends GTNavigationPage {
   }
 
   @override
-  String get navigationLabel => "Example Page";
+  TranslationString get navigationLabel => TS.raw("Example Page");
 
   @override
   IconData get navigationNotSelectedIcon => Icons.add;
@@ -111,7 +112,7 @@ Future<void> main() async {
   }
   GameToolsLib.gameManager().addInputListener(
     KeyInputListener(
-      configLabel: "Example def h",
+      configLabel: TS.raw("Example def h"),
       createEventCallback: () => ExampleEvent(isInstant: true),
       alwaysCreateNewEvents: true,
       defaultKey: BoardKey.h,
@@ -119,7 +120,7 @@ Future<void> main() async {
   );
   GameToolsLib.gameManager().addInputListener(
     KeyInputListener(
-      configLabel: "Copy with ctrlC",
+      configLabel: TS.raw("Copy with ctrlC"),
       createEventCallback: () => ExampleEvent(isInstant: true),
       alwaysCreateNewEvents: true,
       defaultKey: BoardKey.ctrlC,
@@ -128,7 +129,7 @@ Future<void> main() async {
 
   GameToolsLib.gameManager().addInputListener(
     KeyInputListener(
-      configLabel: "",
+      configLabel: const TS.empty(),
       createEventCallback: () => ExampleEvent(isInstant: false),
       alwaysCreateNewEvents: true,
       defaultKey: BoardKey.a,
@@ -137,11 +138,12 @@ Future<void> main() async {
 
   GameToolsLib.gameManager().addInputListener(
     KeyInputListener(
-      configLabel: "Should be Key B",
-      configLabelDescription:
-          "Must be set later. test test test test test test test test test test test test test "
-          "test test test test test test test test ",
-      configGroupLabel: "test",
+      configLabel: TS.raw("Should be Key B"),
+      configLabelDescription: TS.raw(
+        "Must be set later. test test test test test test test test test test test test test "
+        "test test test test test test test test ",
+      ),
+      configGroupLabel: TS.raw("test"),
       createEventCallback: () => ExampleEvent(isInstant: false),
       alwaysCreateNewEvents: true,
       defaultKey: null,
@@ -150,8 +152,8 @@ Future<void> main() async {
 
   GameToolsLib.gameManager().addInputListener(
     KeyInputListener(
-      configLabel: "Some nice action",
-      configGroupLabel: "test",
+      configLabel: TS.raw("Some nice action"),
+      configGroupLabel: TS.raw("test"),
       createEventCallback: () => ExampleEvent(isInstant: false),
       alwaysCreateNewEvents: true,
       defaultKey: BoardKey.c,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_grouped_builders_extension.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder_group.dart';
@@ -57,9 +58,9 @@ abstract base class ConfigOptionBuilder<T> with GTBaseWidget {
   T? get value => configOption.cachedValue();
 
   /// Per default to test if this should be shown for a user search, just test if its contained (case doesn't matter)
-  /// in the translated [MutableConfigOption.titleKey]
+  /// in the translated [MutableConfigOption.title]
   bool containsSearch(BuildContext context, String upperCaseSearchString) =>
-      translate(context, configOption.titleKey).toUpperCase().contains(upperCaseSearchString);
+      translate(configOption.title, context).toUpperCase().contains(upperCaseSearchString);
 }
 
 /// Subclasses of this are only for the custom and model config options, or for config option groups to also build
@@ -94,10 +95,10 @@ abstract base class MultiConfigOptionBuilder<T> extends ConfigOptionBuilder<T>
       padding: const EdgeInsets.symmetric(vertical: 4),
       icon: const Icon(Icons.keyboard_arrow_right),
       selectedIcon: const Icon(Icons.keyboard_double_arrow_right),
-      label: Text(translate(context, configOption.titleKey)),
+      label: Text(translate(configOption.title, context)),
     );
   }
 
   @override
-  String get groupName => configOption.titleKey;
+  TranslationString get groupName => configOption.title;
 }

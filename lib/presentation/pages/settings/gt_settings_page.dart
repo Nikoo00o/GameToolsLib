@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_grouped_builders_extension.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
@@ -20,7 +21,7 @@ import 'package:provider/provider.dart';
 base class GTSettingsPage extends GTNavigationPage
     with GTGroupedBuildersExtension<MultiConfigOptionBuilder<dynamic>, GTSettingsGroupIndex> {
   /// For the remaining options with no group
-  static const String otherGroup = "page.settings.group.other";
+  static const TranslationString otherGroup = TS("page.settings.group.other");
 
   GTSettingsPage({
     super.key,
@@ -47,7 +48,7 @@ base class GTSettingsPage extends GTNavigationPage
     }
     if (otherRemaining.isNotEmpty) {
       final MutableConfigOptionGroup other = MutableConfigOptionGroup(
-        titleKey: otherGroup,
+        title: otherGroup,
         configOptions: otherRemaining,
       );
       builders.add(ConfigOptionBuilderGroup(configOption: other));
@@ -58,7 +59,7 @@ base class GTSettingsPage extends GTNavigationPage
   String get pageName => "GTSettingsPage";
 
   @override
-  String get navigationLabel => "page.settings.title";
+  TranslationString get navigationLabel => const TS("page.settings.title");
 
   @override
   IconData get navigationNotSelectedIcon => Icons.settings_outlined;

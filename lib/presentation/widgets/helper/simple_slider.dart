@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 
 /// Wrapper for [Slider] with a list of [entries] of type [T] to display a slider that slides from first to last element
@@ -10,7 +11,7 @@ class SimpleSlider<T> extends StatefulWidget {
   final List<T> entries;
 
   /// Callback to convert the [entry] to a string to display when the slider is at that position
-  final String Function(T entry) labelForEntry;
+  final TranslationString Function(T entry) labelForEntry;
 
   /// Callback when the slider was moved which contains the entry at that position
   final ValueChanged<T> onValueChanged;
@@ -50,7 +51,7 @@ class _SimpleSliderState<T> extends State<SimpleSlider<T>> with GTBaseWidget {
       value: index,
       max: maxValue.toDouble(),
       divisions: maxValue,
-      label: translate(context, widget.labelForEntry(currentEntry)),
+      label: translate(widget.labelForEntry(currentEntry), context),
       onChanged: (double value) {
         setState(() => index = value);
         widget.onValueChanged(currentEntry);

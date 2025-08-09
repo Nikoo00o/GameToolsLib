@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/domain/entities/base/entity.dart';
 import 'package:game_tools_lib/domain/entities/base/model.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder_types.dart';
@@ -15,8 +16,8 @@ final class ConfigOptionBuilderModelExample extends ConfigOptionBuilderModel<Exa
     final List<int> initialList =
         model?.modifiableData.map((ExampleEntity entity) => entity.someData ?? 0).toList() ?? <int>[];
     return buildListOption(
-      title: "Modify some List",
-      description: "Some other description...",
+      title: TS.raw("Modify some List"),
+      description: TS.raw("Some other description..."),
       elements: initialList,
       onChange: () {
         final List<ExampleEntity> mappedList = initialList
@@ -33,8 +34,8 @@ final class ConfigOptionBuilderModelExample extends ConfigOptionBuilderModel<Exa
       context: context,
       children: <Widget>[
         buildIntOption(
-          title: "Modify some Data",
-          description: "Some info description...",
+          title: TS.raw("Modify some Data"),
+          description: TS.raw("Some info description..."),
           initialData: model?.someData,
           onChanged: (int? newValue) => configOption.setValue(
             ExampleModel(someData: newValue, modifiableData: model?.modifiableData ?? <ExampleEntity>[]),

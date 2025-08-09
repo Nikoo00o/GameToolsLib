@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:collection/collection.dart';
-import 'package:flutter/material.dart' show Colors;
 import 'package:flutter/widgets.dart';
 import 'package:game_tools_lib/core/config/app_colors_config_option.dart';
 import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/locale_config_option.dart';
 import 'package:game_tools_lib/core/enums/log_level.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/domain/entities/base/model.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
@@ -51,29 +51,39 @@ base class MutableConfig {
   /// The current [logLevel] of the logger. All logs with a higher value than this will be ignored and only
   /// the more important logs with a lower [LogLevel] will be printed and stored!
   /// Default is [LogLevel.SPAM] to log everything!
-  final LogLevelConfigOption logLevel = LogLevelConfigOption(titleKey: "config.logLevel", defaultValue: LogLevel.SPAM);
+  final LogLevelConfigOption logLevel = LogLevelConfigOption(
+    title: const TS("config.logLevel"),
+    defaultValue: LogLevel.SPAM,
+  );
 
   /// Controls if the ui is displayed as dark, or light theme
-  final BoolConfigOption useDarkTheme = BoolConfigOption(titleKey: "config.useDarkTheme", defaultValue: true);
+  final BoolConfigOption useDarkTheme = BoolConfigOption(title: const TS("config.useDarkTheme"), defaultValue: true);
 
   /// The current language which is null per default and will return the system language if its null.
   /// But if the current system language is not supported, then internally this will fallback to the first entry of
   /// [FixedConfig.supportedLocales]!
   /// Important: use [LocaleConfigOption.activeLocale] to access the locale that is used in the app!
-  final LocaleConfigOption currentLocale = LocaleConfigOption(titleKey: "config.currentLocale");
+  final LocaleConfigOption currentLocale = LocaleConfigOption(title: const TS("config.currentLocale"));
 
   /// You should override this to customize the colors of your app in regards to the material 3 theme!
   /// https://m3.material.io/styles/color/system/how-the-system-works#094adbe5-d41e-49b4-8dff-906d6094668d
+  ///
+  /// Per default the colors can also be adjusted inside of the app tho and also be reset to the default value here
+  /// (which per default uses a blue color for the seed with full green success)
   final AppColorsConfigOption appColors = AppColorsConfigOption(
-    defaultValue: const GTAppTheme.seed(seedColor: Color(0xff004A95), baseSuccessColor: Colors.green),
+    defaultValue: const GTAppTheme.seed(
+      seedColor: Color(0xff004A95),
+      baseSuccessColor: Color.fromARGB(255, 0, 255, 0),
+      baseAdditionalColors: <Color>[],
+    ),
   );
 
   /// Controls how the window names will be matched ([false] = window title only has to contain the [GameWindow.name].
   /// Otherwise if [true] it has to be exactly the same). Used for [GameWindow], default is [false].
   /// Per default this is only included in the [GTDebugPage] and not in [getConfigurableOptions]!
   final BoolConfigOption alwaysMatchGameWindowNamesEqual = BoolConfigOption(
-    titleKey: "config.alwaysMatchGameWindowNamesEqual",
-    descriptionKey: "config.alwaysMatchGameWindowNamesEqual.description",
+    title: const TS("config.alwaysMatchGameWindowNamesEqual"),
+    description: const TS("config.alwaysMatchGameWindowNamesEqual.description"),
     defaultValue: true,
     updateCallback: _updateGameWindowConfigValues,
   );
@@ -82,8 +92,8 @@ base class MutableConfig {
   /// [false].
   /// Per default this is only included in the [GTDebugPage] and not in [getConfigurableOptions]!
   final BoolConfigOption debugPrintGameWindowNames = BoolConfigOption(
-    titleKey: "config.debugPrintGameWindowNames",
-    descriptionKey: "config.debugPrintGameWindowNames.description",
+    title: const TS("config.debugPrintGameWindowNames"),
+    description: const TS("config.debugPrintGameWindowNames.description"),
     defaultValue: false,
     updateCallback: _updateGameWindowConfigValues,
   );
@@ -107,7 +117,7 @@ base class MutableConfig {
   /// To access those from the outside use the cached [configurableOptions] instead!
   List<MutableConfigOption<dynamic>> getConfigurableOptions() => <MutableConfigOption<dynamic>>[
     MutableConfigOptionGroup(
-      titleKey: "page.settings.group.general",
+      title: const TS("page.settings.group.general"),
       configOptions: <MutableConfigOption<dynamic>>[
         logLevel,
         useDarkTheme,

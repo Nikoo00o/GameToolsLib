@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 
 /// Used to create a drop down menu for [Type] which is mostly used for enums.
@@ -12,7 +13,7 @@ final class SimpleDropDownMenu<Type> extends StatelessWidget with GTBaseWidget {
   final Type initialValue;
 
   /// The translation key to display on the menu
-  final String? label;
+  final TranslationString? label;
 
   /// Default would be 160 (but the result may also be smaller)
   final double maxWidth;
@@ -37,7 +38,7 @@ final class SimpleDropDownMenu<Type> extends StatelessWidget with GTBaseWidget {
 
   /// Optional to return a matching translation keys for the enum type [value] to display them instead of just
   /// calling toString on them!
-  final String Function(Type value)? translationKeys;
+  final TranslationString Function(Type value)? translationKeys;
 
   const SimpleDropDownMenu({
     super.key,
@@ -69,7 +70,7 @@ final class SimpleDropDownMenu<Type> extends StatelessWidget with GTBaseWidget {
       ),
       initialSelection: initialValue,
       requestFocusOnTap: true,
-      label: label == null ? null : Text(translate(context, label!)),
+      label: label == null ? null : Text(translate(label!, context)),
       onSelected: onValueChange,
       dropdownMenuEntries: List<DropdownMenuEntry<Type>>.generate(
         values.length,
@@ -77,7 +78,7 @@ final class SimpleDropDownMenu<Type> extends StatelessWidget with GTBaseWidget {
           final Type value = values.elementAt(index);
           return DropdownMenuEntry<Type>(
             value: value,
-            label: translationKeys != null ? translate(context, translationKeys!.call(value)) : value.toString(),
+            label: translationKeys != null ? translate(translationKeys!.call(value), context) : value.toString(),
             style: colourTexts != null ? MenuItemButton.styleFrom(foregroundColor: colourTexts!.call(value)) : null,
           );
         },

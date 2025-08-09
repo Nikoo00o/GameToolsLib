@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/base/ui_helper.dart';
@@ -61,7 +62,7 @@ abstract base class GTBasePage extends StatelessWidget with GTBaseWidget {
     return null; // default from theme
   }
 
-  /// The page name for logging.
+  /// The page name for logging / debugging.
   ///
   /// This needs to be overridden in the subclass
   String get pageName;
@@ -101,12 +102,12 @@ abstract base class GTBasePage extends StatelessWidget with GTBaseWidget {
   /// build some custom padding and colors.
   Color? getScaffoldBackgroundColor(BuildContext context) => null;
 
-  /// Can be used in the [buildAppBar] to build a default app bar translating and showing the [titleKey] together
+  /// Can be used in the [buildAppBar] to build a default app bar translating and showing the [title] together
   /// with the [GameToolsConfig.appTitle]. And [buildBackButton] is false per default, but can be used to build a
   /// back button! Optionally [actions] can also display some elements on the right of the app bar!
   PreferredSizeWidget? buildAppBarDefaultTitle(
-    BuildContext context,
-    String titleKey, {
+    TranslationString title,
+    BuildContext context, {
     bool buildBackButton = false,
     List<Widget>? actions,
     Key? key,
@@ -116,7 +117,7 @@ abstract base class GTBasePage extends StatelessWidget with GTBaseWidget {
       leading: buildBackButton ? const BackButton() : null,
       backgroundColor: colorSurfaceContainer(context),
       title: Text(
-        "${GameToolsConfig.baseConfig.appTitle} - ${translate(context, titleKey)}",
+        "${GameToolsConfig.baseConfig.appTitle} - ${translate(title, context)}",
         style: textTitleLarge(context).copyWith(fontWeight: FontWeight.bold),
       ),
       centerTitle: false,

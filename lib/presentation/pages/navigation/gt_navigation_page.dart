@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_page.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigator.dart';
 
@@ -34,7 +35,7 @@ abstract base class GTNavigationPage extends GTBasePage {
   });
 
   @override
-  PreferredSizeWidget? buildAppBar(BuildContext context) => buildAppBarDefaultTitle(context, navigationLabel);
+  PreferredSizeWidget? buildAppBar(BuildContext context) => buildAppBarDefaultTitle(navigationLabel, context);
 
   /// Can be overridden in the sub class to return something differently, but per default returns the [pagePadding].
   /// It will be used as the padding around the right side of the page!
@@ -66,9 +67,9 @@ abstract base class GTNavigationPage extends GTBasePage {
     );
   }
 
-  /// Must be overridden in sub classes to show a different label on the navigation rail bar to navigate to this!
-  /// This is also used per default to build [buildAppBar].
-  String get navigationLabel;
+  /// Must be overridden in sub classes to show a different label on the outer navigation rail bar on the left side to
+  /// navigate to this! This is also used per default to build [buildAppBar].
+  TranslationString get navigationLabel;
 
   /// The image to display in the left navigation bar for this. Must be overridden.
   IconData get navigationSelectedIcon;

@@ -8,6 +8,7 @@ import 'package:game_tools_lib/core/config/locale_config_option.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/utils/file_utils.dart';
 import 'package:game_tools_lib/core/utils/locale_extension.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_app_theme.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
@@ -59,7 +60,7 @@ base class GTApp extends StatelessWidget {
   }
 
   /// Is called from [build] to build the app with the theme config options and then call [buildApp]
-  Widget buildThemeWithLocale(Locale locale) {
+  Widget buildThemeWithLocale(Locale locale, Widget home) {
     return UIHelper.configConsumer(
       option: _mutableConfig.appColors,
       builder: (BuildContext context, GTAppTheme gtAppTheme, Widget? child) {
@@ -68,10 +69,10 @@ base class GTApp extends StatelessWidget {
           builder: (BuildContext context, bool darkTheme, Widget? child) {
             final ThemeData theme = gtAppTheme.getTheme(darkTheme: darkTheme);
             _setSystemStatusBar(isDarkTheme: theme.brightness == Brightness.dark);
-            Logger.verbose(
+            Logger.debug(
               "Displaying $runtimeType with ${darkTheme ? "dark" : "light"} theme and locale $locale",
             );
-            return buildApp(context, theme, locale);
+            return buildApp(context, theme, locale, home);
           },
         );
       },
@@ -84,11 +85,12 @@ base class GTApp extends StatelessWidget {
       providers: buildProvider(),
       child: Builder(
         builder: (BuildContext context) {
+          final Widget home = buildHome(context);
           return Selector<LocaleConfigOption, Locale>(
             selector: (_, LocaleConfigOption option) => option.activeLocale,
             builder: (BuildContext context, Locale locale, Widget? child) {
               _loadLocale(locale);
-              return buildThemeWithLocale(locale);
+              return buildThemeWithLocale(locale, home);
             },
           );
         },
@@ -97,7 +99,7 @@ base class GTApp extends StatelessWidget {
   }
 
   /// Builds the [MaterialApp] with the home being [buildHome]
-  Widget buildApp(BuildContext context, ThemeData theme, Locale locale) {
+  Widget buildApp(BuildContext context, ThemeData theme, Locale locale, Widget home) {
     return MaterialApp(
       title: _baseConfig.appTitle,
       theme: theme,
@@ -110,7 +112,7 @@ base class GTApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
         CustomAppLocalizationsDelegate(),
       ],
-      home: buildHome(context),
+      home: home,
       localeResolutionCallback: (Locale? locale, Iterable<Locale> supportedLocales) =>
           _localeResolutionCallback(locale, supportedLocales, context),
     );
@@ -171,45 +173,57 @@ base class GTApp extends StatelessWidget {
     Logger.spam("Loaded ", _keys.length, " translation key-value-pairs for the locale ", locale);
   }
 
-  /// Translates a [key] to a value of the map and replaces the placeholders with the optional [keyParams]..
+  /// Translates a translation [TranslationString.key] for the current locale and placeholders are replaced with
+  /// [TranslationString.params].
   ///
-  /// If no value was found for the [key], it will return the key itself.
+  /// If no value was found for the [TranslationString.key], it will return the key itself, but spam log a warning.
+  /// If a translated string contains not enough placeholders but more [TranslationString.params] were given, then it
+  /// logs a warning. For raw not translated values, use [TranslationString.raw].
   ///
   /// Important: if you need translation values for building widgets, use [GTBaseWidget.translate] with the current
   /// build context instead to react to locale changes!!!
-  static String translate(String key, {List<String>? keyParams}) {
+  ///
+  /// Placeholders in the translation string of language.json have to start with "{0}" and then "{1}", "{2}", etc.
+  /// But you always have to use [TranslationString.params] for translated strings that have those placeholders! (If
+  /// you don't want to use them, use a list of empty strings with the same length!)
+  static String translate(TranslationString translationString) {
+    final String? key = translationString.key;
+    if (key == null) {
+      return translationString.params!.first; // special case, raw translation string
+    }
     if (_keys.containsKey(key)) {
       String translatedKey = _keys[key]!;
-      if (keyParams != null && keyParams.isNotEmpty) {
-        for (int i = 0; i < keyParams.length; i++) {
-          final String param = keyParams[i];
+      final List<String>? params = translationString.params;
+      if (params != null && params.isNotEmpty) {
+        for (int i = 0; i < params.length; i++) {
+          final String param = params[i];
           final String placeholder = "{$i}";
           if (translatedKey.contains(placeholder)) {
             translatedKey = translatedKey.replaceAll(placeholder, param);
           } else {
-            Logger.warn("Could not replace '$placeholder' with '$param' in '$key'");
+            Logger.warn("Could not replace '$placeholder' with '$param' for '$translationString'");
           }
         }
       }
       return translatedKey;
     }
-    Logger.spam("Translation key not found for locale $_cachedLocale: $key");
+    Logger.spam("Translation key not found for locale $_cachedLocale: $translationString");
     return key;
   }
 }
 
 /// Used for translation
-class CustomAppLocalizations {
+final class CustomAppLocalizations {
   /// Used for translation
   static CustomAppLocalizations? of(BuildContext context) =>
       Localizations.of<CustomAppLocalizations>(context, CustomAppLocalizations);
 
   /// delegate translate to translation service
-  String translate(String key, {List<String>? keyParams}) => GTApp.translate(key, keyParams: keyParams);
+  String translate(TranslationString key) => GTApp.translate(key);
 }
 
 /// Used for translation
-class CustomAppLocalizationsDelegate extends LocalizationsDelegate<CustomAppLocalizations> {
+final class CustomAppLocalizationsDelegate extends LocalizationsDelegate<CustomAppLocalizations> {
   @override
   bool isSupported(Locale locale) =>
       GTApp.supportedLocales.where((Locale other) => other.languageCode == locale.languageCode).isNotEmpty;

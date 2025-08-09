@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/pages/home/gt_home_page.dart';
@@ -14,7 +15,7 @@ class GTWindowStatus extends StatelessWidget with GTBaseWidget {
       builder: (BuildContext context, GameWindow window, Widget? child) {
         return Column(
           children: <Widget>[
-            Text(translate(context, "page.home.window.status")),
+            Text(translate(const TS("page.home.window.status"), context)),
             const SizedBox(height: 2),
             Text(
               window.name,
@@ -41,7 +42,7 @@ class GTWindowStatus extends StatelessWidget with GTBaseWidget {
         Icon(active ? Icons.check_box : Icons.close, color: active ? colorSuccess(context) : colorError(context)),
         const SizedBox(height: 2),
         Text(
-          translate(context, translationKey),
+          translate(TS(translationKey), context),
           style: textLabelSmall(context),
         ),
       ],

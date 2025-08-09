@@ -6,7 +6,7 @@ part of 'package:game_tools_lib/core/config/mutable_config.dart';
 /// initialisation at the end of [GameToolsLib.initGameToolsLib] to load all children
 final class MutableConfigOptionGroup extends MutableConfigOption<List<MutableConfigOption<dynamic>>> {
   MutableConfigOptionGroup({
-    required super.titleKey,
+    required super.title,
     required List<MutableConfigOption<dynamic>> configOptions,
   }) : super(onInit: _callInitForValues, defaultValue: configOptions) {
     _value = configOptions; // same as default value, just always return the list of options!
@@ -25,7 +25,7 @@ final class MutableConfigOptionGroup extends MutableConfigOption<List<MutableCon
   }
 
   @override
-  String toString() => StringUtils.toStringPretty(this, <String, Object?>{"key": titleKey, "value": _value});
+  String toString() => StringUtils.toStringPretty(this, <String, Object?>{"key": title, "value": _value});
 
   @override
   ConfigOptionBuilder<List<MutableConfigOption<dynamic>>> get builder => ConfigOptionBuilderGroup(configOption: this);

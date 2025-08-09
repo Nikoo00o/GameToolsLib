@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder_new_page.dart';
@@ -19,22 +20,22 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
   /// [trailingWidget]!
   Widget defaultContentTile(Widget trailingWidget) {
     return SimpleCard(
-      titleKey: configOption.titleKey,
-      descriptionKey: configOption.descriptionKey,
+      title: configOption.title,
+      description: configOption.description,
       trailingActions: trailingWidget,
     );
   }
 
   /// Builds a list tile with a switch to the right. [null] in [initialData] will leave the switch toggled off initially
   Widget buildBoolOption({
-    required String title,
-    String? description,
+    required TranslationString title,
+    TranslationString? description,
     required bool? initialData,
     required ValueChanged<bool> onChanged,
   }) {
     return SimpleCard(
-      titleKey: title,
-      descriptionKey: description,
+      title: title,
+      description: description,
       trailingActions: Switch(
         value: initialData ?? false,
         onChanged: onChanged,
@@ -44,14 +45,14 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
 
   /// Builds a list tile with a text field for text. [null] in [initialData] will leave the text field empty!
   Widget buildStringOption({
-    required String title,
-    String? description,
+    required TranslationString title,
+    TranslationString? description,
     required String? initialData,
     required ValueChanged<String> onChanged,
   }) {
     return SimpleCard(
-      titleKey: title,
-      descriptionKey: description,
+      title: title,
+      description: description,
       trailingActions: SimpleTextField<String>(
         width: 280,
         initialValue: initialData ?? "",
@@ -63,14 +64,14 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
   /// Builds a list tile with a text field for numbers. [null] in [initialData], or [onChanged] means an empty text
   /// field!
   Widget buildIntOption({
-    required String title,
-    String? description,
+    required TranslationString title,
+    TranslationString? description,
     required int? initialData,
     required ValueChanged<int?> onChanged,
   }) {
     return SimpleCard(
-      titleKey: title,
-      descriptionKey: description,
+      title: title,
+      description: description,
       trailingActions: SimpleTextField<int>(
         width: 140,
         initialValue: initialData?.toString() ?? "",
@@ -82,14 +83,14 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
   /// Builds a list tile with a text field for doubles. [null] in [initialData], or [onChanged] means an empty text
   /// field!
   Widget buildDoubleOption({
-    required String title,
-    String? description,
+    required TranslationString title,
+    TranslationString? description,
     required double? initialData,
     required ValueChanged<double?> onChanged,
   }) {
     return SimpleCard(
-      titleKey: title,
-      descriptionKey: description,
+      title: title,
+      description: description,
       trailingActions: SimpleTextField<double>(
         width: 140,
         initialValue: initialData?.toString() ?? "",
@@ -103,16 +104,16 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
   ///
   /// [availableOptions] should be static, or const, or created/stored outside of the build method!
   Widget buildEnumOption<ET>({
-    required String title,
-    String? description,
+    required TranslationString title,
+    TranslationString? description,
     required List<ET> availableOptions,
     required ET initialValue,
     required void Function(ET? newValue) onValueChange,
-    required String Function(ET value)? convertToTranslationKeys,
+    required TranslationString Function(ET value)? convertToTranslationKeys,
   }) {
     return SimpleCard(
-      titleKey: title,
-      descriptionKey: description,
+      title: title,
+      description: description,
       trailingActions: SimpleDropDownMenu<ET>(
         height: 40,
         maxWidth: 250,
@@ -129,22 +130,22 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
   ///
   /// [availableOptions] should be static, or const, or created/stored outside of the build method!
   Widget buildEnumSliderOption<ET extends Enum>({
-    required String title,
-    String? description,
+    required TranslationString title,
+    TranslationString? description,
     required List<ET> availableOptions,
     required ET initialValue,
     required void Function(ET newValue) onValueChange,
-    required String Function(ET value)? convertToTranslationKeys,
+    required TranslationString Function(ET value)? convertToTranslationKeys,
   }) {
     return SimpleCard(
-      titleKey: title,
-      descriptionKey: description,
+      title: title,
+      description: description,
       trailingActions: SizedBox(
         width: 450,
         child: SimpleSlider<ET>(
           initialIndex: initialValue.index,
           entries: availableOptions,
-          labelForEntry: (ET option) => convertToTranslationKeys?.call(option) ?? option.name,
+          labelForEntry: (ET option) => convertToTranslationKeys?.call(option) ?? TS.raw(option.name),
           onValueChanged: onValueChange,
         ),
       ),
@@ -159,40 +160,21 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
   /// called if the selection changes for one of the entries!
   ///
   /// [entries] should be static, or const, or created/stored outside of the build method!
-  ///
-  /// [rows] should be chosen to be large enough to fit all entries if they are selected!
   Widget buildMultiSelection<LT>({
-    required String title,
-    String? description,
+    required TranslationString title,
+    TranslationString? description,
     required List<LT> entries,
-    required int rows,
-    required String Function(LT entry) convertToTranslationKeys,
+    required TranslationString Function(LT entry) convertToTranslationKeys,
     required bool Function(LT entry) isEntrySelected,
     required void Function(LT entry, {required bool isNowSelected}) onSelectionChanged,
   }) {
-    final double height = rows * 31 + 30;
-    return Stack(
-      children: <Widget>[
-        SimpleCard(
-          titleKey: title,
-          descriptionKey: description,
-          minimumHeight: height,
-          trailingActions: const SizedBox(),
-        ),
-        Positioned(
-          top: 15.0,
-          right: 15.0,
-          child: SizedBox(
-            width: 450,
-            child: SimpleMultiSelect<LT>(
-              entries: entries,
-              labelForEntry: convertToTranslationKeys,
-              isEntrySelected: isEntrySelected,
-              onSelectionChanged: onSelectionChanged,
-            ),
-          ),
-        ),
-      ],
+    return SimpleMultiSelect<LT>(
+      title: title,
+      description: description,
+      entries: entries,
+      labelForEntry: convertToTranslationKeys,
+      isEntrySelected: isEntrySelected,
+      onSelectionChanged: onSelectionChanged,
     );
   }
 
@@ -203,8 +185,8 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
   /// [ConfigOptionBuilderNewPage] instead
   Widget buildNewPageOption<CT>(MutableConfigOption<CT> option, BuildContext context) {
     return SimpleCard(
-      titleKey: option.titleKey,
-      descriptionKey: option.descriptionKey,
+      title: option.title,
+      description: option.description,
       trailingActions: const Icon(Icons.open_in_new),
       onTap: () {
         Navigator.push<dynamic>(
@@ -239,8 +221,8 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
   /// The [elementNumber] is the not zero based index (1 to size for edit, size+1 for create) and is ignored most of
   /// the times.
   Widget buildListOption<LT>({
-    required String title,
-    String? description,
+    required TranslationString title,
+    TranslationString? description,
     bool buildEditButtons = true,
     required List<LT> elements,
     VoidCallback? onChange,
@@ -261,8 +243,8 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
       }
       if (LT == int) {
         return GTListEditorInt(
-          titleKey: title,
-          descriptionKey: description,
+          title: title,
+          description: description,
           buildEditButtons: buildEditButtons,
           elements: elements as List<int>,
           onChange: onChange,
@@ -272,8 +254,8 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
       }
     }
     return GTListEditor<LT>(
-      titleKey: title,
-      descriptionKey: description,
+      title: title,
+      description: description,
       buildEditButtons: buildEditButtons,
       elements: elements,
       onChange: onChange,
@@ -282,8 +264,8 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
     );
   }
 
-  /// Builds a column with the [MutableConfigOption.titleKey] from [configOption] as the title at the top
-  /// (optional [MutableConfigOption.descriptionKey] if not null as well) and the [children] as a list view below that.
+  /// Builds a column with the [MutableConfigOption.title] from [configOption] as the title at the top
+  /// (optional [MutableConfigOption.description] if not null as well) and the [children] as a list view below that.
   /// So it is used to group up together other options from above!
   Widget buildMultiOptionsWithTitle({
     required BuildContext context,
@@ -292,17 +274,17 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
     return Column(
       children: <Widget>[
         Text(
-          translate(context, configOption.titleKey),
+          translate(configOption.title, context),
           style: textTitleLarge(context).copyWith(color: colorPrimary(context)),
           textAlign: TextAlign.center,
         ),
-        if (configOption.descriptionKey != null)
+        if (configOption.description != null)
           Align(
             alignment: Alignment.centerLeft,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(10, 4, 8, 0),
               child: Text(
-                translate(context, configOption.descriptionKey!),
+                translate(configOption.description!, context),
                 textAlign: TextAlign.left,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,

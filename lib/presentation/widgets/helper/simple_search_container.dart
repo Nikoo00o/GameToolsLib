@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/base/ui_helper.dart';
 
@@ -6,12 +7,12 @@ import 'package:game_tools_lib/presentation/base/ui_helper.dart';
 class SimpleSearchContainer extends StatelessWidget with GTBaseWidget {
   final double width;
   final double height;
-  final String hintTextKey;
+  final TranslationString hintText;
 
   const SimpleSearchContainer({
     this.width = 280,
     this.height = 40,
-    required this.hintTextKey,
+    required this.hintText,
   });
 
   @override
@@ -25,7 +26,7 @@ class SimpleSearchContainer extends StatelessWidget with GTBaseWidget {
         decoration: InputDecoration(
           isDense: true,
           prefixIcon: const Icon(Icons.search),
-          hintText: translate(context, hintTextKey),
+          hintText: translate(hintText, context),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(32)),
           fillColor: colorSurfaceContainer(context),
           filled: true,

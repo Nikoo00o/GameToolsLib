@@ -92,29 +92,29 @@ final class ConfigOptionBuilderTypes<T> extends ConfigOptionBuilder<T> with Conf
   Widget buildContent(BuildContext context, T currentData, {required bool calledFromInnerGroup}) {
     if (Utils.isSameOrNullableType<T, bool>()) {
       return buildBoolOption(
-        title: configOption.titleKey,
-        description: configOption.descriptionKey,
+        title: configOption.title,
+        description: configOption.description,
         initialData: currentData as bool?,
         onChanged: (bool newState) => configOption.setValue(newState as T),
       );
     } else if (Utils.isSameOrNullableType<T, String>()) {
       return buildStringOption(
-        title: configOption.titleKey,
-        description: configOption.descriptionKey,
+        title: configOption.title,
+        description: configOption.description,
         initialData: currentData as String?,
         onChanged: (String newValue) => configOption.setValue(newValue as T),
       );
     } else if (Utils.isSameOrNullableType<T, int>()) {
       return buildIntOption(
-        title: configOption.titleKey,
-        description: configOption.descriptionKey,
+        title: configOption.title,
+        description: configOption.description,
         initialData: currentData as int?,
         onChanged: (int? newValue) => _setOption(newValue as T?),
       );
     } else if (Utils.isSameOrNullableType<T, double>()) {
       return buildDoubleOption(
-        title: configOption.titleKey,
-        description: configOption.descriptionKey,
+        title: configOption.title,
+        description: configOption.description,
         initialData: currentData as double?,
         onChanged: (double? newValue) => _setOption(newValue as T?),
       );
@@ -134,8 +134,8 @@ final class ConfigOptionBuilderEnum<T> extends ConfigOptionBuilder<T> with Confi
   @override
   Widget buildContent(BuildContext context, T selectedData, {required bool calledFromInnerGroup}) {
     return buildEnumOption<T>(
-      title: configOption.titleKey,
-      description: configOption.descriptionKey,
+      title: configOption.title,
+      description: configOption.description,
       availableOptions: enumOption.availableOptions,
       initialValue: configOption.cachedValueNotNull(),
       onValueChange: (T? newValue) => configOption.setValue(newValue as T),

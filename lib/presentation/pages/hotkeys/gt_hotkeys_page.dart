@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/pages/hotkeys/hotkey_group_builder.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_grouped_builders_extension.dart';
@@ -19,7 +20,7 @@ import 'package:provider/provider.dart';
 base class GTHotkeysPage extends GTNavigationPage
     with GTGroupedBuildersExtension<HotkeyGroupBuilder, GTHotkeyGroupIndex> {
   /// For the remaining hotkeys with no group
-  static const String otherGroup = "page.hotkeys.group.other";
+  static const TranslationString otherGroup = TS("page.hotkeys.group.other");
 
   GTHotkeysPage({
     super.key,
@@ -36,8 +37,8 @@ base class GTHotkeysPage extends GTNavigationPage
       inputListener: <BaseInputListener<dynamic>>[],
     );
     for (final BaseInputListener<dynamic> listener in listeners) {
-      if (listener.configLabel.isNotEmpty) {
-        final String? groupLabel = listener.configGroupLabel;
+      if (listener.isConfigurable) {
+        final TranslationString? groupLabel = listener.configGroupLabel;
         if (groupLabel != null) {
           _addToBuilderGroup(groupLabel, listener);
         } else {
@@ -52,7 +53,7 @@ base class GTHotkeysPage extends GTNavigationPage
     }
   }
 
-  void _addToBuilderGroup(String groupLabel, BaseInputListener<dynamic> listener) {
+  void _addToBuilderGroup(TranslationString groupLabel, BaseInputListener<dynamic> listener) {
     for (final HotkeyGroupBuilder builder in builders) {
       if (builder.groupLabel == groupLabel) {
         builder.inputListener.add(listener);
@@ -66,7 +67,7 @@ base class GTHotkeysPage extends GTNavigationPage
   String get pageName => "GTHotkeysPage";
 
   @override
-  String get navigationLabel => "page.hotkeys.title";
+  TranslationString get navigationLabel => const TS("page.hotkeys.title");
 
   @override
   IconData get navigationNotSelectedIcon => Icons.keyboard_alt_outlined;

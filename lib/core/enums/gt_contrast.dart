@@ -19,4 +19,10 @@ enum GTContrast {
   factory GTContrast.fromString(String data) {
     return values.firstWhere((GTContrast element) => element.name == data);
   }
+
+  double getContrastLevel() => switch (this) {
+    DEFAULT => 0.0,
+    MEDIUM => 0.5,
+    HIGH => 1.0,
+  };
 }

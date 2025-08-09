@@ -14,7 +14,7 @@ final class LogMessage {
   /// They are taken from beginning and end!
   static const int stackTraceLines = 16;
 
-  LogMessage({
+  const LogMessage({
     this.message,
     required this.level,
     required this.timestamp,

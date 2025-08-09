@@ -19,6 +19,8 @@
   "input.default": "Default",
   "input.medium": "Medium",
   "input.high": "High",
+  "input.adjust": "Adjust {0}",
+  "input.reset.to.default": "Reset to Default",
   "config.logLevel": "Log Level",
   "config.useDarkTheme": "Use Dark Theme",
   "config.currentLocale": "Language",

@@ -1,11 +1,17 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/enums/gt_contrast.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/presentation/base/gt_app_theme_extension.dart';
+import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 
 //ignore_for_file: prefer_initializing_formals
 
-/// A utility helper class to create a theme for the app.
+/// A utility helper class to create a theme for the app. The colors will be converted to the final tones and can be
+/// accessed in [GTBaseWidget] afterwards like for example for [basePrimaryColor] you have [GTBaseWidget.colorPrimary],
+/// etc. For non material default colors like [baseSuccessColor] and [baseAdditionalColors] look at
+/// [GTAppThemeExtension]!
 ///
 /// Just pick your base material colors which will then be used to generate the [ColorScheme] of the [ThemeData].
 /// For Reference: https://m3.material.io/styles/color/system/how-the-system-works#094adbe5-d41e-49b4-8dff-906d6094668d
@@ -42,7 +48,7 @@ final class GTAppTheme {
   /// Used for the surface and background (mostly black, or white).
   final Color? baseNeutralColor;
 
-  /// A slightly different shade of the [baseNeutralColor] for more background options.
+  /// A slightly different optional shade of the [baseNeutralColor] for more background options.
   /// If this is null, then the [baseNeutralColor] will be used instead blended by 5% to the [basePrimaryColor]!
   final Color? baseNeutralVariantColor;
 
@@ -50,12 +56,20 @@ final class GTAppTheme {
   final Color? baseErrorColor;
 
   /// Used to display some success status in the app (most of the time this would be [Colors.green] except for when
-  /// the theme itself is green! See [GTAppThemeExtension.success]
+  /// the theme itself is green! See [GTAppThemeExtension.success] with [GTBaseWidget.colorSuccess],etc
   final Color baseSuccessColor;
 
   /// The contrast mode which affects the colors of the theme (the default would be [GTContrast.DEFAULT] ). Dark vs
   /// light theme will be decided in [getTheme].
   final GTContrast contrast;
+
+  /// See unmodifiable getter [baseAdditionalColors]
+  final List<Color> _baseAdditionalColors;
+
+  /// Used to display additional non material default index based colors which are used across the app. This is only
+  /// optional and can also be left empty if the other colors are enough. Look at [GTAppThemeExtension.additionalColors]
+  /// for more info!
+  UnmodifiableListView<Color> get baseAdditionalColors => UnmodifiableListView<Color>(_baseAdditionalColors);
 
   /// Converts the base colors to their tonal palettes. [baseSecondaryColor], etc are non nullable params for
   /// [GTAppTheme.baseSecondaryColor], etc
@@ -68,29 +82,119 @@ final class GTAppTheme {
     this.baseNeutralVariantColor,
     required this.baseSuccessColor,
     required this.contrast,
+    required List<Color> baseAdditionalColors,
   }) : baseSecondaryColor = baseSecondaryColor,
        baseTertiaryColor = baseTertiaryColor,
        baseNeutralColor = baseNeutralColor,
-       baseErrorColor = baseErrorColor;
+       baseErrorColor = baseErrorColor,
+       _baseAdditionalColors = baseAdditionalColors;
 
   /// Builds internal colors from the seed color
-  const GTAppTheme.seed({required Color seedColor, required this.baseSuccessColor, this.contrast = GTContrast.DEFAULT})
-    : basePrimaryColor = seedColor,
-      baseSecondaryColor = null,
-      baseTertiaryColor = null,
-      baseNeutralColor = null,
-      baseNeutralVariantColor = null,
-      baseErrorColor = null;
+  const GTAppTheme.seed({
+    required Color seedColor,
+    required this.baseSuccessColor,
+    this.contrast = GTContrast.DEFAULT,
+    required List<Color> baseAdditionalColors,
+  }) : basePrimaryColor = seedColor,
+       baseSecondaryColor = null,
+       baseTertiaryColor = null,
+       baseNeutralColor = null,
+       baseNeutralVariantColor = null,
+       baseErrorColor = null,
+       _baseAdditionalColors = baseAdditionalColors;
 
-  /// Returns the material 3 theme data for this theme with the generated [ColorScheme].
-  ///
-  /// Depending on [darkTheme] either a dark, or light theme will be returned!
-  ThemeData getTheme({required bool darkTheme}) {
+  static Color? _readColor(String part) {
+    if (part == "null") {
+      return null;
+    }
+    return Color(int.parse(part));
+  }
+
+  factory GTAppTheme.fromString(String data) {
+    final List<String> parts = data.split("|");
+    int i = 0;
+    final Color basePrimaryColor = _readColor(parts[i++])!;
+    final Color? baseSecondaryColor = _readColor(parts[i++]);
+    final Color? baseTertiaryColor = _readColor(parts[i++]);
+    final Color? baseNeutralColor = _readColor(parts[i++]);
+    final Color? baseErrorColor = _readColor(parts[i++]);
+    final Color? baseNeutralVariantColor = _readColor(parts[i++]);
+    final Color baseSuccessColor = _readColor(parts[i++])!;
+    final GTContrast contrast = GTContrast.fromString(parts[i++]);
+    final List<String> innerParts = parts[i++].split("-");
+    if (innerParts.length == 1 && innerParts.first.isEmpty) {
+      innerParts.clear();
+    }
+    final List<Color> baseAdditionalColors = <Color>[];
+    for (final String part in innerParts) {
+      baseAdditionalColors.add(Color(int.parse(part)));
+    }
+    if (baseSecondaryColor == null || baseTertiaryColor == null || baseNeutralColor == null || baseErrorColor == null) {
+      return GTAppTheme.seed(
+        seedColor: basePrimaryColor,
+        baseSuccessColor: baseSuccessColor,
+        contrast: contrast,
+        baseAdditionalColors: baseAdditionalColors,
+      );
+    } else {
+      return GTAppTheme.colors(
+        basePrimaryColor: basePrimaryColor,
+        baseSecondaryColor: baseSecondaryColor,
+        baseTertiaryColor: baseTertiaryColor,
+        baseNeutralColor: baseNeutralColor,
+        baseErrorColor: baseErrorColor,
+        baseNeutralVariantColor: baseNeutralVariantColor,
+        baseSuccessColor: baseSuccessColor,
+        contrast: contrast,
+        baseAdditionalColors: baseAdditionalColors,
+      );
+    }
+  }
+
+  static void _writeColor(Color? color, StringBuffer buff) {
+    buff.write(color?.toARGB32());
+    buff.write("|");
+  }
+
+  @override
+  String toString() {
+    final StringBuffer buff = StringBuffer();
+    _writeColor(basePrimaryColor, buff);
+    _writeColor(baseSecondaryColor, buff);
+    _writeColor(baseTertiaryColor, buff);
+    _writeColor(baseNeutralColor, buff);
+    _writeColor(baseErrorColor, buff);
+    _writeColor(baseNeutralVariantColor, buff);
+    _writeColor(baseSuccessColor, buff);
+    buff.write("${contrast.name}|");
+    for (final Color color in baseAdditionalColors) {
+      buff.write(color.toARGB32());
+      buff.write("-");
+    }
+    return buff.toString();
+  }
+
+  GTAppThemeExtension _getExtension({required bool darkTheme}) {
     final MaterialColor success = convertColor(baseSuccessColor);
     final List<int> tone = _defaultTone(contrast: contrast, isDarkTheme: darkTheme);
     final List<int> fTone = _fixedTone(contrast: contrast, isDarkTheme: darkTheme);
-
-    final GTAppThemeExtension extension = GTAppThemeExtension(
+    final List<ColorGroup> additionalColors = <ColorGroup>[];
+    for (final Color baseColor in baseAdditionalColors) {
+      final MaterialColor base = convertColor(baseColor);
+      additionalColors.add(
+        ColorGroup(
+          normal: _transform(base, tone),
+          onNormal: _transform(base, tone),
+          container: _transform(base, tone),
+          onContainer: _transform(base, tone),
+          fixed: _transform(base, fTone),
+          onFixed: _transform(base, fTone),
+          fixedDim: _transform(base, fTone),
+          onFixedVariant: _transform(base, fTone),
+        ),
+      );
+    }
+    return GTAppThemeExtension(
       success: _transform(success, tone),
       onSuccess: _transform(success, tone),
       successContainer: _transform(success, tone),
@@ -99,14 +203,21 @@ final class GTAppTheme {
       onSuccessFixed: _transform(success, fTone),
       successFixedDim: _transform(success, fTone),
       onSuccessFixedVariant: _transform(success, fTone),
+      additionalColors: additionalColors,
     );
+  }
+
+  /// Returns the material 3 theme data for this theme with the generated [ColorScheme].
+  ///
+  /// Depending on [darkTheme] either a dark, or light theme will be returned!
+  ThemeData getTheme({required bool darkTheme}) {
     return ThemeData(
       colorScheme: getColorScheme(darkTheme: darkTheme),
       useMaterial3: true,
       scrollbarTheme: ScrollbarThemeData(
         thumbVisibility: WidgetStateProperty.all<bool>(true),
       ),
-      extensions: <ThemeExtension<dynamic>>[extension],
+      extensions: <ThemeExtension<dynamic>>[_getExtension(darkTheme: darkTheme)],
     );
   }
 
@@ -114,7 +225,11 @@ final class GTAppTheme {
   ColorScheme getColorScheme({required bool darkTheme}) {
     final Brightness brightness = darkTheme ? Brightness.dark : Brightness.light;
     if (baseSecondaryColor == null || baseTertiaryColor == null || baseNeutralColor == null || baseErrorColor == null) {
-      return ColorScheme.fromSeed(seedColor: basePrimaryColor, brightness: brightness);
+      return ColorScheme.fromSeed(
+        seedColor: basePrimaryColor,
+        brightness: brightness,
+        contrastLevel: contrast.getContrastLevel(),
+      );
     }
     final MaterialColor primary = convertColor(basePrimaryColor);
     final MaterialColor secondary = convertColor(baseSecondaryColor!);
@@ -266,14 +381,14 @@ final class GTAppTheme {
     if (isDarkTheme) {
       return switch (contrast) {
         GTContrast.DEFAULT => <int>[30, 80, 60, 30],
-        GTContrast.MEDIUM => <int>[90, 10, 60, 0],
-        GTContrast.HIGH => <int>[95, 0, 80, 0],
+        GTContrast.MEDIUM => <int>[30, 90, 70, 60],
+        GTContrast.HIGH => <int>[30, 100, 95, 80],
       };
     } else {
       return switch (contrast) {
-        GTContrast.DEFAULT => <int>[40, 100, 90, 30],
-        GTContrast.MEDIUM => <int>[30, 100, 40, 100],
-        GTContrast.HIGH => <int>[20, 100, 30, 100],
+        GTContrast.DEFAULT => <int>[90, 30, 50, 80],
+        GTContrast.MEDIUM => <int>[90, 20, 30, 50],
+        GTContrast.HIGH => <int>[90, 0, 20, 30],
       };
     }
   }
@@ -281,24 +396,35 @@ final class GTAppTheme {
   /// The returned material color also has [0] set to white and [1000] set to black and of course [500] set to the color
   /// itself. This also contains some additional tints and shades.
   ///
+  /// 10 steps here from dart (keys of the map) are equal to 1 step in the material color tone (and an increment of
+  /// the double scale of 0.02):
   /// [900] is the material color tone [10].
   /// [50] is the material color tone [95].
   /// [10] is the material color tone [99].
   static MaterialColor convertColor(Color color) {
     final Map<int, Color> colorMap = <int, Color>{
-      0: tintColor(color, 1.0),
-      10: tintColor(color, 0.98),
-      50: tintColor(color, 0.9),
-      100: tintColor(color, 0.8),
-      200: tintColor(color, 0.6),
-      300: tintColor(color, 0.4),
-      400: tintColor(color, 0.2),
-      500: color,
-      600: shadeColor(color, 0.2),
-      700: shadeColor(color, 0.4),
-      800: shadeColor(color, 0.6),
-      900: shadeColor(color, 0.8),
-      1000: shadeColor(color, 1.0),
+      0: tintColor(color, 1.0), // 100
+      10: tintColor(color, 0.98), // 99
+      20: tintColor(color, 0.96), // 98
+      40: tintColor(color, 0.92), // 96
+      50: tintColor(color, 0.9), // 95
+      60: tintColor(color, 0.88), // 94
+      80: tintColor(color, 0.84), // 92
+      100: tintColor(color, 0.8), // 90
+      200: tintColor(color, 0.6), // 80
+      300: tintColor(color, 0.4), // 70
+      400: tintColor(color, 0.2), // 60
+      500: color, // 50
+      600: shadeColor(color, 0.2), // 40
+      700: shadeColor(color, 0.4), // 30
+      780: shadeColor(color, 0.56), // 22
+      800: shadeColor(color, 0.6), // 20
+      830: shadeColor(color, 0.66), // 17
+      880: shadeColor(color, 0.76), // 12
+      900: shadeColor(color, 0.8), // 10
+      940: shadeColor(color, 0.88), // 6
+      960: shadeColor(color, 0.92), // 4
+      1000: shadeColor(color, 1.0), // 0
     };
     return MaterialColor(color.toARGB32(), colorMap);
   }
@@ -311,6 +437,51 @@ final class GTAppTheme {
 
   /// Returns a color that is the [source] blended into the [target] by the percentage [factor] 0.000001 to 0.999999
   static Color blend(Color source, Color target, double factor) => source.blend(target, factor);
+
+  /// Important: this is not a true copy constructor, because for [baseSecondaryColor], [baseTertiaryColor],
+  /// [baseNeutralColor] and [baseErrorColor] this will use [basePrimaryColor] as a default fallback if they were
+  /// null and if they are null in the params AND IF ANY OF THEM IS NOT NULL (otherwise if all of them are null, seed
+  /// constructor is used!)!
+  GTAppTheme copyWith({
+    Color? basePrimaryColor,
+    Color? baseSecondaryColor,
+    Color? baseTertiaryColor,
+    Color? baseNeutralColor,
+    Color? baseErrorColor,
+    Color? baseNeutralVariantColor,
+    Color? baseSuccessColor,
+    GTContrast? newContrast,
+    List<Color>? baseAdditionalColors,
+  }) {
+    final Color primary = basePrimaryColor ?? this.basePrimaryColor;
+    final Color? secondary = baseSecondaryColor ?? this.baseSecondaryColor;
+    final Color? tertiary = baseTertiaryColor ?? this.baseTertiaryColor;
+    final Color? neutral = baseNeutralColor ?? this.baseNeutralColor;
+    final Color? error = baseErrorColor ?? this.baseErrorColor;
+    final Color success = baseSuccessColor ?? this.baseSuccessColor;
+    final GTContrast contrast = newContrast ?? this.contrast;
+    final List<Color> additionalColors = baseAdditionalColors ?? _baseAdditionalColors;
+    if (secondary == null && tertiary == null && neutral == null && error == null) {
+      return GTAppTheme.seed(
+        seedColor: primary,
+        baseSuccessColor: success,
+        contrast: contrast,
+        baseAdditionalColors: additionalColors,
+      );
+    } else {
+      return GTAppTheme.colors(
+        basePrimaryColor: primary,
+        baseSecondaryColor: secondary ?? primary,
+        baseTertiaryColor: tertiary ?? primary,
+        baseNeutralColor: neutral ?? primary,
+        baseErrorColor: error ?? primary,
+        baseNeutralVariantColor: baseNeutralVariantColor ?? this.baseNeutralVariantColor,
+        baseSuccessColor: success,
+        contrast: contrast,
+        baseAdditionalColors: additionalColors,
+      );
+    }
+  }
 }
 
 extension on MaterialColor {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/locale_config_option.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/presentation/base/gt_app.dart';
 import 'package:game_tools_lib/presentation/base/gt_app_theme_extension.dart';
 import 'package:provider/provider.dart';
@@ -9,25 +10,28 @@ import 'package:provider/provider.dart';
 /// Best used to get colors like [colorPrimary] of the [theme], or text styles like [textBodyMedium], or translate
 /// text with [translate]!
 mixin class GTBaseWidget {
-  /// Translates a translation [key] for the current locale and placeholders are replaced with [keyParams].
+  /// Translates a translation [TranslationString.key] for the current locale and placeholders are replaced with
+  /// [TranslationString.params]. This needs the current [context] to react to locale changes!
   ///
-  /// Needs the current [context] to react to locale changes!
-  ///
-  /// Placeholders in the translation string of language.json have to start with "{0}" and then "{1}", "{2}", etc
-  String translate(BuildContext context, String key, {List<String>? keyParams}) =>
-      translateS(context, key, keyParams: keyParams, listen: true);
+  /// Placeholders in the translation string of language.json have to start with "{0}" and then "{1}", "{2}", etc.
+  /// But you always have to use [TranslationString.params] for translated strings that have those placeholders! (If
+  /// you don't want to use them, use a list of empty strings with the same length!)
+  String translate(TranslationString key, BuildContext context) => translateS(key, context);
 
-  /// Translates a translation [key] for the current locale and placeholders are replaced with [keyParams].
+  /// Translates a translation [TranslationString.key] for the current locale and placeholders are replaced with
+  /// [TranslationString.params].
   ///
-  /// Depending on [listen] this can listen to locale changes and rebuild the calling widget automatically if needed!
-  /// If used in button callbacks, always use false!
+  /// If [context] is not null, then this will listen to locale changes and rebuild the calling widget automatically
+  /// if needed! Otherwise for button callbacks, etc always leave it at null!
   ///
-  /// Placeholders in the translation string of language.json have to start with "{0}" and then "{1}", "{2}", etc
-  static String translateS(BuildContext context, String key, {List<String>? keyParams, required bool listen}) {
-    if (listen) {
+  /// Placeholders in the translation string of language.json have to start with "{0}" and then "{1}", "{2}", etc.
+  /// But you always have to use [TranslationString.params] for translated strings that have those placeholders! (If
+  /// you don't want to use them, use a list of empty strings with the same length!)
+  static String translateS(TranslationString key, BuildContext? context) {
+    if (context != null) {
       context.select<LocaleConfigOption, Locale?>((LocaleConfigOption option) => option.activeLocale);
     }
-    return GTApp.translate(key, keyParams: keyParams); // IMPORTANT: first watch for changes to the locale above!!!
+    return GTApp.translate(key); // IMPORTANT: first watch for changes to the locale above!!!
   }
 
   /// Returns the theme data. The [ThemeData.colorScheme] contains the colors used inside of the app.
@@ -148,20 +152,6 @@ mixin class GTBaseWidget {
   /// Version of [colorSurface] that is brighter in both light and dark theme
   Color colorSurfaceBright(BuildContext context) => theme(context).colorScheme.surfaceBright;
 
-  /// Custom color used for success indicators from [GTAppThemeExtension]
-  Color colorSuccess(BuildContext context) => theme(context).extension<GTAppThemeExtension>()!.success;
-
-  /// Used for text/icons on the [colorOnSuccess] color.
-  Color colorOnSuccess(BuildContext context) => theme(context).extension<GTAppThemeExtension>()!.onSuccess;
-
-  /// Custom success container color for key components that display some success like a checkbox from [GTAppThemeExtension]
-  Color colorSuccessContainer(BuildContext context) =>
-      theme(context).extension<GTAppThemeExtension>()!.successContainer;
-
-  /// Contrast-passing color shown against the [colorSuccessContainer]
-  Color colorOnSuccessContainer(BuildContext context) =>
-      theme(context).extension<GTAppThemeExtension>()!.onSuccessContainer;
-
   /// Version of [colorPrimary] that does not care for light, or dark theme
   Color colorPrimaryFixed(BuildContext context) => theme(context).colorScheme.primaryFixed;
 
@@ -183,7 +173,7 @@ mixin class GTBaseWidget {
   /// Dimmer Version of [colorSecondaryFixed]
   Color colorSecondaryFixedDim(BuildContext context) => theme(context).colorScheme.secondaryFixedDim;
 
-  /// Stronger hue variant of [colorSecondaryFixed]
+  /// Stronger hue variant of [colorOnSecondaryFixed]
   Color colorOnSecondaryFixedVariant(BuildContext context) => theme(context).colorScheme.onSecondaryFixedVariant;
 
   /// Version of [colorTertiary] that does not care for light, or dark theme
@@ -195,8 +185,22 @@ mixin class GTBaseWidget {
   /// Dimmer Version of [colorTertiaryFixed]
   Color colorTertiaryFixedDim(BuildContext context) => theme(context).colorScheme.tertiaryFixedDim;
 
-  /// Stronger hue variant of [colorTertiaryFixed]
+  /// Stronger hue variant of [colorOnTertiaryFixed]
   Color colorOnTertiaryFixedVariant(BuildContext context) => theme(context).colorScheme.onTertiaryFixedVariant;
+
+  /// Custom color used for success indicators from [GTAppThemeExtension]
+  Color colorSuccess(BuildContext context) => theme(context).extension<GTAppThemeExtension>()!.success;
+
+  /// Used for text/icons on the [colorOnSuccess] color.
+  Color colorOnSuccess(BuildContext context) => theme(context).extension<GTAppThemeExtension>()!.onSuccess;
+
+  /// Custom success container color for key components that display some success like a checkbox from [GTAppThemeExtension]
+  Color colorSuccessContainer(BuildContext context) =>
+      theme(context).extension<GTAppThemeExtension>()!.successContainer;
+
+  /// Contrast-passing color shown against the [colorSuccessContainer]
+  Color colorOnSuccessContainer(BuildContext context) =>
+      theme(context).extension<GTAppThemeExtension>()!.onSuccessContainer;
 
   /// Version of [colorSuccess] that does not care for light, or dark theme
   Color colorSuccessFixed(BuildContext context) => theme(context).extension<GTAppThemeExtension>()!.successFixed;
@@ -207,9 +211,14 @@ mixin class GTBaseWidget {
   /// Dimmer Version of [colorSuccessFixed]
   Color colorSuccessFixedDim(BuildContext context) => theme(context).extension<GTAppThemeExtension>()!.successFixedDim;
 
-  /// Stronger hue variant of [colorSuccessFixed]
+  /// Stronger hue variant of [colorOnSuccessFixed]
   Color colorOnSuccessFixedVariant(BuildContext context) =>
       theme(context).extension<GTAppThemeExtension>()!.onSuccessFixedVariant;
+
+  /// Contains the different tones of the additional custom color at zero based [index] of
+  /// [GTAppThemeExtension.additionalColors]
+  ColorGroup colorAdditional(BuildContext context, int index) =>
+      theme(context).extension<GTAppThemeExtension>()!.additionalColors.elementAt(index);
 
   /// Returns only the size, weight and spacing of the [ThemeData.textTheme], so that the text color will not be
   /// overridden when using this in widgets! (and so that something like a disabled color still works!)
@@ -278,14 +287,14 @@ mixin class GTBaseWidget {
   ///
   /// Because this is mostly called after some action in a callback, [listen] for [translateS] is false here to not
   /// listen to new locale changes! You should check [BuildContext.mounted] first if you call this across async gaps
-  /// as well.
-  bool showToast(BuildContext context, String key, {List<String>? keyParams, bool listen = false}) {
+  /// as well. If you want to listen to changes, then set [listen] to true instead.
+  bool showToast(TranslationString key, BuildContext context, {bool listen = false}) {
     final ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? result =
         ScaffoldMessenger.maybeOf(
           context,
         )?.showSnackBar(
           SnackBar(
-            content: Text(translateS(context, key, keyParams: keyParams, listen: listen)),
+            content: Text(translateS(key, listen ? context : null)),
           ),
         );
     return result != null;
