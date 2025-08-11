@@ -154,6 +154,10 @@ extension ColorExtension on Color {
   /// 255 is brightest color)
   int get v => redI;
 
+  /// Luminance of rgb int values that can be compared against 0.5 to see if this color is brighter or darker
+  /// (bigger means closer to white and smaller means closer to black)
+  double get luminance => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
   /// Returns a color that is brighter by the percentage [factor] 0.000001 to 0.999999
   Color tint(double factor) =>
       Color.from(alpha: 1.0, red: _tint(r, factor), green: _tint(g, factor), blue: _tint(b, factor));

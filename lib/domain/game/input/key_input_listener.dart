@@ -13,6 +13,7 @@ base class KeyInputListener extends BaseInputListener<BoardKey> {
     required super.alwaysCreateNewEvents,
     required super.defaultKey,
     super.configGroupLabel,
+    super.isActive = true,
   });
 
   @override

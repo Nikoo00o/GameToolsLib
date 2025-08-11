@@ -18,7 +18,8 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// Important: these listeners only trigger once per press/click (holding down for a while and then releasing)! But
 /// they already trigger when it is pressed/clicked down and not only when its up again!
 ///
-/// This is updated automatically at the end of the event loop of [GameToolsLib]!
+/// This is updated automatically at the end of the event loop of [GameToolsLib]! You can also toggle the listening
+/// of this with [isActive]
 abstract base class BaseInputListener<DataType> {
   /// If this is empty, then this listener will not get any ui build to be able to modify it! Otherwise it should
   /// display a info label text (or translation key), but it will also be used as the database storage key (for the
@@ -60,6 +61,10 @@ abstract base class BaseInputListener<DataType> {
   /// But this is optional and null by default!
   final TranslationString? configGroupLabel;
 
+  /// This can be toggled to control if this listener should currently be listening and adding events, or not, per
+  /// default it's true!
+  bool isActive;
+
   /// The current hotkey which is loaded/saved in storage, but initially null (and default is used before)
   DataType? _key;
 
@@ -88,6 +93,7 @@ abstract base class BaseInputListener<DataType> {
     required this.alwaysCreateNewEvents,
     required this.defaultKey,
     this.configGroupLabel,
+    required this.isActive,
   }) {
     if (isConfigurable == false && configGroupLabel != null) {
       throw ConfigException(
@@ -212,6 +218,12 @@ abstract base class BaseInputListener<DataType> {
 
   /// Called periodically from the internal event loop
   Future<void> _update() async {
+    if (isActive == false) {
+      if (_isKeyDown) {
+        _isKeyDown = false;
+      }
+      return; // don't update if not active!
+    }
     if (_existsOnStorage == null) {
       await _loadKey();
     }

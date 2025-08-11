@@ -11,6 +11,7 @@
   "input.edit": "Bearbeiten",
   "input.ok": "Ok",
   "input.cancel": "Abbrechen",
+  "input.done": "Fertig",
   "input.edit.element": "Element {0} bearbeiten",
   "input.create.element": "Element {0} erstellen",
   "input.show.element": "Element {0}: {1}",
@@ -24,9 +25,10 @@
   "config.logLevel": "Log Level",
   "config.useDarkTheme": "Dark Theme benutzen",
   "config.currentLocale": "Sprache",
-  "config.appColors" : "App Farben",
-  "config.appColors.description" : "Zeigt die Farben der App mit einer Möglichkeit diese anzupassen",
-  "config.appColors.contrast" : "Contrast Mode",
+  "config.appColors": "App Farben",
+  "config.appColors.description": "Zeigt die Farben der App mit einer Möglichkeit diese anzupassen",
+  "config.appColors.contrast": "Contrast Mode",
+  "config.appColors.info": "Zuerst beeinflusst der Kontrastregler, wie die verschiedenen Farbtöne aus Ihren Grundfarben ausgewählt werden.\nStandardmäßig wird nur eine Standard-Primärfarbe als Ausgangspunkt für die Erstellung aller Farbtöne verwendet (siehe unten).\nSie können jedoch auch jede der zusätzlichen Farben manuell ändern, die durch Zurücksetzen auf die Standardeinstellungen wieder gelöscht werden können.",
   "config.debugPrintGameWindowNames": "Fenster Namen ausgeben",
   "config.debugPrintGameWindowNames.description": "Loggt alle offene Fenster nach Neustart der App zum debuggen",
   "config.alwaysMatchGameWindowNamesEqual": "Fenster exakt vergleichen",
@@ -51,7 +53,7 @@
   "page.logs.title": "Application Logs",
   "page.logs.level": "Level anzeigen",
   "page.logs.search": "Logs durchsuchen",
-  "page.logs.copy.to.clipboard" : "In Zwischenablage kopieren",
-  "page.logs.copy.to.clipboard.done" : "Sichtbare App Logs wurden in die Zwischenablage kopiert!",
-  "page.debug.title" : "Debug Info"
+  "page.logs.copy.to.clipboard": "In Zwischenablage kopieren",
+  "page.logs.copy.to.clipboard.done": "Sichtbare App Logs wurden in die Zwischenablage kopiert!",
+  "page.debug.title": "Debug Info"
 }

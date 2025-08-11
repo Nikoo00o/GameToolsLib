@@ -52,6 +52,7 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
     }
   }
 
+  /// Called from [GameToolsLib.initGameToolsLib] to load native libs
   static Future<bool> _initNativeCode({required bool isCalledFromTesting}) async {
     try {
       final bool unChanged = await NativeWindow.initNativeWindow(); // first init native window (this also calls
@@ -140,6 +141,22 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
     "macos" => "libdartcv.dylib",
     _ => throw UnsupportedError("Platform ${Platform.operatingSystem} not supported"),
   };
+
+  /// This is called from [GameToolsLib.initGameToolsLib] at the end to init remaining stuff. Can also throw
+  /// [ConfigException]!
+  static Future<bool> _initGameSpecificClasses(
+    GameLogWatcher gameLogWatcher,
+    GameConfigLoader? gameConfigLoader,
+  ) async {
+    GameLogWatcher._instance = gameLogWatcher;
+    final bool firstLoaded = await gameLogWatcher._init();
+    if (firstLoaded == false) {
+      return false;
+    }
+    GameConfigLoader._instance = gameConfigLoader;
+    final bool? secondLoaded = await gameConfigLoader?.readConfig();
+    return secondLoaded ?? true;
+  }
 
   /// shows a warning after a delay of 30 seconds if the library was not initialized by then
   static Future<void> _showStartupWarning() async {

@@ -56,7 +56,8 @@ final class ConfigOptionBuilderCustom<T> extends MultiConfigOptionBuilder<T> {
 
   /// This should return true if your custom option should be shown for the [upperCaseSearchString] in the search bar.
   /// If this is null it will compare against the title.
-  final bool Function(BuildContext context, String upperCaseSearchString)? containsSearchCallback;
+  final bool Function(BuildContext context, ConfigOptionBuilderCustom<T> builder, String upperCaseSearchString)?
+  containsSearchCallback;
 
   const ConfigOptionBuilderCustom({
     required CustomConfigOption<T> configOption,
@@ -70,7 +71,7 @@ final class ConfigOptionBuilderCustom<T> extends MultiConfigOptionBuilder<T> {
 
   @override
   bool containsSearch(BuildContext context, String upperCaseSearchString) =>
-      containsSearchCallback?.call(context, upperCaseSearchString) ??
+      containsSearchCallback?.call(context, this, upperCaseSearchString) ??
       super.containsSearch(context, upperCaseSearchString);
 }
 

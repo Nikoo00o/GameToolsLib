@@ -122,8 +122,8 @@ final class GTAppTheme {
     final Color baseSuccessColor = _readColor(parts[i++])!;
     final GTContrast contrast = GTContrast.fromString(parts[i++]);
     final List<String> innerParts = parts[i++].split("-");
-    if (innerParts.length == 1 && innerParts.first.isEmpty) {
-      innerParts.clear();
+    if (innerParts.isNotEmpty && innerParts.last.isEmpty) {
+      innerParts.removeLast();
     }
     final List<Color> baseAdditionalColors = <Color>[];
     for (final String part in innerParts) {

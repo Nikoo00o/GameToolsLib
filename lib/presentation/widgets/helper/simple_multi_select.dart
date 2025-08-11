@@ -43,6 +43,7 @@ class _SimpleMultiSelectState<T> extends State<SimpleMultiSelect<T>> with GTBase
   Widget buildExpandedContent(BuildContext context) {
     return Wrap(
       spacing: 5.0,
+      runSpacing: 5.0,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: widget.entries.map((T entry) {
         return FilterChip(

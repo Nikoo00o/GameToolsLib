@@ -2,7 +2,7 @@ part of 'package:game_tools_lib/domain/game/game_window.dart';
 
 /// Used for [InputManager] to identify the different keyboard keys including special modifier.
 /// Can be used to either press a key, or check if a key is pressed.
-/// Uses [keyCode], [keyName] and [logicalKeys].
+/// Uses [keyCode], [keyName] and [logicalKeysToPress].
 ///
 /// For a better user interface representation [keyTextHint] is used internally when the user configures a shortcut
 /// for this to present a keyboard region + language specific label with [keyCombinationText]!
@@ -63,29 +63,71 @@ final class BoardKey implements Model {
     );
   }
 
-  /// The matching logical keys for this including the [logicalKey] and modifiers that are true
-  /// (for example [withShift]).
-  /// This is used for pressing a key.
-  List<LogicalKeyboardKey> get logicalKeys => <LogicalKeyboardKey>[
+  /// Tries to create a board key with the [keys] being only one normal key and otherwise only modifier keys like
+  /// "shift", etc. Otherwise will throw a [KeyNotFoundException]!
+  factory BoardKey.fromLogicalKeys(List<LogicalKeyboardKey> keys) {
+    LogicalKeyboardKey? logicalKey;
+    bool? withShift;
+    bool? withControl;
+    bool? withAlt;
+    bool? withMeta;
+    for (final LogicalKeyboardKey key in keys) {
+      if (key.isAnyShift) {
+        withShift = true;
+      } else if (key.isAnyControl) {
+        withControl = true;
+      } else if (key.isAnyAlt) {
+        withAlt = true;
+      } else if (key.isAnyMeta) {
+        withMeta = true;
+      } else {
+        if (logicalKey != null) {
+          throw KeyNotFoundException(message: "$keys contained more than 1 normal key to convert to BoardKey");
+        }
+        logicalKey = key;
+      }
+    }
+    if (logicalKey == null) {
+      throw KeyNotFoundException(message: "$keys did not contain a normal key to convert to BoardKey");
+    }
+    return BoardKey(logicalKey, withShift: withShift, withControl: withControl, withAlt: withAlt, withMeta: withMeta);
+  }
+
+  /// The matching logical keys for this including the [logicalKey] and specific left (not general) modifiers that are
+  /// true (for example [withShift]).
+  /// This is used for pressing a key instead of [logicalKeysToCheck]
+  List<LogicalKeyboardKey> get logicalKeysToPress => <LogicalKeyboardKey>[
+    if (withShift == true) LogicalKeyboardKey.shiftLeft,
+    if (withControl == true) LogicalKeyboardKey.controlLeft,
+    if (withAlt == true) LogicalKeyboardKey.altLeft,
+    if (withMeta == true) LogicalKeyboardKey.metaLeft,
+    logicalKey,
+  ];
+
+  /// Used together with [logicalKeysToPress] to check the general modifier keys if they are down (does not contain
+  /// the [logicalKey] itself here!
+  List<LogicalKeyboardKey> get logicalKeysToCheck => <LogicalKeyboardKey>[
     if (withShift == true) LogicalKeyboardKey.shift,
     if (withControl == true) LogicalKeyboardKey.control,
     if (withAlt == true) LogicalKeyboardKey.alt,
     if (withMeta == true) LogicalKeyboardKey.meta,
-    logicalKey,
   ];
 
   /// Returns the platform specific key code for this [logicalKey]
   int get keyCode => logicalKey.convertToPlatformCode();
 
-  /// Returns the label for the [logicalKey]
+  /// Returns the label for the [logicalKey] which might not be the correct physical key on the keyboard for your
+  /// language/region if it would be a special key! (for example ÖÄÜ)
   String get keyName => logicalKey.keyLabel;
 
   /// This is used to display the key with its modifiers in the ui! For example "Control + Alt + D"
   ///
   /// The [keyTextHint] is used internally automatically when the user configures a new shortcut to capture the
-  /// region + language specific keyboard keystroke sequence!
+  /// region + language specific keyboard keystroke sequence! Otherwise when this key is not captured then it might
+  /// not display some language/region specific special keys correctly with the matching physical keyboard key (for
+  /// example ÖÄÜ)
   String get keyCombinationText {
-    final List<LogicalKeyboardKey> keys = logicalKeys;
+    final List<LogicalKeyboardKey> keys = logicalKeysToCheck..add(logicalKey);
     final StringBuffer buff = StringBuffer();
     for (int i = 0; i < keys.length; ++i) {
       if (i == keys.length - 1 && keyTextHint != null) {
@@ -103,8 +145,10 @@ final class BoardKey implements Model {
   /// Special Key combinations
   /// Important: this is non restrictive (it would also trigger if shift, or alt would be down as well)
   static const BoardKey ctrlC = BoardKey(LogicalKeyboardKey.keyC, withControl: true);
+
   /// Important: this is non restrictive (it would also trigger if shift, or alt would be down as well)
   static const BoardKey ctrlV = BoardKey(LogicalKeyboardKey.keyV, withControl: true);
+
   /// Important: this is non restrictive (it would also trigger if shift, or alt would be down as well)
   static const BoardKey ctrlA = BoardKey(LogicalKeyboardKey.keyA, withControl: true);
 
@@ -251,10 +295,11 @@ final class BoardKey implements Model {
   /// ß in supported regions
   static BoardKey get ss => oem4;
 
-  /// This always contains shift and capslock. Only used for checking if a key was pressed.
+  /// This always contains shift and capslock. Only used for checking if a key was pressed. in addition to
+  /// [_activeModifierNoLocks] and [_inactiveModifierNoLocks]
   List<LogicalKeyboardKey> get _anyShift => <LogicalKeyboardKey>[LogicalKeyboardKey.shift, LogicalKeyboardKey.capsLock];
 
-  /// The matching logical keys for the modifiers that are explicitly set to [true] except [withShift],
+  /// The matching general logical keys for the modifiers that are explicitly set to [true] except [withShift],
   /// see [_anyShift].
   /// Only used for checking if a key was pressed.
   List<LogicalKeyboardKey> get _activeModifierNoLocks => <LogicalKeyboardKey>[
@@ -263,7 +308,7 @@ final class BoardKey implements Model {
     if (withMeta == true) LogicalKeyboardKey.meta,
   ];
 
-  /// The matching logical keys for the modifiers that are explicitly set to [false] except [withShift],
+  /// The matching general logical keys for the modifiers that are explicitly set to [false] except [withShift],
   /// see [_anyShift].
   /// Only used for checking if a key was pressed.
   List<LogicalKeyboardKey> get _inactiveModifierNoLocks => <LogicalKeyboardKey>[

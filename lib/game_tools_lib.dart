@@ -55,6 +55,8 @@ part 'package:game_tools_lib/domain/game/states/game_state.dart';
 
 part 'package:game_tools_lib/domain/game/game_log_watcher.dart';
 
+part 'package:game_tools_lib/domain/game/game_config_loader.dart';
+
 part 'package:game_tools_lib/domain/game/helper/example/example_log_watcher.dart';
 
 part 'package:game_tools_lib/domain/game/input/base_input_listener.dart';
@@ -121,6 +123,9 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   /// In addition to the listeners in the constructor, you can also use [addLogInputListener], or
   /// [removeLogInputListener] later on. There you add your [LogInputListener] subclass objects.
   ///
+  /// [gameConfigLoader] can optionally be your custom subclass of [GameConfigLoader] (default null) which can be
+  /// used to access the config file of the game itself with [GameToolsLib.gameConfigLoader].
+  ///
   /// For the [BaseInputListener]: [MouseInputListener] and [KeyInputListener], look at [GameManager].
   ///
   /// This will also set some flutter error callbacks internally and call [MutableConfig.loadAllConfigurableOptions]!
@@ -131,6 +136,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     bool isCalledFromTesting = false,
     required List<GameWindow> gameWindows,
     required GameLogWatcher gameLogWatcher,
+    GameConfigLoader? gameConfigLoader,
   }) async {
     if (_GameToolsLibHelper._initialized) {
       Logger.verbose("Game Tools Lib is already initialized and not doing it again!");
@@ -155,10 +161,12 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     if (await _GameToolsLibHelper._initNativeCode(isCalledFromTesting: isCalledFromTesting) == false) {
       return false;
     }
+    // then init game log watcher and game config loader if available
+    if (await _GameToolsLibHelper._initGameSpecificClasses(gameLogWatcher, gameConfigLoader) == false) {
+      return false;
+    }
     _GameToolsLibEventLoop._currentState = GameClosedState(); // also set the current state to closed here
-    GameLogWatcher._instance = gameLogWatcher;
-    await gameLogWatcher._init(); // also init log watcher
-    _GameToolsLibHelper._initialized = true;
+    _GameToolsLibHelper._initialized = true; // now init is done
     await config.mutable.loadAllConfigurableOptions(); // and lastly load all mutable config options
     Logger.debug(
       "GameToolsLib.initGameToolsLib done with config ${config.runtimeType}, manager "
@@ -216,6 +224,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       _gameWindows = null;
       GameManager._instance = null;
       GameLogWatcher._instance = null;
+      GameConfigLoader._instance = null;
       await Logger.waitForLoggingToBeDone(); // print last logs,
       Logger._instance = StartupLogger(); // reset logger to startup
       _GameToolsLibHelper._initialized = false; // cleanup done
@@ -344,6 +353,9 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
 
   /// Removes the [listener] from the internal list of log input listeners
   static void removeLogInputListener(LogInputListener listener) => GameLogWatcher._instance!.removeListener(listener);
+
+  /// Reference to the game config loader if it was used in [initGameToolsLib] (otherwise throws [ConfigException]!)
+  static T gameConfigLoader<T extends GameConfigLoader>() => GameConfigLoader.configLoader<T>();
 
   /// Used in [close] to not close this multiple times
   static bool get wasInitStarted => GameManager._instance != null;

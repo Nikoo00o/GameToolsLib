@@ -178,7 +178,8 @@ base class CustomConfigOption<T> extends MutableConfigOption<T> {
   /// for the ui. If this is null it will compare against the title of this config option.
   ///
   /// Only use this if [buildCustomContentWidget] is also not null!
-  final bool Function(BuildContext context, String upperCaseSearchString)? containsSearchCallback;
+  final bool Function(BuildContext context, ConfigOptionBuilderCustom<T> builder, String upperCaseSearchString)?
+  containsSearchCallback;
 
   /// [createNewInstance] function that creates a new instance of [T] (or return null)
   /// [updateCallback] Optional update callback that is called after [setValue] to update data references elsewhere.

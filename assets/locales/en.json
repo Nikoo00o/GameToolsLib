@@ -11,6 +11,7 @@
   "input.edit": "Edit",
   "input.ok": "Ok",
   "input.cancel": "Cancel",
+  "input.done": "Done",
   "input.edit.element": "Edit Element {0}",
   "input.create.element": "Create Element {0}",
   "input.show.element": "Element {0}: {1}",
@@ -24,9 +25,10 @@
   "config.logLevel": "Log Level",
   "config.useDarkTheme": "Use Dark Theme",
   "config.currentLocale": "Language",
-  "config.appColors" : "App Colors",
-  "config.appColors.description" : "Shows and lets you modify the colors of the App",
-  "config.appColors.contrast" : "Contrast Mode",
+  "config.appColors": "App Colors",
+  "config.appColors.description": "Shows and lets you modify the colors of the App",
+  "config.appColors.contrast": "Contrast Mode",
+  "config.appColors.info": "First the contrast slider affects how the different color tones are chosen from your base colors.\nThen per default only one default primary color is used as a seed to build all color tones (see below).\nBut you can also modify each of the additional colors manually which can be cleared again by resetting to default.",
   "config.debugPrintGameWindowNames": "Print window names",
   "config.debugPrintGameWindowNames.description": "Logs all open windows after restart of the app for debugging",
   "config.alwaysMatchGameWindowNamesEqual": "Compare windows strictly",
@@ -51,7 +53,7 @@
   "page.logs.title": "Application Logs",
   "page.logs.level": "Show Level",
   "page.logs.search": "Search Logs",
-  "page.logs.copy.to.clipboard" : "Copy to Clipboard",
-  "page.logs.copy.to.clipboard.done" : "Visible app logs were copied into the Clipboard!",
-  "page.debug.title" : "Debug Info"
+  "page.logs.copy.to.clipboard": "Copy to Clipboard",
+  "page.logs.copy.to.clipboard.done": "Visible app logs were copied into the Clipboard!",
+  "page.debug.title": "Debug Info"
 }

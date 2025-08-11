@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:game_tools_lib/core/enums/input/input_enums.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
@@ -134,13 +135,13 @@ class _GTHotkeyFieldState extends State<GTHotkeyField> with GTBaseWidget {
 
   void onKeyEvent(KeyEvent event) {
     final LogicalKeyboardKey key = event.logicalKey;
-    if (key == BoardKey.shiftLeft.logicalKey || key == BoardKey.shiftRight.logicalKey) {
+    if (key.isAnyShift) {
       shiftDown = _setModifierForEvent(event);
-    } else if (key == BoardKey.controlLeft.logicalKey || key == BoardKey.controlRight.logicalKey) {
+    } else if (key.isAnyControl) {
       ctrlDown = _setModifierForEvent(event);
-    } else if (key == BoardKey.altLeft.logicalKey || key == BoardKey.altRight.logicalKey) {
+    } else if (key.isAnyAlt) {
       altDown = _setModifierForEvent(event);
-    } else if (key == BoardKey.metaLeft.logicalKey || key == BoardKey.metaRight.logicalKey) {
+    } else if (key.isAnyMeta) {
       metaDown = _setModifierForEvent(event);
     } else if (event is KeyDownEvent) {
       keyPressed = key;

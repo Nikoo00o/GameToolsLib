@@ -212,7 +212,7 @@ abstract final class InputManager {
   static Future<bool> keyPress(BoardKey key, {Point<int>? delayBeforeAndBetweenInMS}) async {
     final Duration duration = NumUtils.getRandomDuration(delayBeforeAndBetweenInMS);
     await Utils.delay(duration);
-    final List<LogicalKeyboardKey> keyCodes = key.logicalKeys;
+    final List<LogicalKeyboardKey> keyCodes = key.logicalKeysToPress;
     if (_nativeWindow.isKeyDown(keyCodes.last)) {
       Logger.spam("Can't press ", key, " because it was already down!");
       return false;
@@ -222,9 +222,10 @@ abstract final class InputManager {
       await Utils.delay(duration);
       keyUp(keyCodes.first);
     } else {
-      for (int i = 0; i < keyCodes.length - 1; ++i) {
-        if (_nativeWindow.isKeyDown(keyCodes[i])) {
-          keyCodes.removeAt(i--);
+      final List<LogicalKeyboardKey> keysToCheck = key.logicalKeysToCheck;
+      for (int i = keysToCheck.length - 1; i >= 0; --i) {
+        if (_nativeWindow.isKeyDown(keysToCheck[i])) {
+          keyCodes.removeAt(i); // remove from original keys after checking the check keys
         }
       }
       sendRawKeyEvents(keyUp: false, keyCodes: keyCodes);

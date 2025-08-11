@@ -9,6 +9,8 @@ import 'package:game_tools_lib/presentation/pages/navigation/gt_navigator.dart';
 
 /// The default landing page of the [GTNavigator] inside of the [GTApp] that can display some information about the
 /// app and also provide some extra navigation steps in overridden sub classes.
+///
+/// Sub classes may override [buildCustomBottomPart] for custom content at the bottom!
 base class GTHomePage extends GTNavigationPage {
   const GTHomePage({
     super.key,
@@ -34,6 +36,7 @@ base class GTHomePage extends GTNavigationPage {
             child: Text("$open ${translate(const TS("page.debug.title"), context)}"),
           ),
           const SizedBox(height: 10),
+          // todo: implement and translate
           FilledButton(
             onPressed: () {},
             child: const Text("Edit UI"),
@@ -51,10 +54,14 @@ base class GTHomePage extends GTNavigationPage {
             child: Text("$open ${translate(const TS("page.logs.title"), context)}"),
           ),
           const SizedBox(height: 10),
+          buildCustomBottomPart(),
         ],
       ),
     );
   }
+
+  /// Can be overridden in sub classes to display some custom elements at the bottom of [buildBody]
+  Widget buildCustomBottomPart() => const SizedBox();
 
   @override
   String get pageName => "GTHomePage";

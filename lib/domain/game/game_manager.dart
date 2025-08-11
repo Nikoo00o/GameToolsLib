@@ -18,6 +18,9 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// You can also manage your [LogInputListener] of your subclass of [GameLogWatcher] with [addLogInputListener] and
 /// [removeLogInputListener].
 ///
+/// You can also optionally retrieve the config values of the game directly with your custom sub class of
+/// [GameConfigLoader] in [gameConfigLoader]!
+///
 /// And in the same way you can manage your [BaseInputListener] like [MouseInputListener] and [KeyInputListener] in
 /// the constructor, but also in [addInputListener] and [removeInputListener].
 ///
@@ -77,6 +80,10 @@ abstract base class GameManager<ConfigType extends GameToolsConfigBaseType> {
   /// The database for storage
   HiveDatabase get database => GameToolsLib.database;
 
+  /// Reference to the game config loader if it was used in [GameToolsLib.initGameToolsLib] (otherwise throws
+  /// [ConfigException]!)
+  T gameConfigLoader<T extends GameConfigLoader>() => GameToolsLib.gameConfigLoader<T>();
+
   /// Adds any event to the internal event queue if the same event is not already in it. See [GameEvent] for
   /// documentation! To remove/delete an event, use [GameEvent.remove]!
   void addEvent(GameEvent event) => GameToolsLib.addEvent(event);
@@ -101,7 +108,7 @@ abstract base class GameManager<ConfigType extends GameToolsConfigBaseType> {
   /// use [getCurrentState]!
   GameState get currentState => GameToolsLib.currentState;
 
-  /// Returns the [currentState] as [StateType]
+  /// Returns the [currentState] as [StateType] (should be nullable type and checked afterwards)
   StateType getCurrentState<StateType>() => currentState as StateType;
 
   /// Adds a new [listener] to the internal list of input listeners (important: this does not include the

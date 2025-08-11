@@ -189,6 +189,7 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
       description: option.description,
       trailingActions: const Icon(Icons.open_in_new),
       onTap: () {
+        Logger.spam("Opening config option $option on new page");
         Navigator.push<dynamic>(
           context,
           MaterialPageRoute<dynamic>(

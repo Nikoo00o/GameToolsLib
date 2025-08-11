@@ -215,8 +215,12 @@ mixin class GTBaseWidget {
   Color colorOnSuccessFixedVariant(BuildContext context) =>
       theme(context).extension<GTAppThemeExtension>()!.onSuccessFixedVariant;
 
+  /// Returns the amount of additional colors which may be used for [colorAdditional].
+  int colorAdditionalAmount(BuildContext context) =>
+      theme(context).extension<GTAppThemeExtension>()!.additionalColors.length;
+
   /// Contains the different tones of the additional custom color at zero based [index] of
-  /// [GTAppThemeExtension.additionalColors]
+  /// [GTAppThemeExtension.additionalColors]. You can also look at the available number with [colorAdditionalAmount]
   ColorGroup colorAdditional(BuildContext context, int index) =>
       theme(context).extension<GTAppThemeExtension>()!.additionalColors.elementAt(index);
 

@@ -115,6 +115,9 @@ base class MutableConfig {
   /// ```
   ///
   /// To access those from the outside use the cached [configurableOptions] instead!
+  ///
+  /// For all config options contained here the [MutableConfigOption.cachedValue] can directly be called after
+  /// [GameToolsLib.initGameToolsLib], because they will already be loaded into memory!
   List<MutableConfigOption<dynamic>> getConfigurableOptions() => <MutableConfigOption<dynamic>>[
     MutableConfigOptionGroup(
       title: const TS("page.settings.group.general"),
