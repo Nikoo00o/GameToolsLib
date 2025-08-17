@@ -143,19 +143,37 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
   };
 
   /// This is called from [GameToolsLib.initGameToolsLib] at the end to init remaining stuff. Can also throw
-  /// [ConfigException]!
+  /// [ConfigException]! This also adds the additional listeners of the modules
   static Future<bool> _initGameSpecificClasses(
-    GameLogWatcher gameLogWatcher,
+    GameLogWatcher? gameLogWatcher,
     GameConfigLoader? gameConfigLoader,
   ) async {
-    GameLogWatcher._instance = gameLogWatcher;
-    final bool firstLoaded = await gameLogWatcher._init();
+    GameLogWatcher._instance = gameLogWatcher ?? GameLogWatcher.empty(); // should never be null!
+    final List<LogInputListener> moduleLogListeners = <LogInputListener>[]; // used below to add log listeners
+    for (final ModuleBaseType module in GameManager._instance!.modules) {
+      final List<LogInputListener> listeners = module.getAdditionalLogInputListener();
+      moduleLogListeners.addAll(listeners);
+      module._addInputListeners(listeners.length); // also logs message and adds input listeners
+    }
+    final bool firstLoaded = await GameLogWatcher.logWatcher<GameLogWatcher>()._init(moduleLogListeners);
     if (firstLoaded == false) {
       return false;
     }
     GameConfigLoader._instance = gameConfigLoader;
-    final bool? secondLoaded = await gameConfigLoader?.readConfig();
+    final bool? secondLoaded = await gameConfigLoader?.readConfig(); // may be null
     return secondLoaded ?? true;
+  }
+
+  /// Last part of [GameToolsLib.initGameToolsLib] to set the current state to [GameClosedState], then set
+  /// [_initialized] and also load all config options and call onInit on them with
+  /// [MutableConfig.loadAllConfigurableOptions] and [Module.loadAllConfigurableOptions]
+  static Future<void> _postInit() async {
+    _GameToolsLibEventLoop._currentState = GameClosedState(); // first set state to closed
+    _GameToolsLibHelper._initialized = true; // now init is done
+    await MutableConfig.mutableConfig.loadAllConfigurableOptions(); // lastly load config options
+    for (final ModuleBaseType module in GameManager._instance!.modules) {
+      await module.loadAllConfigurableOptions();
+    }
   }
 
   /// shows a warning after a delay of 30 seconds if the library was not initialized by then

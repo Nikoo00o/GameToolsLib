@@ -94,26 +94,18 @@ base mixin GTGroupedBuildersExtension<BT extends GTGroupBuilderInterface, IndexT
     final List<NavigationRailDestination> destinations = searchedBuilders
         .map((BT builder) => builder.buildGroupLabel(context))
         .toList();
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraint) {
-        return SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraint.maxHeight),
-            child: IntrinsicHeight(
-              child: NavigationRail(
-                selectedLabelTextStyle: TextStyle(color: colorPrimary(context)),
-                minWidth: 140,
-                backgroundColor: colorScaffoldBackground(context),
-                selectedIndex: index,
-                groupAlignment: -1.0,
-                onDestinationSelected: (int index) => context.read<IndexType>().value = index,
-                labelType: NavigationRailLabelType.all,
-                destinations: destinations,
-              ),
-            ),
-          ),
-        );
-      },
+    return FocusTraversalGroup(
+      child: NavigationRail(
+        selectedLabelTextStyle: TextStyle(color: colorPrimary(context)),
+        minWidth: 140,
+        backgroundColor: colorScaffoldBackground(context),
+        selectedIndex: index,
+        groupAlignment: -1.0,
+        onDestinationSelected: (int index) => context.read<IndexType>().value = index,
+        labelType: NavigationRailLabelType.all,
+        destinations: destinations,
+        scrollable: true,
+      ),
     );
   }
 

@@ -9,11 +9,12 @@ import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/utils/file_utils.dart';
 import 'package:game_tools_lib/core/utils/locale_extension.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
+import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_app_theme.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
-import 'package:game_tools_lib/presentation/base/gt_overlay_switcher.dart';
 import 'package:game_tools_lib/presentation/base/ui_helper.dart';
+import 'package:game_tools_lib/presentation/overlay/gt_overlay.dart';
 import 'package:game_tools_lib/presentation/pages/home/gt_home_page.dart';
 import 'package:game_tools_lib/presentation/pages/hotkeys/gt_hotkeys_page.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
@@ -21,10 +22,19 @@ import 'package:game_tools_lib/presentation/pages/navigation/gt_navigator.dart';
 import 'package:game_tools_lib/presentation/pages/settings/gt_settings_page.dart';
 import 'package:provider/provider.dart';
 
-// todo: doc comments
-/// The top level widget that builds the app itself with the widget subtree. It provides [UIHelper.configProvider] for
-/// [MutableConfig.currentLocale], [MutableConfig.appColors] and [MutableConfig.useDarkTheme] which can be accessed in
-/// [UIHelper.configConsumer] further down the widget tree!
+/// The top level widget that builds the app itself with the widget subtree and provide some top level important
+/// classes like the following:
+///
+/// This provides [UIHelper.configProvider] for [MutableConfig.currentLocale], [MutableConfig.appColors] and
+/// [MutableConfig.useDarkTheme] which can be accessed in [UIHelper.configConsumer] further down the widget tree!
+///
+/// And this also provides the widgets below with changes if main window focus or open status changed which can be
+/// accessed with a [Consumer] of [GameWindow], but per default only uses the main window! At this point if the
+/// target main game window was open, then this will never build with false and same goes for the focus!
+///
+/// Subclasses of this should mostly be used to return something different in [buildNavigator].
+///
+/// This may also be used to statically access [translate] and [currentLocale].
 base class GTApp extends StatelessWidget {
   /// This may be used to provide additional pages to display as options in the navigation rail of [GTNavigator].
   /// But you can also override [buildNavigator] instead for more options.
@@ -32,14 +42,18 @@ base class GTApp extends StatelessWidget {
 
   const GTApp({required this.additionalNavigatorPages});
 
+  /// Builds the top level [Provider] to be used in the app
   List<ChangeNotifierProvider<dynamic>> buildProvider() {
     return <ChangeNotifierProvider<dynamic>>[
       UIHelper.configProvider(option: _mutableConfig.currentLocale),
       UIHelper.configProvider(option: _mutableConfig.appColors),
       UIHelper.configProvider(option: _mutableConfig.useDarkTheme),
+      ChangeNotifierProvider<GameWindow>.value(value: GameToolsLib.mainGameWindow),
     ];
   }
 
+  /// Builds the [GTNavigator] with the [GTNavigationPage]s: [GTHomePage], [GTSettingsPage], [GTHotkeysPage],
+  /// [additionalNavigatorPages] and can be overridden in sub classes to return more, or fewer!
   Widget buildNavigator(BuildContext context) {
     return GTNavigator(
       pages: <GTNavigationPage>[
@@ -51,15 +65,18 @@ base class GTApp extends StatelessWidget {
     );
   }
 
+  // todo: remove when new flutter multi window api is available
   Widget buildOverlaySwitcher(BuildContext context, Widget navigatorChild) {
-    return GTOverlaySwitcher(navigatorChild: navigatorChild);
+    return GTOverlay(navigatorChild: navigatorChild);
   }
 
+  /// Used in [buildApp] to build the main app part which per default just returns [buildNavigator]
   Widget buildHome(BuildContext context) {
     return buildOverlaySwitcher(context, buildNavigator(context));
   }
 
-  /// Is called from [build] to build the app with the theme config options and then call [buildApp]
+  /// Is called from [build] to build the app with the theme config options (and locale handled above) and then call
+  /// [buildApp]
   Widget buildThemeWithLocale(Locale locale, Widget home) {
     return UIHelper.configConsumer(
       option: _mutableConfig.appColors,
@@ -98,7 +115,7 @@ base class GTApp extends StatelessWidget {
     );
   }
 
-  /// Builds the [MaterialApp] with the home being [buildHome]
+  /// Builds the [MaterialApp] with the home being [buildHome] and called from [buildThemeWithLocale]
   Widget buildApp(BuildContext context, ThemeData theme, Locale locale, Widget home) {
     return MaterialApp(
       title: _baseConfig.appTitle,

@@ -18,6 +18,7 @@ import 'package:provider/provider.dart';
 /// [ModelConfigOption] and [CustomConfigOption] of [MutableConfig.getConfigurableOptions] in [buildBody]'s
 /// [buildGroupLabels]. Then the individual config options on the right part of a page are build with
 /// [buildCurrentGroupOptions] by using the [ConfigOptionBuilder] subclasses!
+//ignore: must_be_immutable
 base class GTSettingsPage extends GTNavigationPage
     with GTGroupedBuildersExtension<MultiConfigOptionBuilder<dynamic>, GTSettingsGroupIndex> {
   /// For the remaining options with no group

@@ -40,9 +40,23 @@ final class TranslationString {
     return TranslationString.raw(buff.toString());
   }
 
-  /// Used for [ValueKey]'s, etc which either returns [key], or the first of [params], or [params] added together
-  /// depending on the constructor used
-  String get identifier => key ?? params!.first;
+  /// Used for [ValueKey]'s, etc which either returns [key] together with params added together if not null, or the
+  /// first of [params], or [params] added together depending on the constructor used
+  String get identifier {
+    if (key != null) {
+      if (params?.isEmpty ?? true) {
+        return key!;
+      } else {
+        final StringBuffer buff = StringBuffer(key!);
+        for (final String param in params!) {
+          buff.write(param);
+        }
+        return buff.toString();
+      }
+    } else {
+      return params!.first;
+    }
+  }
 
   @override
   bool operator ==(Object other) => other is TranslationString && other.identifier == identifier;

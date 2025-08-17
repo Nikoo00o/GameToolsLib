@@ -19,7 +19,10 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// they already trigger when it is pressed/clicked down and not only when its up again!
 ///
 /// This is updated automatically at the end of the event loop of [GameToolsLib]! You can also toggle the listening
-/// of this with [isActive]
+/// of this with [isActive].
+///
+/// For very quick non-async actions that need no event, use [KeyInputListener.instant] and
+/// [MouseInputListener.instant] instead of a [GameEvent] with [GameEventPriority.INSTANT]!
 abstract base class BaseInputListener<DataType> {
   /// If this is empty, then this listener will not get any ui build to be able to modify it! Otherwise it should
   /// display a info label text (or translation key), but it will also be used as the database storage key (for the
@@ -37,8 +40,9 @@ abstract base class BaseInputListener<DataType> {
 
   /// This is the function called internally when this listener is activated to create a new object of any
   /// [GameEvent] subclass (which will then be added to the internal event queue) only if [eventCreateCondition]
-  /// returns true!
-  final GameEvent Function() createEventCallback;
+  /// returns true! If this returns null, then nothing will be added (if conditionally may return null, you should
+  /// always use it together with [alwaysCreateNewEvents] being [true]!)
+  final GameEvent? Function() createEventCallback;
 
   /// If [alwaysCreateNewEvents] is false, then this will cache the [createEventCallback]
   GameEvent? _cachedEvent;
@@ -52,14 +56,16 @@ abstract base class BaseInputListener<DataType> {
 
   /// This is the default hotkey for the input listener used for the internal [_key] if its not saved in storage.
   /// Its used until the first [storeKey] (which may of course also be called in an earlier execution and then loaded
-  /// in [loadKey]) or again after [deleteKey]. Remember storing a key with [null] will also prevent the default from
+  /// in [_loadKey]) or again after [deleteKey]. Remember storing a key with [null] will also prevent the default from
   /// being returned
   final DataType? defaultKey;
 
   /// If the [configLabel] is not empty, then this may also be set to group up multiple input listeners in
   /// config groups by matching the group labels! In the config menu the labels will also be translated.
   /// But this is optional and null by default!
-  final TranslationString? configGroupLabel;
+  ///
+  /// This may also be reassigned / changed on runtime!
+  TranslationString? configGroupLabel;
 
   /// This can be toggled to control if this listener should currently be listening and adding events, or not, per
   /// default it's true!
@@ -105,10 +111,15 @@ abstract base class BaseInputListener<DataType> {
   void _addEvent() {
     if (eventCreateCondition.call()) {
       if (alwaysCreateNewEvents) {
-        GameToolsLib.addEvent(createEventCallback.call());
+        final GameEvent? event = createEventCallback.call();
+        if (event != null) {
+          GameToolsLib.addEvent(event);
+        }
       } else {
         _cachedEvent ??= createEventCallback.call();
-        GameToolsLib.addEvent(_cachedEvent!);
+        if (_cachedEvent != null) {
+          GameToolsLib.addEvent(_cachedEvent!);
+        }
       }
     } else {
       Logger.spamPeriodic(_addSkipLog, "skipped adding new event from ", this);

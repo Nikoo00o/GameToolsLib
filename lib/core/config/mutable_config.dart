@@ -47,6 +47,9 @@ part 'package:game_tools_lib/core/config/mutable_config_option_group.dart';
 /// Look at [getConfigurableOptions] which you can optionally override depending on which config options you want
 /// to be able to be modified in the UI. Those will also be loaded once automatically on startup in
 /// [loadAllConfigurableOptions]. Important: access those from the outside cached with [configurableOptions] instead!
+///
+/// You can also split off config options into [Module]'s instead of using them here in the same way if you want to
+/// group them together.
 base class MutableConfig {
   /// The current [logLevel] of the logger. All logs with a higher value than this will be ignored and only
   /// the more important logs with a lower [LogLevel] will be printed and stored!

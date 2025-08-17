@@ -84,6 +84,7 @@ base class GTNavigator extends GTBasePage {
         ),
         leading: navTopWidget,
         destinations: destinations,
+        scrollable: true,
       ),
     );
   }

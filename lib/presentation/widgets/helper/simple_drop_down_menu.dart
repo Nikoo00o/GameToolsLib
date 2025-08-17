@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 
-/// Used to create a drop down menu for [Type] which is mostly used for enums.
+/// Used to create a drop down menu for the type [T] which is mostly used for enums.
 /// You should provide the [initialValue] value and the list of [values] further up in the widget tree and then you
 /// can receive updates when the value changes with [onValueChange]!
-final class SimpleDropDownMenu<Type> extends StatelessWidget with GTBaseWidget {
+final class SimpleDropDownMenu<T> extends StatelessWidget with GTBaseWidget {
   /// The list of available drop down options
-  final List<Type> values;
+  final List<T> values;
 
   /// The current selected value (should be managed higher up the widget tree)
-  final Type initialValue;
+  final T initialValue;
 
   /// The translation key to display on the menu
   final TranslationString? label;
@@ -31,14 +31,14 @@ final class SimpleDropDownMenu<Type> extends StatelessWidget with GTBaseWidget {
   static const double defaultHeight = 48;
 
   /// Will be called when the user changed something with the drop down menu
-  final void Function(Type? newValue) onValueChange;
+  final void Function(T? newValue) onValueChange;
 
   /// Optional to color the text of the individual entries!
-  final Color Function(Type value)? colourTexts;
+  final Color Function(T value)? colourTexts;
 
   /// Optional to return a matching translation keys for the enum type [value] to display them instead of just
   /// calling toString on them!
-  final TranslationString Function(Type value)? translationKeys;
+  final TranslationString Function(T value)? translationKeys;
 
   const SimpleDropDownMenu({
     super.key,
@@ -55,7 +55,7 @@ final class SimpleDropDownMenu<Type> extends StatelessWidget with GTBaseWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownMenu<Type>(
+    return DropdownMenu<T>(
       inputDecorationTheme: InputDecorationTheme(
         isDense: true,
         contentPadding: EdgeInsets.symmetric(horizontal: horizontalPadding),
@@ -72,11 +72,11 @@ final class SimpleDropDownMenu<Type> extends StatelessWidget with GTBaseWidget {
       requestFocusOnTap: true,
       label: label == null ? null : Text(translate(label!, context)),
       onSelected: onValueChange,
-      dropdownMenuEntries: List<DropdownMenuEntry<Type>>.generate(
+      dropdownMenuEntries: List<DropdownMenuEntry<T>>.generate(
         values.length,
         (int index) {
-          final Type value = values.elementAt(index);
-          return DropdownMenuEntry<Type>(
+          final T value = values.elementAt(index);
+          return DropdownMenuEntry<T>(
             value: value,
             label: translationKeys != null ? translate(translationKeys!.call(value), context) : value.toString(),
             style: colourTexts != null ? MenuItemButton.styleFrom(foregroundColor: colourTexts!.call(value)) : null,

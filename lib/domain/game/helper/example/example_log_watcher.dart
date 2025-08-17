@@ -8,7 +8,7 @@ final class ExampleLogWatcher extends GameLogWatcher {
   ExampleLogWatcher({required super.gameLogFilePaths, required super.listeners});
 
   Future<bool> manualInit() async {
-    final bool result = await super._init();
+    final bool result = await super._init(<LogInputListener>[]);
     if (result == false) {
       return false;
     }

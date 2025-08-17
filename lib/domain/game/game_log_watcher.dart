@@ -13,7 +13,8 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// alternative if you want (for an example you can also look at the [ExampleLogWatcher] that is used for testing.
 ///
 /// You also don't have to decide on listeners in the constructor call and can use [addListener], or [removeListener]
-/// later. If your game does not have a log file, then just use the [GameLogWatcher.empty] constructor.
+/// later. If your game does not have a log file, then just use the [GameLogWatcher.empty] constructor. And you can
+/// optionally also use [Module.getAdditionalInputListener] instead to provide additional log input listeners.
 ///
 /// This is updated automatically at the end of the event loop of [GameToolsLib]!
 base class GameLogWatcher {
@@ -106,7 +107,7 @@ base class GameLogWatcher {
   static GameLogWatcher? _instance;
 
   /// This is called automatically from [GameToolsLib.initGameToolsLib] to initialize this
-  Future<bool> _init() async {
+  Future<bool> _init(List<LogInputListener> additionalListenerFromModules) async {
     if (_gameLogFilePaths == null || _gameLogFilePaths.isEmpty) {
       if (_listeners.isNotEmpty) {
         Logger.error("GameLogWatcher was not given a path to a game log file, but it was given LogInputListener's!");
@@ -130,8 +131,9 @@ base class GameLogWatcher {
       Logger.error("GameLogWatcher can't find a game log file with paths: $_gameLogFilePaths");
     } else {
       final String? path = _file?.absolute.path;
-      Logger.verbose("GameLogWatcher initialized with game log file path: $path and log listeners: $_listeners");
       _listeners.addAll(additionalListeners());
+      _listeners.addAll(additionalListenerFromModules);
+      Logger.verbose("GameLogWatcher initialized with game log file path: $path and log listeners: $_listeners");
     }
     return _file != null;
   }

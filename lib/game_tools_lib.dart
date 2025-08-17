@@ -1,10 +1,11 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
@@ -31,6 +32,7 @@ import 'package:game_tools_lib/domain/game/helper/example/example_state.dart';
 import 'package:game_tools_lib/domain/game/input/log_input_listener.dart';
 import 'package:game_tools_lib/domain/game/states/child_game_state.dart';
 import 'package:game_tools_lib/domain/game/states/game_closed_state.dart';
+import 'package:game_tools_lib/presentation/overlay/gt_overlay.dart';
 import 'package:hive/hive.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:synchronized/synchronized.dart';
@@ -65,6 +67,10 @@ part 'package:game_tools_lib/domain/game/input/key_input_listener.dart';
 
 part 'package:game_tools_lib/domain/game/input/mouse_input_listener.dart';
 
+part 'package:game_tools_lib/domain/game/modules/module.dart';
+
+part 'package:game_tools_lib/domain/game/overlay_manager.dart';
+
 /// This is the main class of the game tools lib and you should call [initGameToolsLib] at the beginning of your
 /// program, then [runLoop] to start the internal update event loop and [close] at the end of it!
 /// The following contains some information on how to use the library:
@@ -72,13 +78,15 @@ part 'package:game_tools_lib/domain/game/input/mouse_input_listener.dart';
 /// Your main interaction point will be the [GameManager] accessed in [gameManager], or [gm] with events to listen to
 /// and getters for all instances of the following.
 ///
-/// To Interact with the input like mouse and keyboard events, look at [InputManager] (only static access).
+/// To Interact with the input like mouse and keyboard events, look at [InputManager] (only static access). Or for
+/// logs from [GameLogWatcher] look at [addLogInputListener] and [removeLogInputListener] (but all of this and also
+/// the stuff from below can of course be used in [Module]'s as well)!
 ///
 /// For Logging use static methods [Logger.error], [Logger.warn], [Logger.info], [Logger.debug], [Logger.verbose].
 /// For other file, or data storage, use [HiveDatabase] with [database].
 ///
 /// Config Values should be saved in a subclass of [GameToolsConfig] and can be used with the correct type in [config].
-/// But you can also access this in [gameManager].
+/// But you can also access this and every other instances from below in [gameManager].
 ///
 /// To Interact with the game window with its bounds and status and also images (see [NativeImage]), look at
 /// [GameWindow] with [mainGameWindow], or [gameWindows] (but you can also access this in [gameManager]).
@@ -87,14 +95,22 @@ part 'package:game_tools_lib/domain/game/input/mouse_input_listener.dart';
 /// [GameManager] for that.
 ///
 /// Same for [GameState]'s with [currentState] and [changeState].
+///
+/// The [GameConfigLoader] can be retrieved with [gameConfigLoader] and the [OverlayManager] with [overlayManager]!
+///
+/// [Module]'s are only available in [GameManager]!
 final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop {
-  /// Sets the [GameToolsConfig.config] at the beginning of the program to your subclass instance [config].
-  ///
-  /// This should be called by the user. Multiple calls will just return true. Read [GameToolsLib] Documentation!
-  ///
   /// This will then block until the game tools lib is initialized and return true as soon as it is running (and
   /// otherwise false if an exception happened). And it will also initialize instances of native window, database,
-  /// etc and also set the first state to [GameClosedState].
+  /// etc and also set the first state to [GameClosedState]. Multiple calls will be ignored and just return true!
+  ///
+  /// It should be the first thing to call in your program (also read the [GameToolsLib] Documentation)!
+  ///
+  /// [config] is your own custom subclass that should be used for the [GameToolsConfig.config] and [gameManager] is
+  /// your own custom subclass that should be used for the [GameManager.gameManager which is your custom entrypoint.
+  ///
+  /// [overlayManager] may optionally be your custom subclass for [OverlayManager.overlayManager] which is your
+  /// interaction point with the overlay UI. Per default this will be an instance of [OverlayManagerBaseType] if null!
   ///
   /// [isCalledFromTesting] should only be set to true in tests to use mock classes instead of the default ones (so
   /// nothing is saved to local storage and is instead kept in memory. and other lib paths are used).
@@ -129,20 +145,27 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   /// For the [BaseInputListener]: [MouseInputListener] and [KeyInputListener], look at [GameManager].
   ///
   /// This will also set some flutter error callbacks internally and call [MutableConfig.loadAllConfigurableOptions]!
+  ///
+  /// Don't initialize anything in the constructor of your sub classes for the parameters and instead use  something
+  /// like [GameManager.onStart] which is called after [GameToolsLib.initGameToolsLib] so that you can also
+  /// access the config, etc during your custom init!
   static Future<bool> initGameToolsLib<CF extends GameToolsConfigBaseType, GM extends GameManagerBaseType>({
     required CF config,
     required GM gameManager,
+    OverlayManagerBaseType? overlayManager,
     CustomLogger? logger,
-    bool isCalledFromTesting = false,
     required List<GameWindow> gameWindows,
-    required GameLogWatcher gameLogWatcher,
+    GameLogWatcher? gameLogWatcher,
     GameConfigLoader? gameConfigLoader,
+    bool isCalledFromTesting = false,
   }) async {
     if (_GameToolsLibHelper._initialized) {
       Logger.verbose("Game Tools Lib is already initialized and not doing it again!");
       return true; // first check if already called
     }
     GameManager._instance = gameManager; // most important first signal that init was started
+    OverlayManager._instance =
+        overlayManager ?? OverlayManagerBaseType(); // also already set overlay manager at the top
     _GameToolsLibHelper._initConfigAndLogger(config, logger, isCalledFromTesting: isCalledFromTesting); // first logger
     Logger.verbose("GameToolsLib.initGameToolsLib... (remember to call GameToolsLib.runLoop afterwards!)");
     if (Platform.isWindows == false) {
@@ -165,36 +188,48 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     if (await _GameToolsLibHelper._initGameSpecificClasses(gameLogWatcher, gameConfigLoader) == false) {
       return false;
     }
-    _GameToolsLibEventLoop._currentState = GameClosedState(); // also set the current state to closed here
-    _GameToolsLibHelper._initialized = true; // now init is done
-    await config.mutable.loadAllConfigurableOptions(); // and lastly load all mutable config options
+    await _GameToolsLibHelper._postInit(); // set state, initialized bool and call onInit for config options(+load)
     Logger.debug(
       "GameToolsLib.initGameToolsLib done with config ${config.runtimeType}, manager "
       "${gameManager.runtimeType}\nand windows $gameWindows",
     );
-    return true; // done (onInit and then start loop at the end)
+    return true; // done (afterwards runLoop is called to call onStart and start the loop)
   }
 
   /// Remember to call [initGameToolsLib] before to initialize this, otherwise a [ConfigException] will be thrown!
   ///
-  /// This will call first [GameManager.onStart], then [GameLogWatcher._handleOldLastLines], start the internal event loop
-  /// and wait and block until [close] is called (by stopping the lib)!
+  /// First this will run the flutter [app], then call [OverlayManager.init] and afterwards [GameManager.onStart], then
+  /// [GameLogWatcher._handleOldLastLines], start the internal event loop  and wait and block until [close] is called
+  /// (by stopping the lib)!
   ///
-  /// [app] can also be null if you don't want any user interface (otherwise it is used with [runApp])
-  static Future<void> runLoop({required Widget? app}) async {
+  /// This should always return true except when [OverlayManager.init] fails!
+  ///
+  /// [app] can also be null if you don't want any user interface (then [runApp] is not called to run the flutter app
+  /// and [OverlayManager.init] is not called, but this method will still return true)
+  static Future<bool> runLoop({required Widget? app}) async {
     if (_GameToolsLibHelper._initialized == false) {
       throw const ConfigException(message: "initGameToolsLib was not called before runLoop");
     }
+    late final bool overlayInit;
     if (app != null) {
       runApp(app);
+      overlayInit = await OverlayManager._instance?.init() ?? false;
     } else {
       Logger.verbose("Displaying no app user interface for GameToolsLib (is this intended?)");
+      overlayInit = true;
     }
-    Logger.spam("calling GameManager.onStart and then GameLogWatcher._handleOldLastLines before starting loop");
+    Logger.spam(
+      "Initialized OverlayManager $overlayInit. Now calling GameManager.onStart and then "
+      "GameLogWatcher._handleOldLastLines before starting the loop",
+    );
     await GameManager._instance!.onStart();
+    for (final ModuleBaseType module in GameManager._instance!.modules) {
+      await module.onStart();
+    }
     await GameLogWatcher._instance!._handleOldLastLines();
     _GameToolsLibHelper._printRunningLog();
     await _GameToolsLibEventLoop._startLoop(baseConfig.fixed.updatesPerSecond);
+    return overlayInit;
   }
 
   /// Should be called at the end of your program (and otherwise is used for testing to cleanup all data)
@@ -211,7 +246,12 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       final GameState gameClosed = GameClosedState();
       await _GameToolsLibEventLoop._currentState?.onStop(gameClosed);
       _GameToolsLibEventLoop._currentState = gameClosed;
-      await GameManager._instance?.onStop();
+      if (GameManager._instance != null) {
+        await GameManager._instance!.onStop();
+        for (final ModuleBaseType module in GameManager._instance!.modules) {
+          await module.onStop();
+        }
+      }
       if (HiveDatabase._instance != null) {
         await database.closeHiveDatabases();
         HiveDatabase._instance = null;
@@ -223,6 +263,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       GameToolsConfig._instance = null;
       _gameWindows = null;
       GameManager._instance = null;
+      OverlayManager._instance = null;
       GameLogWatcher._instance = null;
       GameConfigLoader._instance = null;
       await Logger.waitForLoggingToBeDone(); // print last logs,
@@ -255,6 +296,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     final bool init = await GameToolsLib.initGameToolsLib(
       config: ExampleGameToolsConfig(),
       gameManager: ExampleGameManager(inputListeners: null),
+      overlayManager: OverlayManagerBaseType(),
       isCalledFromTesting: isCalledFromTesting,
       gameWindows: GameToolsLib.createDefaultWindowForInit(windowName),
       gameLogWatcher: GameLogWatcher.empty(),
@@ -300,11 +342,11 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   /// documentation! To remove/delete an event, use [GameEvent.remove]!
   static void addEvent(GameEvent event) => _GameToolsLibEventLoop._addEventInternal(event);
 
-  /// Returns a list of all currently active [GameEvent]s that match the [Type]
-  static List<GameEvent> getEventByType<Type>() {
+  /// Returns a list of all currently active [GameEvent]s that match the [EventType]
+  static List<GameEvent> getEventByType<EventType>() {
     final List<GameEvent> events = <GameEvent>[];
     _GameToolsLibEventLoop._runForAllEvents((GameEvent event) {
-      if (event is Type) {
+      if (event is EventType) {
         events.add(event);
       }
     });
@@ -339,7 +381,12 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     await oldState?.onStop(newState);
     _GameToolsLibEventLoop._currentState = newState;
     await newState.onStart(oldState!);
-    await GameManager._instance?.onStateChange(oldState, newState);
+    if (GameManager._instance != null) {
+      await GameManager._instance!.onStateChange(oldState, newState);
+      for (final ModuleBaseType module in GameManager._instance!.modules) {
+        await module.onStateChange(oldState, newState);
+      }
+    }
     await _GameToolsLibEventLoop._runForAllEventsAsync(
       (GameEvent event) async => event.onStateChange(oldState, newState),
     );
@@ -356,6 +403,9 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
 
   /// Reference to the game config loader if it was used in [initGameToolsLib] (otherwise throws [ConfigException]!)
   static T gameConfigLoader<T extends GameConfigLoader>() => GameConfigLoader.configLoader<T>();
+
+  /// Reference to [OverlayManager.overlayManager] for ui overlay displaying
+  static T overlayManager<T extends OverlayManagerBaseType>() => OverlayManager.overlayManager<T>();
 
   /// Used in [close] to not close this multiple times
   static bool get wasInitStarted => GameManager._instance != null;

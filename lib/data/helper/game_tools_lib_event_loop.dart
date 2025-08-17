@@ -10,6 +10,7 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
   static Future<void>? _managerUpdate;
   static Future<void>? _eventUpdates;
   static final SpamIdentifier _eventLog = SpamIdentifier();
+
   // ignore: unused_field
   static final SpamIdentifier _loopLog = SpamIdentifier();
 
@@ -62,7 +63,13 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
   }
 
   static Future<void> _updateOpen(GameWindow window) async {
-    await GameManager._instance?.onOpenChange(window);
+    await OverlayManager._instance!.onOpenChange(window);
+    if (GameManager._instance != null) {
+      await GameManager._instance!.onOpenChange(window);
+      for (final ModuleBaseType module in GameManager._instance!.modules) {
+        await module.onOpenChange(window);
+      }
+    }
     await _currentState?.onOpenChange(window);
     for (int i = 0; i < _instantEvents.length; ++i) {
       // some might be skipped if added/removed while this is running
@@ -75,7 +82,13 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
   }
 
   static Future<void> _updateFocus(GameWindow window) async {
-    await GameManager._instance?.onFocusChange(window);
+    await OverlayManager._instance!.onFocusChange(window);
+    if (GameManager._instance != null) {
+      await GameManager._instance!.onFocusChange(window);
+      for (final ModuleBaseType module in GameManager._instance!.modules) {
+        await module.onFocusChange(window);
+      }
+    }
     await _currentState?.onFocusChange(window);
     for (int i = 0; i < _instantEvents.length; ++i) {
       // some might be skipped if added/removed while this is running
@@ -90,7 +103,15 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
   /// This is not awaited
   static Future<void> _updateManagerAndState() async {
     try {
-      await GameManager._instance?.onUpdate();
+      await OverlayManager._instance!.onUpdate();
+      if (GameManager._instance != null) {
+        await GameManager._instance!.onUpdate();
+        if (GameManager._instance!._hasModules) {
+          for (final ModuleBaseType module in GameManager._instance!.modules) {
+            await module.onUpdate();
+          }
+        }
+      }
       await Utils.delayMS(1); // needed so that other async tasks may be processed in the meantime
       await _currentState?.onUpdate();
       await Utils.delayMS(1); // needed so that other async tasks may be processed in the meantime
@@ -138,14 +159,21 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
 
   static Future<void> _loopStep() async {
     for (final GameWindow window in GameToolsLib.gameWindows) {
-      if (window.updateOpen()) {
+      final int openStatus = window.updateOpen();
+      if (openStatus > 0) {
         Logger.verbose("Open status change: $window");
         await _updateOpen(window);
       }
       await Utils.delayMS(1); // needed so that other async tasks may be processed in the meantime
-      if (window.updateFocus()) {
-        Logger.verbose("Focus status change: $window");
+      if (openStatus == 2) {
+        // special case, window closed and reset focus, so also call update focus!
+        Logger.verbose("Focus status changed from close: $window");
         await _updateFocus(window);
+      } else {
+        if (window.updateFocus()) {
+          Logger.verbose("Focus status change: $window");
+          await _updateFocus(window);
+        }
       }
     }
     _managerUpdate ??= _updateManagerAndState().whenComplete(() => _managerUpdate = null); // not awaited

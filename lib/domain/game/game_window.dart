@@ -108,16 +108,22 @@ final class GameWindow with ChangeNotifier {
     }
   }
 
-  /// Updates the [isOpen] (needs to search the window handle for it) and returns if the open was different before
-  /// and has changed. This is called periodically in the internal event loop!
-  bool updateOpen() {
+  /// Updates the [isOpen] (needs to search the window handle for it) and returns 1 if the open was different before
+  /// and has changed. Otherwise if nothing changed, this returns 0. This is called periodically in the internal event
+  /// loop!
+  /// If the window had focus and is closed, then this will also update [_hasFocus] and return 2 instead!
+  int updateOpen() {
     final bool oldOpen = _isOpen;
     _isOpen = _nativeWindow.isWindowOpen(_windowID);
     final bool wasChanged = oldOpen != _isOpen;
     if (wasChanged) {
+      if (_isOpen == false && _hasFocus) {
+        _hasFocus = false;
+        return 2;
+      }
       notifyListeners();
     }
-    return wasChanged;
+    return wasChanged ? 1 : 0;
   }
 
   /// Updates the [hasFocus] (needs to search the window handle for it) and returns if the focus was different before

@@ -45,25 +45,6 @@ class _SimpleColorPickerState extends State<SimpleColorPicker> with GTBaseWidget
           onColorChanged: _pickedColor,
           enableAlpha: false,
         ),
-        // Use Material color picker:
-        //
-        // child: MaterialPicker(
-        //   pickerColor: pickerColor,
-        //   onColorChanged: changeColor,
-        //   showLabel: true, // only on portrait mode
-        // ),
-        //
-        // Use Block color picker:
-        //
-        // child: BlockPicker(
-        //   pickerColor: currentColor,
-        //   onColorChanged: changeColor,
-        // ),
-        //
-        // child: MultipleChoiceBlockPicker(
-        //   pickerColors: currentColors,
-        //   onColorsChanged: changeColors,
-        // ),
       ),
       actions: <Widget>[
         ElevatedButton(
@@ -78,7 +59,7 @@ class _SimpleColorPickerState extends State<SimpleColorPicker> with GTBaseWidget
   }
 
   void openDialog(BuildContext context) {
-    showDialog(context: context, builder: buildDialog);
+    showDialog<dynamic>(context: context, builder: buildDialog);
   }
 
   @override

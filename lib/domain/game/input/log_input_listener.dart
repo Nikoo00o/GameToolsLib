@@ -1,3 +1,4 @@
+import 'package:game_tools_lib/core/enums/event/game_event_priority.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 
 /// This is the base class for all listeners of [GameLogWatcher] that react to new game log lines and add new events in
@@ -20,7 +21,7 @@ abstract base class LogInputListener {
   /// same line.
   bool processLine(String line);
 
-  /// Helper method to add a new event to the internal event queue of [GameToolsLib].
+  /// Helper method to add a new event to the internal event queue by just calling [GameToolsLib.addEvent].
   void addEvent(GameEvent event) => GameToolsLib.addEvent(event);
 
   @override
@@ -36,6 +37,9 @@ abstract base class LogInputListener {
 /// [processLine] will always return true here to not call any other listeners and will use the [regex] to match with
 /// what data [createEvent] will be called (the data can also be null if no data from the log is needed). And then it
 /// just adds the event created to the event queue.
+///
+/// For very quick non-async actions that need no event, use [SimpleLogInputListener.instant] instead of a [GameEvent]
+/// with [GameEventPriority.INSTANT]!
 final class SimpleLogInputListener extends LogInputListener {
   /// The internal regular expression that will be matched against the lines. It has a capturing group for each part
   /// (target data, match before, match after)
@@ -78,6 +82,49 @@ final class SimpleLogInputListener extends LogInputListener {
     }
     regex = RegExp(buf.toString());
   }
+
+  /// Similar to the default constructor this will internally build the [regex] as looking for a line that starts with
+  /// [matchBeforeRegex] and ends with [matchAfterRegex]. Then the text in between those will be passed to your
+  /// [createEvent] as the search data! That  regex will then be matched against the lines. If the optional end
+  /// [matchAfterRegex] is null, then it will be ignored at treat the search data as the rest of the line!
+  ///
+  /// Remember to not use any of the following characters in your regex strings: "^", "$", "(", ")" and also dont use
+  /// any ".*" in the direction of your target search data! For an example what to use in your regex, look at the
+  /// docs of [regex] and [createEvent]! And also remember to use a raw string and escape special characters
+  /// like brackets in your regex like for example r"\[te.*st\]"
+  ///
+  /// Here there is no [GameEvent] to be created and instead [quickAction] will be called with your searched data string
+  /// parameter which will be the characters of the line that is between the matched start and end regexes. It may
+  /// also be empty if there is no data needed from the log!
+  /// This should only be used for very quick non-async actions instead of using [GameEvent] with
+  /// [GameEventPriority.INSTANT]!
+  factory SimpleLogInputListener.instant({
+    required String matchBeforeRegex,
+    required String? matchAfterRegex,
+    required void Function(String searchedData) quickAction,
+  }) {
+    GameEvent? createEvent(String searchedData) {
+      Logger.spamPeriodic(
+        _instantLog,
+        "SimpleLogInputListener quick action called with before ",
+        matchBeforeRegex,
+        " after ",
+        matchAfterRegex,
+        " and search data ",
+        searchedData,
+      );
+      quickAction.call(searchedData);
+      return null;
+    }
+
+    return SimpleLogInputListener(
+      matchBeforeRegex: matchBeforeRegex,
+      matchAfterRegex: matchAfterRegex,
+      createEvent: createEvent,
+    );
+  }
+
+  static final SpamIdentifier _instantLog = SpamIdentifier();
 
   @override
   bool matchesLine(String line) => regex.hasMatch(line);

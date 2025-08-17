@@ -138,12 +138,12 @@ abstract base class GameEvent {
   /// Synchronously receives [data] from other events sent from [sendDataToEventsT], or [sendDataToEventsG].
   void onData(dynamic data) {}
 
-  /// Synchronously sends some [data] to all currently active [GameEvent]s that match the [Type] in their [onData]
+  /// Synchronously sends some [data] to all currently active [GameEvent]s that match the [EventType] in their [onData]
   /// callback!
-  void sendDataToEventsT<Type>(dynamic data) {
+  void sendDataToEventsT<EventType>(dynamic data) {
     Logger.spam("Sending data from ", this, " to other events...");
     _GameToolsLibEventLoop._runForAllEvents((GameEvent event) {
-      if (event != this && event is Type) {
+      if (event != this && event is EventType) {
         event.onData(data);
         Logger.spam(event, " received the data");
       }

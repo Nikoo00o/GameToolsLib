@@ -54,53 +54,54 @@ abstract final class UIHelper {
     child: child,
   );
 
-  /// Provides a [SimpleChangeNotifier] of [Type] like the default [ChangeNotifierProvider] to provide the value
+  /// Provides a [SimpleChangeNotifier] of [T] like the default [ChangeNotifierProvider] to provide the value
   /// to [child] further down the widget tree! Of course this can also be used inside of a [MultiProvider].
-  /// You have to create a new object of your [Type] in [createValue] which you can then modify below in the widget
+  /// You have to create a new object of your [T] in [createValue] which you can then modify below in the widget
   /// tree with [modifySimpleValue] (without rebuilding) and also listen to changes of it and rebuild with
   /// [simpleConsumer], or [simpleSelector].
-  static SingleChildWidget simpleProvider<Type>({
-    required Type Function(BuildContext context) createValue,
+  static SingleChildWidget simpleProvider<T>({
+    required T Function(BuildContext context) createValue,
     Key? key,
     Widget? child,
-  }) => ChangeNotifierProvider<SimpleChangeNotifier<Type>>(
-    create: (BuildContext context) => SimpleChangeNotifier<Type>(createValue.call(context)),
+  }) => ChangeNotifierProvider<SimpleChangeNotifier<T>>(
+    create: (BuildContext context) => SimpleChangeNotifier<T>(createValue.call(context)),
     key: key,
     child: child,
   );
 
-  /// This is used to modify a value of [Type] provided with [simpleProvider] higher up in the widget tree.
+  /// This is used to modify a value of [T] provided with [simpleProvider] higher up in the widget tree.
   /// Remember that if you stored a mutable object in [SimpleChangeNotifier.value] that you are changing without
   /// overriding the instance, you have to call [SimpleChangeNotifier.notifyListeners] after all of your changes!
   ///
   /// (you could also listen for changes if you set [listen] to true and you are not inside of a button callback,
   /// etc, but instead in a build method)
-  static SimpleChangeNotifier<Type> modifySimpleValue<Type>(BuildContext context, {bool listen = false}) =>
+  static SimpleChangeNotifier<T> modifySimpleValue<T>(BuildContext context, {bool listen = false}) =>
       Provider.of(context, listen: listen);
 
-  /// This is used to listen to changes from a value of [Type] provided higher up the widget tree with
+  /// This is used to listen to changes from a value of [T] provided higher up the widget tree with
   /// [simpleProvider], but the [child] is build outside for performance reason! Uses a [Consumer] widget.
-  static Widget simpleConsumer<Type>({
+  static Widget simpleConsumer<T>({
     Key? key,
-    required Widget Function(BuildContext context, Type value, Widget? child) builder,
+    required Widget Function(BuildContext context, T value, Widget? child) builder,
     Widget? child,
-  }) => Consumer<SimpleChangeNotifier<Type>>(
+  }) => Consumer<SimpleChangeNotifier<T>>(
     key: key,
-    builder: (BuildContext context, SimpleChangeNotifier<Type> value, Widget? child) =>
+    builder: (BuildContext context, SimpleChangeNotifier<T> value, Widget? child) =>
         builder.call(context, value.value, child),
     child: child,
   );
 
   /// This is similar to [simpleConsumer], but for performance reasons it can select a member of [MemberType] from
-  /// the value [Type] and only rebuild when that exact member changes and that member has to be filtered with
+  /// the value [ValueType] and only rebuild when that exact member changes and that member has to be filtered with
   /// [getMemberFromValue]. Uses a [Selector] widget.
-  static Widget simpleSelector<Type, MemberType>({
+  static Widget simpleSelector<ValueType, MemberType>({
     Key? key,
-    required MemberType Function(BuildContext context, Type value) getMemberFromValue,
+    required MemberType Function(BuildContext context, ValueType value) getMemberFromValue,
     required Widget Function(BuildContext context, MemberType value, Widget? child) builder,
     Widget? child,
-  }) => Selector<SimpleChangeNotifier<Type>, MemberType>(
-    selector: (BuildContext context, SimpleChangeNotifier<Type> value) => getMemberFromValue.call(context, value.value),
+  }) => Selector<SimpleChangeNotifier<ValueType>, MemberType>(
+    selector: (BuildContext context, SimpleChangeNotifier<ValueType> value) =>
+        getMemberFromValue.call(context, value.value),
     key: key,
     builder: builder,
     child: child,
