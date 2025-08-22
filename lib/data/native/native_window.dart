@@ -251,7 +251,7 @@ final class NativeWindow {
         _api ??= FFILoader.api;
         fun = _api!.lookupFunction<versionFuncN, versionFuncD>("nativeCodeVersion");
       } catch (e, s) {
-        Logger.warn("initNativeWindow fail details:", e, s);
+        Logger.warn("initNativeWindow fail details", e, s);
         return false;
       }
       final int version = fun.call();

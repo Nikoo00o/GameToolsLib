@@ -99,7 +99,7 @@ base class GameConfigLoader {
       }
       return BoardKey.fromLogicalKeys(keys);
     } catch (e) {
-      Logger.warn("Could not parse config hotkey from $key: $e");
+      Logger.warn("Could not parse config hotkey from $key", e);
       return null;
     }
   }

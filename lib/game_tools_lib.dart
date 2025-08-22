@@ -32,6 +32,7 @@ import 'package:game_tools_lib/domain/game/helper/example/example_state.dart';
 import 'package:game_tools_lib/domain/game/input/log_input_listener.dart';
 import 'package:game_tools_lib/domain/game/states/child_game_state.dart';
 import 'package:game_tools_lib/domain/game/states/game_closed_state.dart';
+import 'package:game_tools_lib/domain/game/web_manager.dart';
 import 'package:game_tools_lib/presentation/overlay/gt_overlay.dart';
 import 'package:hive/hive.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -98,6 +99,8 @@ part 'package:game_tools_lib/domain/game/overlay_manager.dart';
 ///
 /// The [GameConfigLoader] can be retrieved with [gameConfigLoader] and the [OverlayManager] with [overlayManager]!
 ///
+/// The [WebManager] for http requests can be retrieved with [webManager].
+///
 /// [Module]'s are only available in [GameManager]!
 final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop {
   /// This will then block until the game tools lib is initialized and return true as soon as it is running (and
@@ -134,13 +137,17 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   /// extending [CustomLogger].[GameState] and [GameEvent] are mostly accessed with general types, so you would have
   /// to always cast them to your sub types.
   ///
-  /// [gameLogWatcher] can be your custom subclass of [GameLogWatcher], or the default with your configuration related
-  /// to the game log file, look at its documentation for more info! ([GameLogWatcher._init] will be called here and).
-  /// In addition to the listeners in the constructor, you can also use [addLogInputListener], or
-  /// [removeLogInputListener] later on. There you add your [LogInputListener] subclass objects.
+  /// [gameLogWatcher] can be your custom subclass of [GameLogWatcher], or just use the base class with your
+  /// configuration related to the game log file! (if null, then [GameLogWatcher.empty] will be used. look at its
+  /// documentation for more info (and [GameLogWatcher._init] will be called here). In addition to the listeners in the
+  /// constructor, you can also use [addLogInputListener], or [removeLogInputListener] later on. There you add your
+  /// [LogInputListener] subclass objects.
   ///
   /// [gameConfigLoader] can optionally be your custom subclass of [GameConfigLoader] (default null) which can be
   /// used to access the config file of the game itself with [GameToolsLib.gameConfigLoader].
+  ///
+  /// [webManager] can optionally be your custom sub class of [WebManager] which can be used to send http requests.
+  /// Per default if this is null, a default instance will be created!
   ///
   /// For the [BaseInputListener]: [MouseInputListener] and [KeyInputListener], look at [GameManager].
   ///
@@ -157,6 +164,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     required List<GameWindow> gameWindows,
     GameLogWatcher? gameLogWatcher,
     GameConfigLoader? gameConfigLoader,
+    WebManager? webManager,
     bool isCalledFromTesting = false,
   }) async {
     if (_GameToolsLibHelper._initialized) {
@@ -164,8 +172,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       return true; // first check if already called
     }
     GameManager._instance = gameManager; // most important first signal that init was started
-    OverlayManager._instance =
-        overlayManager ?? OverlayManagerBaseType(); // also already set overlay manager at the top
+    OverlayManager._instance = overlayManager ?? OverlayManagerBaseType(); // also already set overlay manager at top
     _GameToolsLibHelper._initConfigAndLogger(config, logger, isCalledFromTesting: isCalledFromTesting); // first logger
     Logger.verbose("GameToolsLib.initGameToolsLib... (remember to call GameToolsLib.runLoop afterwards!)");
     if (Platform.isWindows == false) {
@@ -188,6 +195,8 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     if (await _GameToolsLibHelper._initGameSpecificClasses(gameLogWatcher, gameConfigLoader) == false) {
       return false;
     }
+    WebManager.instance = webManager ?? WebManager();
+    await WebManager.instance!.init();
     await _GameToolsLibHelper._postInit(); // set state, initialized bool and call onInit for config options(+load)
     Logger.debug(
       "GameToolsLib.initGameToolsLib done with config ${config.runtimeType}, manager "
@@ -266,11 +275,13 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       OverlayManager._instance = null;
       GameLogWatcher._instance = null;
       GameConfigLoader._instance = null;
+      await WebManager.instance?.dispose();
+      WebManager.instance = null;
       await Logger.waitForLoggingToBeDone(); // print last logs,
       Logger._instance = StartupLogger(); // reset logger to startup
       _GameToolsLibHelper._initialized = false; // cleanup done
     } catch (e, s) {
-      await StartupLogger().log("Error closing Game Tools Lib", LogLevel.ERROR, e, s);
+      await StartupLogger().log("Error closing GameToolsLib", LogLevel.ERROR, e, s);
     }
   }
 
@@ -406,6 +417,9 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
 
   /// Reference to [OverlayManager.overlayManager] for ui overlay displaying
   static T overlayManager<T extends OverlayManagerBaseType>() => OverlayManager.overlayManager<T>();
+
+  /// Reference to [WebManager.webManager] for sending http requests
+  static T webManager<T extends WebManager>() => WebManager.webManager<T>();
 
   /// Used in [close] to not close this multiple times
   static bool get wasInitStarted => GameManager._instance != null;

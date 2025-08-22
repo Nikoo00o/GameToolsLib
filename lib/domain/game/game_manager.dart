@@ -21,6 +21,8 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// You can also optionally retrieve the config values of the game directly with your custom sub class of
 /// [GameConfigLoader] in [gameConfigLoader]! Same with the [OverlayManager] in [overlayManager] for ui stuff!
 ///
+/// The [WebManager] for http requests can be retrieved with [webManager].
+///
 /// And in the same way you can manage your [BaseInputListener] like [MouseInputListener] and [KeyInputListener] in
 /// the constructor, but also in [addInputListener] and [removeInputListener]. (can also optionally be added in
 /// [Module.getAdditionalInputListener] instead).
@@ -174,7 +176,10 @@ abstract base class GameManager<ConfigType extends GameToolsConfigBaseType> {
   T gameConfigLoader<T extends GameConfigLoader>() => GameToolsLib.gameConfigLoader<T>();
 
   /// Reference to [OverlayManager.overlayManager] for ui overlay displaying
-  static T overlayManager<T extends OverlayManagerBaseType>() => GameToolsLib.overlayManager<T>();
+  T overlayManager<T extends OverlayManagerBaseType>() => GameToolsLib.overlayManager<T>();
+
+  /// Reference to [WebManager.webManager] for sending http requests
+  T webManager<T extends WebManager>() => GameToolsLib.webManager<T>();
 
   /// Used to retrieve the module with the name [moduleName] of the [moduleConfiguration], or return null if that
   /// module was not found!

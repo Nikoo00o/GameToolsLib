@@ -41,7 +41,7 @@ abstract final class FFILoader {
               "You have to Build the Native library manually at put it at $path (or just move "
               "the dll from starting an application like the example project there)",
         );
-        Logger.error("FFILoader apiPath Error:", exception, StackTrace.current);
+        Logger.error("FFILoader apiPath Error", exception, StackTrace.current);
         throw exception;
       }
     }

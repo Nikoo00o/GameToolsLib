@@ -162,7 +162,7 @@ base class GameLogWatcher {
         return true;
       }
     } catch (e, s) {
-      Logger.error("Error processing log line ", e, s);
+      Logger.error("Error processing log line", e, s);
       return true;
     }
   }

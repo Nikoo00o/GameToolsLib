@@ -4,24 +4,27 @@ publish_to: 'none'
 version: 1.0.0
 
 environment:
-  sdk: '>=3.8.0 <4.0.0'
-  flutter: ^3.32.0
+  sdk: '>=3.9.0 <4.0.0'
+  flutter: ^3.35.0
 
 dependencies:
   flutter:
     sdk: flutter
+  intl: any # dates
   cupertino_icons: ^1.0.8 # default icons
   ffi: 2.1.4 # native c/c++ code
-  plugin_platform_interface: 2.0.2 # platform interface not needed currently
-  opencv_dart: 1.4.2+1 # image processing (IMPORTANT: when updating, rebuild libs in "build/test" folder!)
-  synchronized: 3.4.0 # logging
-  hive: 2.2.3 # database
-  path: ^1.9.1 # files
-  intl: ^0.20.2 # dates
+  plugin_platform_interface: ^2.1.4 # plugin platform interface (not needed currently, maybe later for overlay)
   collection: ^1.19.1
   equatable: 2.0.7 # for entities
-  provider: ^6.1.5
-  flutter_colorpicker: 1.1.0
+  path: ^1.9.1 # files
+  provider: ^6.1.5 # provider/consumer
+  synchronized: 3.4.0 # logging
+  package_info_plus: 8.3.1 # get version for auto update
+  hive: 2.2.3 # database
+  http: ^1.5.0 # web manager
+  opencv_dart: 1.4.2+1 # image processing (IMPORTANT: when updating, rebuild libs in "build/test" folder!)
+  flutter_colorpicker: 1.1.0 # color pick dialog
+  archive: 4.0.7 # extract zip after download
 
   flutter_localizations:
     sdk: flutter
@@ -31,7 +34,7 @@ dev_dependencies:
     sdk: flutter
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true

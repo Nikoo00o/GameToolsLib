@@ -50,7 +50,7 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
       try {
         await _loopStep();
       } catch (e, s) {
-        Logger.error("Error Game Tools Lib Loop: ", e, s);
+        Logger.error("GameToolsLib.Loop", e, s);
       }
       final int loopEndTime = DateTime.now().millisecondsSinceEpoch;
       final int timeSpent = loopEndTime - loopStartTime;
@@ -116,7 +116,7 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
       await _currentState?.onUpdate();
       await Utils.delayMS(1); // needed so that other async tasks may be processed in the meantime
     } catch (e, s) {
-      Logger.error("Error Game Tools Lib Updating Manager And State: ", e, s);
+      Logger.error("GameToolsLib.StateManager", e, s);
     }
   }
 
@@ -143,7 +143,7 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
       }
       await Utils.delayMS(1); // needed so that other async tasks may be processed in the meantime
     } catch (e, s) {
-      Logger.error("Error Game Tools Lib Updating Events: ", e, s);
+      Logger.error("GameToolsLib.Events", e, s);
     }
   }
 

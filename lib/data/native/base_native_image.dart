@@ -259,7 +259,7 @@ sealed class BaseNativeImage {
       try {
         _nativeWindow.cleanupMemory(nativeData);
       } catch (e, s) {
-        Logger.warn("Failed $logMessage $l2 $l3 $l4 $l5 $l6: ", e, s); // never throw here
+        Logger.warn("Failed $logMessage $l2 $l3 $l4 $l5 $l6", e, s); // never throw here
       }
     }
   }

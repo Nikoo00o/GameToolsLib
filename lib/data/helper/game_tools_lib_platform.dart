@@ -85,7 +85,7 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
               "and copy it the same way as you did with the ${FileUtils.getFileName(FFILoader.apiPath)}\n"
               "But you also have to copy all lib dependencies required by OpenCV there ($_openCvDeps)";
           final TestException exception = TestException(message: msg);
-          Logger.error("Init Native Code Error:", exception, StackTrace.current);
+          Logger.error("Init Native Code Error", exception, StackTrace.current);
           throw exception;
         } else {
           Logger.debug("Loading OpenCV for testing from $openCVPath");
@@ -97,7 +97,7 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
           } catch (_) {
             final String msg = "The OpenCV lib dependencies are missing from ${Directory.current.path}: $_openCvDeps";
             final TestException exception = TestException(message: msg);
-            Logger.error("Init Native Code Error:", exception, StackTrace.current);
+            Logger.error("Init Native Code Error", exception, StackTrace.current);
             throw exception; // throw more precise exception here
           } finally {
             Directory.current = old; // always only reset directory here

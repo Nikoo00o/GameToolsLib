@@ -1,4 +1,5 @@
 import 'package:game_tools_lib/data/native/native_image.dart';
+import 'package:game_tools_lib/domain/game/web_manager.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 
 /// The base Exception class which holds a message to display
@@ -6,7 +7,7 @@ abstract base class BaseException implements Exception {
   /// Error Description
   final String? message;
 
-  /// Optional message parameter for the [message] printed in another line
+  /// Optional message parameter for the [message] printed in another line like for example stacktrace, etc
   final List<Object>? messageParams;
 
   const BaseException({required this.message, this.messageParams = const <Object>[]});
@@ -53,4 +54,24 @@ final class TestException extends BaseException {
 /// Different use cases for [GameState]
 final class StateException extends BaseException {
   const StateException({required super.message, super.messageParams});
+}
+
+/// Http errors in [WebManager]
+final class WebException extends BaseException {
+  /// The http status code which may represent different errors.
+  ///
+  /// In case of an unknown exception, this will be -1 (see [WebException.unknown])
+  ///
+  /// Errors while sending (like a timeout) would return -2 (see [WebException.timeout])
+  ///
+  /// And JSON parsing would return a status code -3 (see [WebException.json])
+  final int statusCode;
+
+  const WebException({required super.message, super.messageParams, required this.statusCode});
+
+  const WebException.unknown({required super.message, super.messageParams}) : statusCode = -1;
+
+  const WebException.timeout({required super.message, super.messageParams}) : statusCode = -2;
+
+  const WebException.json({required super.message, super.messageParams}) : statusCode = -1;
 }
