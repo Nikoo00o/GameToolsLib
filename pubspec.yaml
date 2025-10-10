@@ -20,6 +20,7 @@ dependencies:
   provider: ^6.1.5 # provider/consumer
   synchronized: 3.4.0 # logging
   package_info_plus: 8.3.1 # get version for auto update
+  url_launcher: 6.3.2 # open download link
   hive: 2.2.3 # database
   http: ^1.5.0 # web manager
   opencv_dart: 1.4.2+1 # image processing (IMPORTANT: when updating, rebuild libs in "build/test" folder!)

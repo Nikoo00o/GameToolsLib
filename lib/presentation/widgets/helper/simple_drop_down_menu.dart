@@ -70,7 +70,7 @@ final class SimpleDropDownMenu<T> extends StatelessWidget with GTBaseWidget {
       ),
       initialSelection: initialValue,
       requestFocusOnTap: true,
-      label: label == null ? null : Text(translate(label!, context)),
+      label: label == null ? null : Text(label!.tl(context)),
       onSelected: onValueChange,
       dropdownMenuEntries: List<DropdownMenuEntry<T>>.generate(
         values.length,
@@ -78,7 +78,7 @@ final class SimpleDropDownMenu<T> extends StatelessWidget with GTBaseWidget {
           final T value = values.elementAt(index);
           return DropdownMenuEntry<T>(
             value: value,
-            label: translationKeys != null ? translate(translationKeys!.call(value), context) : value.toString(),
+            label: translationKeys != null ? translationKeys!.call(value).tl(context) : value.toString(),
             style: colourTexts != null ? MenuItemButton.styleFrom(foregroundColor: colourTexts!.call(value)) : null,
           );
         },

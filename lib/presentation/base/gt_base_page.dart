@@ -117,7 +117,7 @@ abstract base class GTBasePage extends StatelessWidget with GTBaseWidget {
       leading: buildBackButton ? const BackButton() : null,
       backgroundColor: colorSurfaceContainer(context),
       title: Text(
-        "${GameToolsConfig.baseConfig.appTitle} - ${translate(title, context)}",
+        "${GameToolsConfig.baseConfig.appTitle} - ${title.tl(context)}",
         style: textTitleLarge(context).copyWith(fontWeight: FontWeight.bold),
       ),
       centerTitle: false,

@@ -123,6 +123,8 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   /// If you only know the [GameWindow.name] later, then you can use [GameWindow.rename] at any point!
   ///
   /// You can optionally also use your own logger subclass and override the logging methods for [logger].
+  /// IMPORTANT: remember that you have to include all of your sensitive data strings of your application in the
+  /// constructor in [CustomLogger.sensitiveDataToRemove] so that they wont get logged to storage!
   ///
   /// For unknown dynamic errors, this just returns [false], but for known avoidable config errors, this can also
   /// throw a [ConfigException] (for example if you manually set a config instance before calling this, or if
@@ -217,6 +219,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   /// and [OverlayManager.init] is not called, but this method will still return true)
   static Future<bool> runLoop({required Widget? app}) async {
     if (_GameToolsLibHelper._initialized == false) {
+      Logger.error("initGameToolsLib was not called before runLoop!");
       throw const ConfigException(message: "initGameToolsLib was not called before runLoop");
     }
     late final bool overlayInit;

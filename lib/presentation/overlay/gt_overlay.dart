@@ -15,7 +15,7 @@ import 'package:provider/provider.dart';
 /// Of course also look at the state [GTOverlayState] for this! You need sub classes for both if you want some custom
 /// functionality.
 base class GTOverlay extends StatefulWidget {
-  // todo: this has to be used inside of a different window of the app and the navigatorchild has to be removed!
+  // todo: MULTI-WINDOW IN THE FUTURE: no longer used, because instead a separate window is used
   /// The [GTNavigator] which contains the different pages of the main ui of the app
   final Widget navigatorChild;
 
@@ -57,6 +57,8 @@ base class GTOverlayState extends State<GTOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    // todo: den log wo anders hin moven, da hier nur je nach overlay state changes rebuilded werden sollte? aber
+    //  provided ja window für den rest, also doch ggf einfach lassen?
     return MultiProvider(
       providers: _buildProvider(),
       child: Consumer<GameWindow>(

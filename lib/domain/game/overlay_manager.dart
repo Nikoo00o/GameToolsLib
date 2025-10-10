@@ -13,8 +13,7 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
   /// in here, because the second window is not open at this point!
   @mustCallSuper
   Future<bool> init() async {
-    // todo: create second window with new flutter api. maybe also maximise and hide transparent, etc instead of in
-    // onCreate below?
+    // todo: MULTI-WINDOW IN THE FUTURE: create second overlay window (could also init here instead of in onCreate)
     return true;
   }
 
@@ -28,7 +27,7 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
   @mustCallSuper
   void onCreate(BuildContext context) {
     Logger.info("test create");
-    // todo: switch to overlay mode for this window by calling maximise and hide transparent, etc
+    // todo: MULTI-WINDOW IN THE FUTURE: maximise and hide transparent overlay window (or is it started that way?)
   }
 
   /// This is called once when the ui closes when the [GTOverlayState] for the [GTOverlay] widget is disposed in
@@ -78,6 +77,8 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
     FutureOr<void> Function(BuildContext? context) callback, [
     Duration delay = Duration.zero,
   ]) async {
+    // todo: MULTI-WINDOW IN THE FUTURE: should be executed on overlay window
+    // maybe also show toast then for overlay window? (needs scaffold and cant be used on big app)
     if (delay > Duration.zero) {
       await Future<void>.delayed(delay);
     }

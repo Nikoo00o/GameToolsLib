@@ -29,7 +29,7 @@ base class HotkeyGroupBuilder with GTBaseWidget implements GTGroupBuilderInterfa
       padding: const EdgeInsets.symmetric(vertical: 4),
       icon: const Icon(Icons.keyboard_arrow_right),
       selectedIcon: const Icon(Icons.keyboard_double_arrow_right),
-      label: Text(translate(groupLabel, context)),
+      label: Text(groupLabel.tl(context)),
     );
   }
 
@@ -109,7 +109,7 @@ base class HotkeyGroupBuilder with GTBaseWidget implements GTGroupBuilderInterfa
     BuildContext context,
     BaseInputListener<dynamic> listener,
     String upperCaseSearchString,
-  ) => translate(listener.configLabel, context).toUpperCase().contains(upperCaseSearchString);
+  ) => listener.configLabel.tl(context).toUpperCase().contains(upperCaseSearchString);
 
   @override
   bool containsSearch(BuildContext context, String upperCaseSearchString) {

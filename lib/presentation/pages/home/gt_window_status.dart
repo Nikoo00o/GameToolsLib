@@ -15,7 +15,7 @@ class GTWindowStatus extends StatelessWidget with GTBaseWidget {
       builder: (BuildContext context, GameWindow window, Widget? child) {
         return Column(
           children: <Widget>[
-            Text(translate(const TS("page.home.window.status"), context)),
+            Text(const TS("page.home.window.status").tl(context)),
             const SizedBox(height: 2),
             Text(
               window.name,
@@ -42,7 +42,7 @@ class GTWindowStatus extends StatelessWidget with GTBaseWidget {
         Icon(active ? Icons.check_box : Icons.close, color: active ? colorSuccess(context) : colorError(context)),
         const SizedBox(height: 2),
         Text(
-          translate(TS(translationKey), context),
+          TS(translationKey).tl(context),
           style: textLabelSmall(context),
         ),
       ],

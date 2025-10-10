@@ -6,6 +6,7 @@ import 'package:archive/archive_io.dart';
 import 'package:flutter/foundation.dart' show protected, mustCallSuper;
 import 'package:game_tools_lib/core/enums/http_method.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
+import 'package:game_tools_lib/core/logger/custom_logger.dart';
 import 'package:game_tools_lib/domain/entities/web_response.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:http/http.dart' as http;
@@ -19,6 +20,11 @@ import 'package:path/path.dart' show dirname;
 /// You can always modify general headers and cookies with [baseHeaders] and [baseCookies] in the [webManager]!
 ///
 /// Subclasses may also override [defaultRetryDelay]!
+///
+/// Important: if your requests contain sensitive data, remember to add them in [GameToolsLib.initGameToolsLib] to your
+/// [CustomLogger.sensitiveDataToRemove]!
+///
+///
 base class WebManager {
   /// The http client that is only used internally for the communication (don't use this directly!)
   @protected
@@ -139,7 +145,7 @@ base class WebManager {
       status = response.statusCode;
     }
     if (status >= 400 && status < 600) {
-      throw WebException(message: "HTTP.$status", statusCode: status);
+      throw WebException(message: "HTTP.$status for $query", statusCode: status);
     }
     return response;
   }
@@ -157,6 +163,7 @@ base class WebManager {
     logBuffer.write(" with ");
     logBuffer.write(headers);
     Logger.verbose("Sending http request $logBuffer...");
+    Logger.spam("And body data ", data);
     try {
       final http.Response response = switch (httpMethod) {
         HttpMethod.GET => await client.get(query, headers: headers),
@@ -201,7 +208,7 @@ base class WebManager {
     }
     final _Retry retry = _pendingRetries[hostName]!;
     final int myId = retry.addRequest(retryDelay);
-    Logger.spam("Retrying request ", myId, " with ", query, " after ", retryDelay, "...");
+    Logger.spam("Retrying request ", myId, " to ", query, " after ", retryDelay, "...");
     while (true) {
       if (retry.canRetry(myId)) {
         break;
@@ -209,7 +216,7 @@ base class WebManager {
       await Future<void>.delayed(const Duration(milliseconds: 50));
     }
     try {
-      Logger.spam("Sending request ", myId, " again with ", query);
+      Logger.spam("Sending request ", myId, " again to ", query);
       await retryCallback.call();
     } finally {
       retry.moveToNext();
@@ -264,6 +271,8 @@ base class WebManager {
   /// Tries to download the bytes of [url] into a file at [destination] and return true if the file would not be empty.
   ///
   /// Optionally [extractArchive] can be true to directly unpack a downloaded archive.
+  ///
+  /// Important, this is not using the retry mechanic which is used in every other request!
   Future<bool> downloadFile(Uri url, String destination, {bool extractArchive = false}) async {
     try {
       Logger.verbose("Downloading file from $url to $destination...");
@@ -455,7 +464,8 @@ base class WebManager {
     }
   }
 
-  /// Concrete instance of this controlled by [GameToolsLib]
+  /// Concrete instance of this controlled by [GameToolsLib].
+  /// Don't access this directly and use [webManager] instead!
   static WebManager? instance;
 }
 

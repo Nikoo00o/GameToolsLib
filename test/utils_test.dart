@@ -7,6 +7,7 @@ import 'dart:ui' show Color;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:game_tools_lib/core/encoding/utf16.dart';
+import 'package:game_tools_lib/core/logger/log_message.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 
 import 'helper/test_helper.dart';
@@ -22,6 +23,7 @@ Future<void> main() async {
       "General Utils": _testGeneral,
       "File Utils": _testFiles,
       "Num Utils": _testNum,
+      "String Utils": _testString,
     },
   );
 }
@@ -265,5 +267,28 @@ void _testNum() {
     expect(was1 && was2 && !was3 && !was0, true, reason: "rand should only produce number range");
     expect(NumUtils.gcd(48, 57), 3, reason: "test gcd");
     expect(NumUtils.gcd(148, 157), 1, reason: "also test gcd 1");
+  });
+}
+
+void _testString() {
+  testD("sensitive data conversion", () async {
+    final List<String> sensitive = <String>["pass1: ", "pass2:"];
+    String logMsg = "pass1: 123, pass2:141 pass3: 101";
+    String shouldBeOutput = "pass1: **** pass2:*** pass3: 101";
+    StringBuffer output = StringBuffer();
+    LogMessage.writeSensitiveMessage(output, logMsg, sensitive);
+    expect(output.toString(), shouldBeOutput, reason: "black out correctly");
+
+    logMsg = "pass1: pass2:141 pass3: 101";
+    shouldBeOutput = "pass1: ********* pass3: 101";
+    output = StringBuffer();
+    LogMessage.writeSensitiveMessage(output, logMsg, sensitive);
+    expect(output.toString(), shouldBeOutput, reason: "also black out nested");
+
+    logMsg = "pass1: 102030405060\npass2:123456";
+    shouldBeOutput = "pass1: ************\npass2:******";
+    output = StringBuffer();
+    LogMessage.writeSensitiveMessage(output, logMsg, sensitive);
+    expect(output.toString(), shouldBeOutput, reason: "also black out end and new line");
   });
 }

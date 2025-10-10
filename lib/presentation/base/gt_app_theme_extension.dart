@@ -7,6 +7,8 @@ import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 ///
 /// [success] is used to display some success status in the app (most of the time this would be [Colors.green]
 /// except for when the theme itself is green!
+///
+/// The custom [additionalColors] will have TranslationStrings "color.custom.n" (1 to ...) in the config UI!
 final class GTAppThemeExtension extends ThemeExtension<GTAppThemeExtension> {
   /// Custom color used for success indicators.
   /// With dark theme color tone 80 and with light 40 of [GTAppTheme.baseSuccessColor]
@@ -107,7 +109,7 @@ final class GTAppThemeExtension extends ThemeExtension<GTAppThemeExtension> {
 }
 
 /// Used for [GTAppThemeExtension] to group the different tones of the additional custom colors together with
-/// [normal], [onNormal], [container], [onContainer], [fixed], [onFixed], [fixedDim], [onFixedVariant]
+/// [normal], [onNormal], [container], [onContainer], [fixed], [onFixed], [fixedDim], [onFixedVariant].
 final class ColorGroup {
   /// Custom color used for success indicators.
   /// With dark theme color tone 80 and with light 40 of [GTAppTheme.baseAdditionalColors]

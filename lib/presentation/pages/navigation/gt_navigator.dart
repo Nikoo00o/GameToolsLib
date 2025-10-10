@@ -64,7 +64,7 @@ base class GTNavigator extends GTBasePage {
           padding: const EdgeInsets.symmetric(vertical: 4),
           icon: Icon(page.navigationNotSelectedIcon),
           selectedIcon: Icon(page.navigationSelectedIcon),
-          label: Text(translate(page.navigationLabel, context)),
+          label: Text(page.navigationLabel.tl(context)),
         );
       },
     ).toList();

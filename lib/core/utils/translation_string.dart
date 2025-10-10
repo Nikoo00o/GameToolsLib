@@ -14,6 +14,8 @@ typedef TS = TranslationString;
 ///
 /// And there is another special constructor [TranslationString.combine] if you want to directly translate and
 /// combine translation strings together! Or [TranslationString.empty].
+///
+/// To get the translated text, use [tl]
 final class TranslationString {
   /// The key which will be matched to the translated text of the translation files
   final String? key;
@@ -32,6 +34,8 @@ final class TranslationString {
   const TranslationString.empty() : key = "", params = null;
 
   /// Special case to directly translate and combine the [strings] by using the [TranslationString.raw] constructor!
+  ///
+  /// To directly translate, use [combineS] instead!
   factory TranslationString.combine(List<TranslationString> strings, BuildContext context) {
     final StringBuffer buff = StringBuffer();
     for (final TranslationString string in strings) {
@@ -39,6 +43,14 @@ final class TranslationString {
     }
     return TranslationString.raw(buff.toString());
   }
+
+  /// Special version of [TranslationString.combine] which also directly translates this into a string!
+  static String combineS(List<TranslationString> strings, BuildContext context) =>
+      TS.combine(strings, context).identifier;
+
+  /// Returns the translated text.
+  /// Look at doc comments of [GTBaseWidget.translateS], this is just a shortcut syntax to call it.
+  String tl(BuildContext context) => GTBaseWidget.translateS(this, context);
 
   /// Used for [ValueKey]'s, etc which either returns [key] together with params added together if not null, or the
   /// first of [params], or [params] added together depending on the constructor used

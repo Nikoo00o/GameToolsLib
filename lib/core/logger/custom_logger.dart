@@ -12,11 +12,27 @@ import 'package:intl/intl.dart' show DateFormat;
 /// Your own logger classes can extend this.
 ///
 /// This will also provide the option to listen to new logs from the ui with [SimpleChangeStream].
+///
+/// Very important: look at [sensitiveDataToRemove] so that sensitive data will not be stored to a file!!
 base class CustomLogger extends Logger with SimpleChangeStream<List<LogMessage>> {
   /// Will always remove 10% of the latest logs
   static int maxLogsToKeepForUI = 1000;
 
-  CustomLogger() {
+  /// A list of strings that may appear in logs before sensitive data which will be removed when logging to storage.
+  ///
+  /// Used in [logToStorage] with [LogMessage.getSensitiveString].
+  ///
+  /// It removes all occurrences of exactly each element of [sensitiveDataToRemove] until the next special character
+  /// like " " space or "\n" line break by adding "*" for each character after the element of [sensitiveDataToRemove].
+  ///
+  /// Important: if your sensitive data is separated with a space " " from your string of [sensitiveDataToRemove] then
+  /// you have to include that space of course inside of your string of [sensitiveDataToRemove].
+  ///
+  /// For example "Password: MY_PASSWORD " in a log message with the sensitive data string "Password: " would result in
+  /// "Password: *********** " in the log file.
+  List<String> sensitiveDataToRemove;
+
+  CustomLogger({required this.sensitiveDataToRemove}) {
     initSimpleChangeStream(<LogMessage>[]); // important: init
   }
 
@@ -51,14 +67,17 @@ base class CustomLogger extends Logger with SimpleChangeStream<List<LogMessage>>
   /// Important: the call to this method will not be awaited, but it will be synchronized, so that only ever one log call
   /// is writing to it at the same time!
   ///
-  /// The default is just a call to do nothing
+  /// The default is just a call to do nothing. 
+  /// 
+  /// For sensitive data [LogMessage.getSensitiveString] is used with [logMessage] and [sensitiveDataToRemove]!
   @override
   Future<void> logToStorage(LogMessage logMessage) async {
     if (fixedConfig?.logIntoStorage ?? false) {
       try {
+        final String logString = logMessage.getSensitiveString(sensitiveDataToRemove: sensitiveDataToRemove);
         final String date = DateFormat("yyyy-MM-dd").format(DateTime.now());
         final String path = FileUtils.combinePath(<String>[Logger.config!.logFolder, "$date.txt"]);
-        await FileUtils.addToFile(path, logMessage.toString());
+        await FileUtils.addToFile(path, logString);
         await FileUtils.addToFile(path, logMessage.buildDelimiter(chars: 100, withNewLines: true));
       } catch (e, s) {
         final StartupLogger fallback = StartupLogger();
@@ -74,7 +93,7 @@ base class CustomLogger extends Logger with SimpleChangeStream<List<LogMessage>>
 
 /// Used on Startup, because it will never log to storage, but always to console and ui!
 final class StartupLogger extends CustomLogger {
-  StartupLogger();
+  StartupLogger() : super(sensitiveDataToRemove: <String>[]);
 
   @override
   void logToConsole(String logMessage) {

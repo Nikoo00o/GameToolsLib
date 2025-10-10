@@ -53,6 +53,19 @@ abstract final class StringUtils {
     return buffer.toString();
   }
 
+  /// Returns if [source] contains [needle] at [offset] (length added to index of source)
+  static bool containsAtOffset(int offset, String source, String needle) {
+    if (offset >= source.length || needle.isEmpty) {
+      return false;
+    }
+    for (int i = 0; i < needle.length; ++i) {
+      if (source[i + offset] != needle[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   static void _printInnerObject(StringBuffer buffer, String value) {
     final String valueString = value.substring(1); // remove the line break
     final List<String> innerLogs = splitIntoLines(valueString);

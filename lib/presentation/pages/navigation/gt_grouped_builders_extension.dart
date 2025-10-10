@@ -115,7 +115,7 @@ base mixin GTGroupedBuildersExtension<BT extends GTGroupBuilderInterface, IndexT
     if (searchedBuilders.isEmpty) {
       return Center(
         child: Text(
-          translate(const TS("input.search.not.found"), context),
+          const TS("input.search.not.found").tl(context),
           style: textTitleLarge(context).copyWith(color: colorError(context)),
         ),
       );

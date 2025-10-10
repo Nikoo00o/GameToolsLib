@@ -35,12 +35,9 @@ final class AppColorsConfigOption extends CustomConfigOption<GTAppTheme> {
     ConfigOptionBuilderCustom<GTAppTheme> builder,
     String upperCaseSearchString,
   ) {
-    if (builder.translate(builder.configOption.title, context).toUpperCase().contains(upperCaseSearchString)) {
+    if (builder.configOption.title.tl(context).toUpperCase().contains(upperCaseSearchString)) {
       return true;
-    } else if (builder
-        .translate(const TS("config.appColors.contrast"), context)
-        .toUpperCase()
-        .contains(upperCaseSearchString)) {
+    } else if (const TS("config.appColors.contrast").tl(context).toUpperCase().contains(upperCaseSearchString)) {
       return true;
     }
     return "THEME".contains(upperCaseSearchString);
@@ -66,26 +63,26 @@ final class AppColorsConfigOption extends CustomConfigOption<GTAppTheme> {
           }),
         ),
         const SizedBox(height: 5),
-        _buildInfo(context, builder),
+        _buildInfo(context),
         const SizedBox(height: 5),
-        _buildColorOptions(context, builder),
+        _buildColorOptions(context),
         const SizedBox(height: 5),
         _buildShowcase(context, data, builder),
       ],
     );
   }
 
-  static Widget _buildInfo(BuildContext context, ConfigOptionBuilderCustom<GTAppTheme> builder) {
+  static Widget _buildInfo(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            Text(builder.translate(const TS("config.appColors.info"), context)),
+            Text(const TS("config.appColors.info").tl(context)),
             FilledButton(
               onPressed: () => _option.deleteValue(),
-              child: Text(builder.translate(const TS("input.reset.to.default"), context)),
+              child: Text(const TS("input.reset.to.default").tl(context)),
             ),
           ],
         ),
@@ -93,14 +90,14 @@ final class AppColorsConfigOption extends CustomConfigOption<GTAppTheme> {
     );
   }
 
-  static Widget _buildColorOptions(BuildContext context, ConfigOptionBuilderCustom<GTAppTheme> builder) {
+  static Widget _buildColorOptions(BuildContext context) {
     final List<Color> additionalColors = List<Color>.of(_value.baseAdditionalColors);
     final List<Widget> additionalColorWidgets = <Widget>[];
     for (int i = 0; i < additionalColors.length; ++i) {
       additionalColorWidgets.add(
         SimpleColorPicker(
           colorToShow: additionalColors.elementAt(i),
-          colorName: "Additional Color${i + 1}",
+          colorName: TS("color.custom.${i + 1}"),
           onColorChange: (Color newColor) {
             additionalColors[i] = newColor;
             _option.setValue(_value.copyWith(baseAdditionalColors: additionalColors));
@@ -119,32 +116,32 @@ final class AppColorsConfigOption extends CustomConfigOption<GTAppTheme> {
           children: <Widget>[
             SimpleColorPicker(
               colorToShow: _value.basePrimaryColor,
-              colorName: "Primary Color",
+              colorName: const TS("color.primary"),
               onColorChange: (Color newColor) => _option.setValue(_value.copyWith(basePrimaryColor: newColor)),
             ),
             SimpleColorPicker(
               colorToShow: _value.baseSecondaryColor ?? Colors.white,
-              colorName: "Secondary Color",
+              colorName: const TS("color.secondary"),
               onColorChange: (Color newColor) => _option.setValue(_value.copyWith(baseSecondaryColor: newColor)),
             ),
             SimpleColorPicker(
               colorToShow: _value.baseTertiaryColor ?? Colors.white,
-              colorName: "Tertiary Color",
+              colorName: const TS("color.tertiary"),
               onColorChange: (Color newColor) => _option.setValue(_value.copyWith(baseTertiaryColor: newColor)),
             ),
             SimpleColorPicker(
               colorToShow: _value.baseNeutralColor ?? Colors.white,
-              colorName: "Neutral Color",
+              colorName: const TS("color.neutral"),
               onColorChange: (Color newColor) => _option.setValue(_value.copyWith(baseNeutralColor: newColor)),
             ),
             SimpleColorPicker(
               colorToShow: _value.baseErrorColor ?? Colors.white,
-              colorName: "Error Color",
+              colorName: const TS("color.error"),
               onColorChange: (Color newColor) => _option.setValue(_value.copyWith(baseErrorColor: newColor)),
             ),
             SimpleColorPicker(
               colorToShow: _value.baseSuccessColor,
-              colorName: "Success Color",
+              colorName: const TS("color.success"),
               onColorChange: (Color newColor) => _option.setValue(_value.copyWith(baseSuccessColor: newColor)),
             ),
             ...additionalColorWidgets,

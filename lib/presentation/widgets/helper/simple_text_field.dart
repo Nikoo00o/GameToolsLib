@@ -52,7 +52,7 @@ final class _SimpleTextFieldState<T> extends State<SimpleTextField<T>> with GTBa
               ],
         onChanged: widget.onChanged,
         decoration: InputDecoration(
-          hintText: translate(TranslationString(hintKey), context),
+          hintText: TranslationString(hintKey).tl(context),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           isDense: true,
           filled: true,

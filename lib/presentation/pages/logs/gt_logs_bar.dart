@@ -33,7 +33,7 @@ final class GTLogsBar extends StatelessWidget with GTBaseWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
           child: IconButton(
-            tooltip: translate(const TS("page.logs.copy.to.clipboard"), context),
+            tooltip: const TS("page.logs.copy.to.clipboard").tl(context),
             onPressed: () => _onCopyToClipboard(context),
             icon: const Icon(Icons.copy),
           ),

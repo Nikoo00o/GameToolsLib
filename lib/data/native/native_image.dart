@@ -37,6 +37,9 @@ final class NativeImage extends BaseNativeImage {
   /// Used for pixel comparison how many invalid pixel would still return true
   static int defaultMaxAmountOfPixelsNotEqual = 40;
 
+  /// Used for pixel comparison as the shift between images in each direction (top, left, right, bot)
+  static int defaultShiftedEqualsPixels = 1;
+
   /// Only takes [mat] reference and optionally [nativeData]. Used in other constructors
   /// If [typeOverride] is not null, then the type will be derived from the [mat.channels] (but this is not possible
   /// for [clone])
@@ -159,6 +162,59 @@ final class NativeImage extends BaseNativeImage {
     );
   }
 
+  /// Uses [equals] a number of ([imagePixelShift]*2 + 1) ^ 2 times in total to compare the images with
+  /// different offsets to each other for "1" it would be called 9 times (-1 0 +1 pixel shifts in x/y direction)!
+  ///
+  /// Per default if [imagePixelShift] is null, it will use [defaultShiftedEqualsPixels] instead for 1 pixel in each
+  /// 4 directions!
+  ///
+  /// While comparing, the minimum width and the minimum height of both images will be used for comparison and each
+  /// image starts at x/y 0/0 for comparing and then each image will be shifted up to [imagePixelShift] times in each
+  /// dimension!
+  /// This also means that at least [imagePixelShift] pixels are cut off when comparing pixels, so you might need
+  /// stricter pixel threshold values!
+  ///
+  /// Look at doc comments of [equals] for the meaning of the base parameter!
+  bool shiftedEquals(
+    NativeImage other, {
+    int? pixelValueThreshold,
+    int? maxAmountOfPixelsNotEqual,
+    bool ignoreAlpha = false,
+    int? imagePixelShift,
+  }) {
+    imagePixelShift ??= defaultShiftedEqualsPixels;
+    final int minWidth = width < other.width ? width : other.width;
+    final int minHeight = height < other.height ? height : other.height;
+    // now compare row by row with both images being shifted once!
+    for (int y1 = 0; y1 <= imagePixelShift; ++y1) {
+      for (int x1 = 0; x1 <= imagePixelShift; ++x1) {
+        final NativeImage firstMine = getSubImage(x1, y1, minWidth, minHeight, onlyReference: true);
+        final NativeImage firstOther = getSubImage(0, 0, minWidth - x1, minHeight - y1, onlyReference: true);
+        if (firstMine.equals(
+          firstOther,
+          pixelValueThreshold: pixelValueThreshold,
+          maxAmountOfPixelsNotEqual: maxAmountOfPixelsNotEqual,
+          ignoreAlpha: ignoreAlpha,
+        )) {
+          return true;
+        }
+        if (x1 != 0) {
+          final NativeImage secondMine = getSubImage(0, 0, minWidth - x1, minHeight - y1, onlyReference: true);
+          final NativeImage secondOther = getSubImage(x1, y1, minWidth, minHeight, onlyReference: true);
+          if (secondMine.equals(
+            secondOther,
+            pixelValueThreshold: pixelValueThreshold,
+            maxAmountOfPixelsNotEqual: maxAmountOfPixelsNotEqual,
+            ignoreAlpha: ignoreAlpha,
+          )) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   /// Similar to [equals] this also compares the difference between the pixels of both matrices, but here instead it
   /// returns a value up to "1.0" (for 100%) on how similar the matrices are.
   ///
@@ -210,7 +266,7 @@ final class NativeImage extends BaseNativeImage {
   /// If you only use this for one comparison, set [onlyReference] so that no unnecessary copy is made, BUT remember
   /// that you should not call [cleanupMemory] on the reference! And also only use it as long as this current image
   /// is not disposed! May throw an [ImageException] if used on an empty image!
-  Future<NativeImage> getSubImage(int x, int y, int width, int height, {bool onlyReference = false}) async {
+  NativeImage getSubImage(int x, int y, int width, int height, {bool onlyReference = false}) {
     if (_data != null &&
         width > 0 &&
         height > 0 &&

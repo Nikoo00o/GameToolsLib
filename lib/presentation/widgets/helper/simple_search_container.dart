@@ -26,7 +26,7 @@ class SimpleSearchContainer extends StatelessWidget with GTBaseWidget {
         decoration: InputDecoration(
           isDense: true,
           prefixIcon: const Icon(Icons.search),
-          hintText: translate(hintText, context),
+          hintText: hintText.tl(context),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(32)),
           fillColor: colorSurfaceContainer(context),
           filled: true,

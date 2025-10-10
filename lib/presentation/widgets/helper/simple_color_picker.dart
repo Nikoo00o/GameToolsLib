@@ -9,8 +9,8 @@ class SimpleColorPicker extends StatefulWidget {
   /// The color which this should modify (to display the current color)
   final Color colorToShow;
 
-  /// Not translated name of the color that is adjusted here
-  final String colorName;
+  /// To be translated name of the color that is adjusted here (for custom colors its "color.custom.1", ...
+  final TranslationString colorName;
 
   final ValueChanged<Color> onColorChange;
 
@@ -37,7 +37,7 @@ class _SimpleColorPickerState extends State<SimpleColorPicker> with GTBaseWidget
 
   Widget buildDialog(BuildContext context) {
     return AlertDialog(
-      title: Text(translate(TS("input.adjust", <String>[widget.colorName]), context)),
+      title: Text(TS.combineS(<TS>[const TS("input.adjust"), widget.colorName], context)),
       content: SingleChildScrollView(
         child: ColorPicker(
           paletteType: PaletteType.hueWheel,
@@ -48,7 +48,7 @@ class _SimpleColorPickerState extends State<SimpleColorPicker> with GTBaseWidget
       ),
       actions: <Widget>[
         ElevatedButton(
-          child: Text(translate(const TS("input.done"), context)),
+          child: Text(const TS("input.done").tl(context)),
           onPressed: () {
             widget.onColorChange(pickerColor);
             Navigator.of(context).pop();
@@ -72,7 +72,7 @@ class _SimpleColorPickerState extends State<SimpleColorPicker> with GTBaseWidget
         ),
       ),
       child: Text(
-        translate(TS("input.adjust", <String>[widget.colorName]), context),
+        TS.combineS(<TS>[const TS("input.adjust"), widget.colorName], context),
         style: TextStyle(color: widget.colorToShow.luminance > 0.5 ? Colors.black : Colors.white),
       ),
     );

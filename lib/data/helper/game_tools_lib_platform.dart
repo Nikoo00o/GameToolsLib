@@ -11,7 +11,7 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
     CustomLogger? logger, {
     required bool isCalledFromTesting,
   }) {
-    Logger.initLoggerInstance(logger ?? CustomLogger());
+    Logger.initLoggerInstance(logger ?? CustomLogger(sensitiveDataToRemove: <String>[]));
     if (isCalledFromTesting) {
       Logger._instance!._isTesting = true;
       Logger.debug("Setting Logger To Testing mode so it does not write to storage");
@@ -27,6 +27,9 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
       Logger.error("Uncaught exception", error, trace);
       return true; // also handles the zone errors
     };
+    if (config.fixed.logIntoUI == false && config.fixed.logIntoStorage == false) {
+      Logger.warn("Logging to neither storage nor UI");
+    }
   }
 
   /// This is called from [GameToolsLib.initGameToolsLib] after setting the important base classes to init local storage

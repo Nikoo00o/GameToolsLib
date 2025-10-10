@@ -83,20 +83,20 @@ base class _GTListEditorState<T> extends State<GTListEditor<T>> with GTBaseWidge
       builder: (BuildContext dialogContext) {
         final String titleKey = oldElement != null ? "input.edit.element" : "input.create.element";
         return AlertDialog(
-          title: Text(translate(TS(titleKey, <String>[elementNumber.toString()]), dialogContext)),
+          title: Text(TS(titleKey, <String>[elementNumber.toString()]).tl(dialogContext)),
           content: widget.buildCreateOrEditDialog(dialogContext, oldElement, elementNumber, onElementUpdate),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
               child: Text(
-                translate(const TS("input.cancel"), dialogContext),
+                const TS("input.cancel").tl(dialogContext),
                 style: TextStyle(color: colorError(dialogContext)),
               ),
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, true),
               child: Text(
-                translate(const TS("input.ok"), dialogContext),
+                const TS("input.ok").tl(dialogContext),
                 style: TextStyle(color: colorSuccess(dialogContext)),
               ),
             ),
@@ -140,7 +140,7 @@ base class _GTListEditorState<T> extends State<GTListEditor<T>> with GTBaseWidge
   Widget buildElement(T element, int index) {
     final int number = index + 1;
     return widget.buildElement?.call(element, number) ??
-        Text(translate(TS("input.show.element", <String>[number.toString(), element.toString()]), context));
+        Text(TS("input.show.element", <String>[number.toString(), element.toString()]).tl(context));
   }
 
   List<Widget> buildChildren(BuildContext context) {
@@ -198,10 +198,10 @@ base class _GTListEditorState<T> extends State<GTListEditor<T>> with GTBaseWidge
         collapsedShape: const ContinuousRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
         shape: const ContinuousRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
         childrenPadding: const EdgeInsets.fromLTRB(10, 5, 10, 10),
-        title: Text(translate(widget.title, context), style: textTitleMedium(context)),
+        title: Text(widget.title.tl(context), style: textTitleMedium(context)),
         subtitle: widget.description != null
             ? Text(
-                translate(widget.description!, context),
+                widget.description!.tl(context),
                 style: textBodySmall(context).copyWith(color: colorOnSurfaceVariant(context)),
               )
             : null,

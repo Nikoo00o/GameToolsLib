@@ -275,7 +275,7 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
     return Column(
       children: <Widget>[
         Text(
-          translate(configOption.title, context),
+          configOption.title.tl(context),
           style: textTitleLarge(context).copyWith(color: colorPrimary(context)),
           textAlign: TextAlign.center,
         ),
@@ -285,7 +285,7 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(10, 4, 8, 0),
               child: Text(
-                translate(configOption.description!, context),
+                configOption.description!.tl(context),
                 textAlign: TextAlign.left,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,

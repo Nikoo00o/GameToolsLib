@@ -6,11 +6,12 @@ import 'package:game_tools_lib/presentation/pages/home/gt_window_status.dart';
 import 'package:game_tools_lib/presentation/pages/logs/gt_logs_page.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigator.dart';
+import 'package:game_tools_lib/presentation/widgets/functional/gt_version_check.dart';
 
 /// The default landing page of the [GTNavigator] inside of the [GTApp] that can display some information about the
 /// app and also provide some extra navigation steps in overridden sub classes.
 ///
-/// Sub classes may override [buildCustomBottomPart] for custom content at the bottom!
+/// Sub classes may override [buildMiddleEnd] for custom content at the bottom!
 base class GTHomePage extends GTNavigationPage {
   const GTHomePage({
     super.key,
@@ -21,47 +22,74 @@ base class GTHomePage extends GTNavigationPage {
 
   @override
   Widget buildBody(BuildContext context) {
-    final String open = translate(const TS("page.home.open"), context);
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          const GTWindowStatus(),
-          const SizedBox(height: 20),
-          FilledButton(
-            onPressed: () {
-              pushPage(context, const GTDebugPage());
-            },
-            child: Text("$open ${translate(const TS("page.debug.title"), context)}"),
-          ),
-          const SizedBox(height: 10),
-          // todo: implement and translate
-          FilledButton(
-            onPressed: () {},
-            child: const Text("Edit UI"),
-          ),
-          const SizedBox(height: 10),
-          FilledButton(
-            onPressed: () {},
-            child: const Text("switch to overlay"),
-          ),
-          const SizedBox(height: 10),
-          FilledButton(
-            onPressed: () {
-              pushPage(context, const GTLogsPage());
-            },
-            child: Text("$open ${translate(const TS("page.logs.title"), context)}"),
-          ),
-          const SizedBox(height: 10),
-          buildCustomBottomPart(),
-        ],
-      ),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        buildTop(context),
+        buildMiddle(context),
+        buildBot(context),
+      ],
     );
   }
 
-  /// Can be overridden in sub classes to display some custom elements at the bottom of [buildBody]
-  Widget buildCustomBottomPart() => const SizedBox();
+  Widget buildTop(BuildContext context) {
+    return const Column(
+      children: <Widget>[
+        GTWindowStatus(),
+        SizedBox(height: 10),
+      ],
+    );
+  }
+
+  Widget buildBot(BuildContext context) {
+    return const Column(
+      children: <Widget>[
+        SizedBox(height: 10),
+        GTVersionCheck(),
+      ],
+    );
+  }
+
+  Widget buildMiddle(BuildContext context) {
+    final String open = const TS("page.home.open").tl(context);
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        Text(const TranslationString("page.home.overlay.warning").tl(context)),
+        FilledButton(
+          onPressed: () {
+            pushPage(context, const GTDebugPage());
+          },
+          child: Text("$open ${const TS("page.debug.title").tl(context)}"),
+        ),
+        const SizedBox(height: 10),
+        // todo: implement and translate
+        FilledButton(
+          onPressed: () {},
+          child: const Text("Edit UI"),
+        ),
+        const SizedBox(height: 10),
+        FilledButton(
+          onPressed: () {},
+          child: const Text("switch to overlay"),
+        ),
+        const SizedBox(height: 10),
+        FilledButton(
+          onPressed: () {
+            pushPage(context, const GTLogsPage());
+          },
+          child: Text("$open ${const TS("page.logs.title").tl(context)}"),
+        ),
+        const SizedBox(height: 10),
+        buildMiddleEnd(),
+      ],
+    );
+  }
+
+  /// Can be overridden in sub classes to display some custom elements at the bottom of [buildMiddle]
+  Widget buildMiddleEnd() => const SizedBox();
 
   @override
   String get pageName => "GTHomePage";

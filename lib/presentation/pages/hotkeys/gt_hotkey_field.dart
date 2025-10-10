@@ -77,14 +77,14 @@ class _GTHotkeyFieldState extends State<GTHotkeyField> with GTBaseWidget {
   Widget buildTextForState(BuildContext context) {
     if (isInputting) {
       return Text(
-        translate(const TS("page.hotkeys.clear.esc"), context),
+        const TS("page.hotkeys.clear.esc").tl(context),
         style: textLabelSmall(context).copyWith(color: colorOnPrimary(context)),
       );
     } else if (boardKey != null) {
       return Text(boardKey!.keyCombinationText, style: textBodyMedium(context).copyWith(fontWeight: FontWeight.bold));
     } else {
       return Text(
-        translate(const TS("page.hotkeys.not.set"), context),
+        const TS("page.hotkeys.not.set").tl(context),
         style: textBodyMedium(context).copyWith(color: colorError(context)).copyWith(fontWeight: FontWeight.bold),
       );
     }

@@ -51,7 +51,7 @@ class _SimpleSliderState<T> extends State<SimpleSlider<T>> with GTBaseWidget {
       value: index,
       max: maxValue.toDouble(),
       divisions: maxValue,
-      label: translate(widget.labelForEntry(currentEntry), context),
+      label: widget.labelForEntry(currentEntry).tl(context),
       onChanged: (double value) {
         setState(() => index = value);
         widget.onValueChanged(currentEntry);

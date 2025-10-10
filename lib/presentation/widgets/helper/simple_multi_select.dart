@@ -47,7 +47,7 @@ class _SimpleMultiSelectState<T> extends State<SimpleMultiSelect<T>> with GTBase
       crossAxisAlignment: WrapCrossAlignment.center,
       children: widget.entries.map((T entry) {
         return FilterChip(
-          label: Text(translate(widget.labelForEntry(entry), context)),
+          label: Text(widget.labelForEntry(entry).tl(context)),
           selected: widget.isEntrySelected(entry),
           onSelected: (bool selected) {
             setState(() {
@@ -67,10 +67,10 @@ class _SimpleMultiSelectState<T> extends State<SimpleMultiSelect<T>> with GTBase
         collapsedShape: const ContinuousRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
         shape: const ContinuousRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
         childrenPadding: const EdgeInsets.fromLTRB(10, 5, 10, 10),
-        title: Text(translate(widget.title, context), style: textTitleMedium(context)),
+        title: Text(widget.title.tl(context), style: textTitleMedium(context)),
         subtitle: widget.description != null
             ? Text(
-                translate(widget.description!, context),
+                widget.description!.tl(context),
                 style: textBodySmall(context).copyWith(color: colorOnSurfaceVariant(context)),
               )
             : null,

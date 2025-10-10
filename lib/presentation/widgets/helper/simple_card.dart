@@ -41,7 +41,7 @@ final class SimpleCard extends StatelessWidget with GTBaseWidget {
         leading: null,
         isThreeLine: lines == 2,
         title: Text(
-          translate(title, context),
+          title.tl(context),
           maxLines: 1,
           style: textTitleMedium(context),
         ),
@@ -54,7 +54,7 @@ final class SimpleCard extends StatelessWidget with GTBaseWidget {
 
   (Widget?, int) _buildDescription(BuildContext context) {
     if (description != null) {
-      String text = translate(description!, context);
+      String text = description!.tl(context);
       final bool hasLineBreak = text.contains("\n");
       int lines = hasLineBreak ? 2 : 1;
       if (text.length > 90 && hasLineBreak == false) {
