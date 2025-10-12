@@ -9,6 +9,7 @@ EXPORTS
     getMainDisplayWidth
     getMainDisplayHeight
     getWindowBounds
+    getWindowSize
     closeWindow
     cleanupMemory
     getFullMainDisplay

@@ -157,6 +157,12 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
     await GameLogWatcher._instance!._fetchNewLines();
   }
 
+  /// late final only used below for resize
+  static final int _maxResizeTicks = FixedConfig.fixedConfig.overlayRefreshTicks;
+
+  /// late cached counter used below for resize
+  static int _currentResizeTick = _maxResizeTicks;
+
   static Future<void> _loopStep() async {
     for (final GameWindow window in GameToolsLib.gameWindows) {
       final int openStatus = window.updateOpen();
@@ -173,6 +179,15 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
         if (window.updateFocus()) {
           Logger.verbose("Focus status change: $window");
           await _updateFocus(window);
+        }
+      }
+
+      if (_currentResizeTick++ >= _maxResizeTicks) {
+        _currentResizeTick = 0;
+        if (window.updateSize()) {
+          Logger.verbose("$window resized to ${window.size}");
+          await OverlayManager._instance!.onWindowResize(window); // resize only needs to affect overlay manager and
+          // may be slower
         }
       }
     }

@@ -95,8 +95,9 @@ abstract base class GameManager<ConfigType extends GameToolsConfigBaseType> {
   Future<void> onFocusChange(GameWindow window);
 
   /// Is called after the state is changed from [oldState] to [newState] with [changeState].
-  /// Don't use any delays inside of this! Important: the first and last state on start and end will always be
-  /// [GameClosedState]!
+  /// Don't use any delays inside of this! Important: the first and last state on start and end of the game itself will
+  /// always be [GameClosedState] and this callback will only be called after the initial state is set, so [oldState]
+  /// will never be null (but the callback will also be called at the end)!
   Future<void> onStateChange(GameState oldState, GameState newState);
 
   /// Returns a reference to [GameToolsLib.config] with the [ConfigType]

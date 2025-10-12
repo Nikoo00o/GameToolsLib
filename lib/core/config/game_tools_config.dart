@@ -38,8 +38,9 @@ base class GameToolsConfig<FixedConfigType extends FixedConfig, MutableConfigTyp
   /// "data/flutter_assets/assets" for your application assets and "data/flutter_assets/packages/game_tools_lib/assets"
   /// for the library assets!
   ///
-  /// Only a translation file "en.json" is bundled with this library and it will be loaded before your "en.json"
-  /// file, but your values may replace the old ones! (also locale files from other packages will be loaded before).
+  /// Only the translation file "en.json" and "de.json" are bundled with this library and will be loaded before your
+  /// "en.json" and "de.json" files, but your values may replace the old ones! (also locale files from other packages
+  /// plugins will be loaded before your final application). Also see [FixedConfig.supportedLocales].
   ///
   /// Uses an internal cached [_localeFolders]!
   List<String> get localeFolders => _localeFolders;

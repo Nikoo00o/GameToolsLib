@@ -80,7 +80,11 @@ final class _GTVersionCheckState extends State<GTVersionCheck> with GTBaseWidget
         style: TextStyle(color: colorSuccess(context)),
       );
     } else {
-      return FilledButton.tonal(
+      return FilledButton(
+        style: FilledButton.styleFrom(
+          backgroundColor: colorErrorContainer(context),
+          foregroundColor: colorOnErrorContainer(context),
+        ),
         onPressed: () => showDialog<void>(
           context: context,
           barrierDismissible: false,

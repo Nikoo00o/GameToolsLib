@@ -8,8 +8,8 @@ typedef GameEventStepCallback = Future<(GameEventStatus, Duration)> Function();
 /// [changeToStep]. Also in addition to the auto deletion, you can manually delete this event with [remove] and you
 /// can add other events with [addEvent].
 ///
-/// You can also override the following: [onStart], [onStop], [onOpenChange], [onFocusChange], [onStateChange] and
-/// [onData] for the data from other events [sendDataToEventsT] + [sendDataToEventsG]!
+/// You can also override the following: [onStart], [onStop], [onOpenChange], [onFocusChange], [onStateChange],
+/// [onOverlayModeChanged] and [onData] for the data from other events [sendDataToEventsT] + [sendDataToEventsG]!
 ///
 /// As a quicker shortcut outside of overriding, you can also use [checkCorrectState] periodically in your [onStep1]
 /// and then use [getCurrentState] if you need specific subtype data access for your state!
@@ -104,12 +104,18 @@ abstract base class GameEvent {
   Future<void> onStart() async {}
 
   /// Will be called from the remover after this event is removed from the event queue by [remove] (should not
-  /// await any delays inside!)
+  /// await any delays inside!). So this can be used for any clean up!
   Future<void> onStop() async {}
 
   /// Is called after the state is changed from [oldState] to [newState] with [GameToolsLib.changeState].
-  /// Don't use any delays inside of this! Important: the first and last state on start and end will always be
-  /// [GameClosedState]! Of course you could also instead always check the [GameToolsLib.currentState] in your [onStep1]
+  /// Don't use any delays inside of this! Important: the first and last state on start and end of the game itself will
+  /// always be [GameClosedState] and this callback will only be called after the initial state is set, so [oldState]
+  /// will never be null (but the callback will also be called at the end)!
+  ///
+  /// Of course you could also instead always check the [GameToolsLib.currentState] in your [onStep1].
+  ///
+  /// For example you could check if the [newState] becomes [GameClosedState] and then call [remove] on this so that
+  /// the cleanup from [onStop] can be executed.
   Future<void> onStateChange(GameState oldState, GameState newState) async {}
 
   /// This is a quick shortcut to check if the [GameToolsLib.mainGameWindow] is open (if [requiresOpen] is true) and
@@ -131,6 +137,11 @@ abstract base class GameEvent {
     }
     return true;
   }
+
+  /// This can optionally be overridden to react to changes when the [OverlayMode] of [OverlayManager] changes to
+  /// maybe render something conditionally like for example only in [OverlayMode.VISIBLE].
+  /// The [oldMode] will only be null for the first call!
+  void onOverlayModeChanged(OverlayMode? oldMode, OverlayMode newMode) {}
 
   /// Shortcut that returns the [GameToolsLib.currentState] as [StateType]
   StateType getCurrentState<StateType>() => GameToolsLib.currentState as StateType;

@@ -19,7 +19,9 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// they already trigger when it is pressed/clicked down and not only when its up again!
 ///
 /// This is updated automatically at the end of the event loop of [GameToolsLib]! You can also toggle the listening
-/// of this with [isActive].
+/// of this with [isActive] which also prevents the spam log logging (for example if user enters password and you
+/// don't want to log key strokes in spam log level (then you would for example have a listener object in an event
+/// and toggle it depending on states).
 ///
 /// For very quick non-async actions that need no event, use [KeyInputListener.instant] and
 /// [MouseInputListener.instant] instead of a [GameEvent] with [GameEventPriority.INSTANT]!
@@ -36,6 +38,8 @@ abstract base class BaseInputListener<DataType> {
 
   /// This will be called before to only execute [createEventCallback] if this returns true!
   /// The default is [onlyWhenMainWindowHasFocus] to only create events when the main window is open and has focus!
+  /// But of course this could also check some sort of ingame state, etc. Of course you could also toggle [isActive]
+  /// instead which also disables the spam logs.
   final bool Function() eventCreateCondition;
 
   /// This is the function called internally when this listener is activated to create a new object of any
@@ -68,7 +72,9 @@ abstract base class BaseInputListener<DataType> {
   TranslationString? configGroupLabel;
 
   /// This can be toggled to control if this listener should currently be listening and adding events, or not, per
-  /// default it's true!
+  /// default it's true! So it can just be toggled during runtime if you want to control the flow of this listener.
+  /// Of course you could also use [eventCreateCondition] instead, but that would still spam log if it returns false
+  /// and the key is pressed!
   bool isActive;
 
   /// The current hotkey which is loaded/saved in storage, but initially null (and default is used before)

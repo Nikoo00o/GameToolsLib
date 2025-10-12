@@ -19,7 +19,7 @@ import 'package:opencv_dart/opencv.dart' as cv;
 
 /// Simple integer to detect dll library mismatches. Has to be incremented when native code is modified!
 /// Also Modify the version in native_window.h
-const int _nativeCodeVersion = 7;
+const int _nativeCodeVersion = 8;
 
 /// First local conversions of classes/structs from c code that are used in the functions below
 final class _Rect extends Struct {
@@ -66,6 +66,9 @@ typedef setWindowFocusD = bool Function(int);
 
 typedef getWindowBoundsN = _Rect Function(Int);
 typedef getWindowBoundsD = _Rect Function(int);
+
+typedef getWindowSizeN = _Point Function(Int);
+typedef getWindowSizeD = _Point Function(int);
 
 typedef getMainDisplayWidthN = UnsignedInt Function();
 typedef getMainDisplayWidthD = int Function();
@@ -135,6 +138,7 @@ final class NativeWindow {
   late hasWindowFocusD _hasWindowFocus;
   late setWindowFocusD _setWindowFocus;
   late getWindowBoundsD _getWindowBounds;
+  late getWindowSizeD _getWindowSize;
   late getMainDisplayWidthD _getMainDisplayWidth;
   late getMainDisplayHeightD _getMainDisplayHeight;
   late closeWindowD _closeWindow;
@@ -169,6 +173,7 @@ final class NativeWindow {
     _hasWindowFocus = _api!.lookupFunction<hasWindowFocusN, hasWindowFocusD>("hasWindowFocus");
     _setWindowFocus = _api!.lookupFunction<setWindowFocusN, setWindowFocusD>("setWindowFocus");
     _getWindowBounds = _api!.lookupFunction<getWindowBoundsN, getWindowBoundsD>("getWindowBounds");
+    _getWindowSize = _api!.lookupFunction<getWindowSizeN, getWindowSizeD>("getWindowSize");
     _getMainDisplayWidth = _api!.lookupFunction<getMainDisplayWidthN, getMainDisplayWidthD>("getMainDisplayWidth");
     _getMainDisplayHeight = _api!.lookupFunction<getMainDisplayHeightN, getMainDisplayHeightD>("getMainDisplayHeight");
     _closeWindow = _api!.lookupFunction<closeWindowN, closeWindowD>("closeWindow");
@@ -229,7 +234,7 @@ final class NativeWindow {
       _windowLog.write("\n");
       _windowLog.write(msg); // // 1 is used for window names
     } else if (id == 2) {
-      if(msg == "No handle" ){
+      if (msg == "No handle") {
         Logger.spamPeriodic(_logSpam, "NativeWindow affinity ", msg, " found open windows:", _windowLog.toString());
       } else {
         Logger.spam("NativeWindow affinity ", msg, " found open windows:", _windowLog.toString());
@@ -288,6 +293,7 @@ final class NativeWindow {
 
   /// The window's top left corner is (x, y) and then it expands to (width, height).
   /// May return null if the window was not open.
+  /// Does include top bar and should be used for screen space context. Also see [getWindowSize]
   Bounds<int>? getWindowBounds(int windowID) {
     final _Rect bounds = _getWindowBounds.call(windowID);
     if (bounds.left == _INVALID_VALUE &&
@@ -297,6 +303,17 @@ final class NativeWindow {
       return null;
     }
     return Bounds<int>.sides(left: bounds.left, top: bounds.top, right: bounds.right, bottom: bounds.bottom);
+  }
+
+  /// The window's top left corner is (x, y) and then it expands to (width, height).
+  /// May return null if the window was not open.
+  /// Does not include top bar and should be used for inner window context. Also see [getWindowBounds]
+  Point<int>? getWindowSize(int windowID) {
+    final _Point size = _getWindowSize.call(windowID);
+    if (size.x == _INVALID_VALUE || size.y == _INVALID_VALUE) {
+      return null;
+    }
+    return Point<int>(size.x, size.y);
   }
 
   /// Full size of the whole screen

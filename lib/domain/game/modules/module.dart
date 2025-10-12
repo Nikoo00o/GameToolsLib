@@ -51,8 +51,9 @@ abstract base class Module<GameManagerType extends GameManagerBaseType> {
   Future<void> onFocusChange(GameWindow window) async {}
 
   /// Is called after the state is changed from [oldState] to [newState] with [GameManager.changeState].
-  /// Don't use any delays inside of this! Important: the first and last state on start and end will always be
-  /// [GameClosedState]!
+  /// Don't use any delays inside of this! Important: the first and last state on start and end of the game itself will
+  /// always be [GameClosedState] and this callback will only be called after the initial state is set, so [oldState]
+  /// will never be null (but the callback will also be called at the end)!
   Future<void> onStateChange(GameState oldState, GameState newState) async {}
 
   /// Should be overridden to provide additional [LogInputListener] in addition to the ones in the constructor of

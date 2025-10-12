@@ -70,9 +70,16 @@ void _testStates() {
     expect(tGm.updateCounter >= updatesManager - 1 && tGm.updateCounter <= updatesManager + 1, true, reason: "gm up");
     expect(eState.updateCounter >= updatesState - 1 && eState.updateCounter <= updatesState + 1, true, reason: "st up");
     final ExampleState st = eState; // instance is null later
+    final ExampleGameManager gm = tGm; // instance is null later
     await GameToolsLib.close();
     await loop;
     expect(st.startStopCounter, -1, reason: "state on stop call");
+    await Utils.delayMS(16);
+    expect(
+      gm.updateCounter >= updatesManager + 980 && gm.updateCounter <= updatesManager + 1020,
+      true,
+      reason: "state change on close updates",
+    );
   });
 }
 

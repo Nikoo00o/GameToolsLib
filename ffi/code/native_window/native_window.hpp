@@ -6,7 +6,7 @@
 
 /// Simple integer to detect dll library mismatches. Has to be incremented when native code is modified!
 /// Also Modify the version in native_window.dart!
-# define _NATIVE_CODE_VERSION 7
+# define _NATIVE_CODE_VERSION 8
 
 /// Simple integer to detect dll library mismatches. Has to be incremented when native code is modified!
 /// Also Modify the version in native_window.dart!
@@ -33,9 +33,14 @@ EXPORT bool setWindowFocus(int windowID);
 
 /// initWindow must be called first
 /// The top left corner of the window is top, left (for borderless / fullscreen they are both 0)
-/// width = right - left
-/// height = bottom - top
+/// width = right - left,  height = bottom - top
+/// For inner size, use getWindowSize instead
 EXPORT RECT getWindowBounds(int windowID);
+
+/// initWindow must be called first
+/// does not include top bar for windowed windows
+/// For outer bounds in screen space, use getWindowBounds instead
+EXPORT POINT getWindowSize(int windowID);
 
 EXPORT unsigned int getMainDisplayWidth();
 

@@ -37,15 +37,21 @@ abstract base class GameState {
   Future<void> onFocusChange(GameWindow window) async {}
 
   /// Is called internally when this state becomes active and also receives the previous [oldState] (which would only
-  /// be null for the first state which is [GameClosedState] and there this method is not called!).
+  /// be null for the first state which is [GameClosedState] for which this method is not called!).
   ///
   /// This is called after [onStop] for the old state. Should not have any internal await delays!
-  Future<void> onStart(GameState oldState) async {}
+  ///
+  /// If you want to call this super class method on your sub class, then it will automatically [Logger.info] log the
+  /// [welcomeMessage] which may also be overridden in sub classes!
+  Future<void> onStart(GameState oldState) async {
+    Logger.info(welcomeMessage);
+  }
 
   /// Will be called when this state becomes inactive and also receives the next [newState].
-  /// On closing the program with [GameToolsLib.close], this is called with [GameClosedState] for the last state!
+  /// On closing the program with [GameToolsLib.close], this is also called with [GameClosedState] for the last state!
   ///
-  /// This is called before [onStart] for the new state. Should not have any internal await delays!
+  /// This is called before [onStart] for the new state. Should not have any internal await delays! Can be used for
+  /// cleanup.
   Future<void> onStop(GameState newState) async {}
 
   /// This is the periodic callback for your periodic update work while this state is active.
@@ -59,6 +65,12 @@ abstract base class GameState {
   /// [GameWindow.isOpen] and [GameWindow.hasFocus] for [GameToolsLib.mainGameWindow], or you can control it with
   /// member variables and [onOpenChange] and [onFocusChange]. (because they might have been changed in the meantime)
   Future<void> onUpdate();
+
+  /// Can be overridden in sub classes to return some message that will be logged in the [onStart] if you call
+  /// "super.onStart" in your sub class.
+  ///
+  /// Per default it only returns "Switched to [runtimeType]" but it can be any other meaningful info like joined area!
+  String get welcomeMessage => "Switched to $runtimeType";
 
   @override
   String toString() => "$runtimeType($_id)";

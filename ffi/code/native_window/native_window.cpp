@@ -28,7 +28,7 @@ inline bool _isLastPartEqualTo(const char *source, const char *targetName)
     size_t startPos = 0;
     for ( size_t i = 0; i < srcLength - 1; ++i )
     {
-        if ( (source[i] == '-' || source[i] == -106)  && source[i + 1] == ' ' )
+        if ((source[i] == '-' || source[i] == -106) && source[i + 1] == ' ' )
         {
             startPos = i + 2; // start at the character after the 2 delimiters
         }
@@ -55,14 +55,14 @@ inline bool _onlyCompareLastPart(const char *source, const char *targetName)
     size_t targetLength = strlen(targetName);
     for ( size_t i = 1; i < targetLength - 1; ++i )
     {
-        if (targetName[i - 1] == ' ' && (targetName[i] == '-' || targetName[i] == -106) && targetName[i + 1] == ' ' )
+        if ( targetName[i - 1] == ' ' && (targetName[i] == '-' || targetName[i] == -106) && targetName[i + 1] == ' ' )
         {
             return false;
         }
     }
     for ( size_t i = 1; i < srcLength - 1; ++i )
     {
-        if (source[i - 1] == ' ' && (source[i] == '-' || source[i] == -106) && source[i + 1] == ' ' )
+        if ( source[i - 1] == ' ' && (source[i] == '-' || source[i] == -106) && source[i + 1] == ' ' )
         {
             return true;
         }
@@ -90,11 +90,18 @@ int __stdcall _enumWindows(HWND hwnd, LPARAM lParam)
             {
                 // special case: windows explorer.exe (must be equal here)
                 isEqual = strcmp(windowTitle, helper->name) == 0;
-            } else if ( _onlyCompareLastPart(windowTitle, helper->name) )
+            } else if ( _onlyCompareLastPart(windowTitle, helper->name))
             {
-                // todo: better use wchar to be able to compare correctly!
-                // special case: discord, or browser like firefox, etc (must be equal to last part here)
-                isEqual = _isLastPartEqualTo(windowTitle, helper->name);
+                if(strncmp(windowTitle, helper->name, strlen(helper->name)) == 0)
+                {
+                    // special case after win11 console has syntax: "Command Prompt - some command..."
+                    isEqual = true;
+                } else
+                {
+                    // todo: better use wchar to be able to compare correctly!
+                    // special case: discord, or browser like firefox, etc (must be equal to last part here)
+                    isEqual = _isLastPartEqualTo(windowTitle, helper->name);
+                }
             } else
             {
                 if ( _alwaysMatchEqual )
@@ -244,7 +251,7 @@ inline unsigned char *_getFullWindowImageOld(int windowID)
     // RGBA: 8 uint with 4 channels, and dimensions
     unsigned char *array = (unsigned char *) malloc(height * width * 4 * sizeof(unsigned char));
     BitBlt(memoryDC, 0, 0, width, height, winDc, 0, 0, _SRCCOPY | CAPTUREBLT);
-    GetDIBits(memoryDC, bitmap, 0, height, array,(BITMAPINFO * ) & bi, _DIB_RGB_COLORS);
+    GetDIBits(memoryDC, bitmap, 0, height, array, (BITMAPINFO * ) & bi, _DIB_RGB_COLORS);
 
     SelectObject(memoryDC, oldObject);
     DeleteObject(bitmap);
@@ -314,6 +321,18 @@ EXPORT RECT getWindowBounds(int windowID)
         return bounds;
     }
     return RECT{_INVALID_VALUE, _INVALID_VALUE, _INVALID_VALUE, _INVALID_VALUE};
+}
+
+EXPORT POINT getWindowSize(int windowID)
+{
+    HWND handle = _getWindowHandle(windowID);
+    if ( handle != 0 )
+    {
+        RECT bounds;
+        GetClientRect(handle, &bounds);
+        return POINT{bounds.right - bounds.left, bounds.bottom - bounds.top};
+    }
+    return POINT{_INVALID_VALUE, _INVALID_VALUE};
 }
 
 #define _HOZRES 8

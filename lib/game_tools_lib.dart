@@ -14,6 +14,7 @@ import 'package:game_tools_lib/core/enums/event/game_event_priority.dart';
 import 'package:game_tools_lib/core/enums/event/game_event_status.dart';
 import 'package:game_tools_lib/core/enums/input/input_enums.dart';
 import 'package:game_tools_lib/core/enums/log_level.dart';
+import 'package:game_tools_lib/core/enums/overlay_mode.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/logger/custom_logger.dart';
 import 'package:game_tools_lib/core/logger/log_color.dart';
@@ -34,6 +35,7 @@ import 'package:game_tools_lib/domain/game/states/child_game_state.dart';
 import 'package:game_tools_lib/domain/game/states/game_closed_state.dart';
 import 'package:game_tools_lib/domain/game/web_manager.dart';
 import 'package:game_tools_lib/presentation/overlay/gt_overlay.dart';
+import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_notifier.dart';
 import 'package:hive/hive.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:synchronized/synchronized.dart';
@@ -254,18 +256,18 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       if (Logger._instance != null) {
         Logger.verbose("Closing Game Tools Lib... ${_GameToolsLibHelper._initialized}");
       }
-      await _GameToolsLibEventLoop._stopLoop(); // wait for loop to stop
-      final GameState gameClosed = GameClosedState();
-      await _GameToolsLibEventLoop._currentState?.onStop(gameClosed);
-      _GameToolsLibEventLoop._currentState = gameClosed;
+
+      await changeState(GameClosedState()); // first always change to game closed to trigger any cleanups
+      await _GameToolsLibEventLoop._stopLoop(); // then wait for loop to stop
       if (GameManager._instance != null) {
-        await GameManager._instance!.onStop();
         for (final ModuleBaseType module in GameManager._instance!.modules) {
-          await module.onStop();
+          await module.onStop(); // then stop modules
         }
+        await GameManager._instance!.onStop(); // lastly stop game manager
       }
+
       if (HiveDatabase._instance != null) {
-        await database.closeHiveDatabases();
+        await database.closeHiveDatabases(); // afterwards native cleanup like hive db, etc
         HiveDatabase._instance = null;
       } else {
         // logger might not be initialized yet. also dont clean up logger itself!

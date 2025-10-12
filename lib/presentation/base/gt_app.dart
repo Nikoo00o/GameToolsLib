@@ -65,7 +65,7 @@ base class GTApp extends StatelessWidget {
     );
   }
 
-  // todo: remove when new flutter multi window api is available
+  // todo: MULTI-WINDOW IN THE FUTURE: might be removed
   Widget buildOverlaySwitcher(BuildContext context, Widget navigatorChild) {
     return GTOverlay(navigatorChild: navigatorChild);
   }

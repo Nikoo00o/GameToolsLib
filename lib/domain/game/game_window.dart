@@ -34,7 +34,11 @@ part 'package:game_tools_lib/core/enums/input/board_key.dart';
 /// [updateAndGetOpen] and [updateAndGetFocus]).
 ///
 /// UI App elements can also use this as a [ChangeNotifier] in a [ChangeNotifierProvider] to listen to changes from
-/// [name], [isOpen] and [hasFocus] updated from [rename], [updateOpen], [updateFocus]
+/// [name], [isOpen] and [hasFocus] updated from [rename], [updateOpen], [updateFocus], but also [size] with
+/// [width] / [height] updated from [updateSize].
+///
+/// Remember that [size] returns the inner size of the window and [getWindowBounds] returns the outer positions in
+/// relation to the screen/display!
 final class GameWindow with ChangeNotifier {
   /// This is set in the constructor only once and used to identify/find the window.
   /// Name Examples: "Path of Exile", "TL", "League of Legends".
@@ -61,6 +65,37 @@ final class GameWindow with ChangeNotifier {
   /// If the user is tabbed into the [name] window (if the window is in the foreground. initially false).
   /// To update this, [updateOpen] is used in the event loop.
   bool get hasFocus => _hasFocus;
+
+  Point<int>? _size;
+
+  /// Returns the inner size of this window which is worked with in all inner methods in contrast to the outer
+  /// [getWindowBounds]! If the window is not open, then this will return null!
+  /// To update this, [updateSize] is used in the event loop.
+  ///
+  /// Does not include the top bar (title bar) for windowed mode windows!
+  Point<int>? get size => isOpen ? _size : null;
+
+  /// Returns the width of [size] (look at doc comments there!).
+  ///
+  /// May throw a [WindowClosedException] if the window was not open.
+  int get width {
+    if (size == null) {
+      throw WindowClosedException(message: "Cant get window size for $this");
+    }
+    return size!.x;
+  }
+
+  /// Returns the height of [size] (look at doc comments there!).
+  ///
+  /// May throw a [WindowClosedException] if the window was not open.
+  ///
+  /// Does not include the top bar (title bar) for windowed mode windows!
+  int get height {
+    if (size == null) {
+      throw WindowClosedException(message: "Cant get window size for $this");
+    }
+    return size!.y;
+  }
 
   /// Used to keep track of multiple windows
   late final int _windowID;
@@ -141,7 +176,7 @@ final class GameWindow with ChangeNotifier {
   /// Mainly used for testing, combines [updateOpen] and [isOpen]
   bool updateAndGetOpen() {
     updateOpen();
-    return _isOpen;
+    return isOpen;
   }
 
   /// Mainly used for testing, combines [updateFocus] and [hasFocus]
@@ -162,12 +197,33 @@ final class GameWindow with ChangeNotifier {
     await Utils.delayMS(FixedConfig.fixedConfig.tinyDelayMS.y);
   }
 
+  /// Updates the [size] (needs to search the window handle for it) and returns if the size was different before
+  /// and has changed. This is called periodically in the internal event loop!
+  bool updateSize() {
+    final Point<int>? oldSize = _size;
+    _size = _nativeWindow.getWindowSize(_windowID);
+    final bool wasChanged = oldSize != _size;
+    if (wasChanged) {
+      notifyListeners();
+    }
+    return wasChanged;
+  }
+
+  /// Mainly used for testing, combines [updateSize] and [size]
+  Point<int>? updateAndGetSize() {
+    updateSize();
+    return size;
+  }
+
   /// The window's top left corner is ([Bounds.x], [Bounds.y]) and then it expands to ([Bounds.width], [Bounds.height]).
   /// May throw a [WindowClosedException] if the window was not open.
   ///
   /// Important: the [getWindowBounds] would also include a top window border in its height while all other methods
-  /// like [getImage], [windowMousePos], [getPixelOfWindow] ignore those borders and
-  /// only access space inside of the window!
+  /// like [getImage], [windowMousePos], [getPixelOfWindow], [size], [width], [height], [getMiddle], etc ignore those
+  /// borders and  only access space inside of the window!
+  ///
+  /// So to get the inner size of this window or work inside of it, use [size] instead!!! This is only for
+  /// screen/display related stuff!
   Bounds<int> getWindowBounds() {
     final Bounds<int>? bounds = _nativeWindow.getWindowBounds(_windowID);
     if (bounds == null) {
@@ -181,8 +237,10 @@ final class GameWindow with ChangeNotifier {
   /// If you instead want the middle pos in screen/display space, use [getWindowBounds].[Bounds.middlePos]
   /// instead
   Point<int> getMiddle() {
-    final Bounds<int> bounds = getWindowBounds();
-    return bounds.size.scaleB(0.5);
+    if (size == null) {
+      throw WindowClosedException(message: "Cant get window size for $this");
+    }
+    return size!.scaleB(0.5);
   }
 
   /// Returns a cropped Sub Image relative to top left corner of the window.
@@ -228,7 +286,7 @@ final class GameWindow with ChangeNotifier {
 
   /// Returns the color of the pixel at [x], [y] relative to the top left corner of the window.
   /// May throw a [WindowClosedException] if the window was not open.
-  /// Returns null if the position [x], [y] is outside of the window (see [isWithinWindow])!
+  /// Returns null if the position [x], [y] is outside of the window (relative to window space)!
   ///
   /// Important: uses mouse position relative to top left window border, but [GameWindow.getWindowBounds] would also
   /// include a top window border in its height which is not included here!
@@ -236,10 +294,11 @@ final class GameWindow with ChangeNotifier {
   /// To see rgb values from 0 to 255 as a string from color, use [Color.rgb].
   Color? getPixelOfWindow(int x, int y) {
     final Color? color = _nativeWindow.getPixelOfWindow(_windowID, x, y);
-    if (color == null) {
+    final Point<int>? size = this.size;
+    if (color == null || size == null) {
       throw WindowClosedException(message: "Cant get pixel of window $this: $x, $y");
     }
-    if (isWithinWindow(Point<int>(x, y)) == false) {
+    if (x < 0 || y < 0 || x >= size.x || y >= size.y) {
       return null;
     }
     return color;
@@ -248,13 +307,12 @@ final class GameWindow with ChangeNotifier {
   /// Same as [getPixelOfWindow], but with [Point]
   Color? getPixelOfWindowP(Point<int> p) => getPixelOfWindow(p.x, p.y);
 
-  /// Returns if the [point] is inside of the visible space of the window (not a border at the top)
-  /// This is not 100% correct, because it does not respect the invisible window borders and also not a window bar at
-  /// the top (so its best used with borderless fullscreen applications)!
-  /// Uses [getWindowBounds] to get height/width and could return false positives to the bottom right of the window!
+  /// Returns if the [point] is inside of the visible space of the window (also border at the top) in relation to
+  /// screen space.
+  /// IMPORTANT: don't use this with a [point] that is relational to window screen space!
   bool isWithinWindow(Point<int> point) {
     final Bounds<int> bounds = getWindowBounds();
-    if (point.x < 0 || point.y < 0 || point.x >= bounds.width || point.y >= bounds.height) {
+    if (point.x < bounds.left || point.y < bounds.top || point.x >= bounds.right || point.y >= bounds.bottom) {
       return false;
     }
     return true;
@@ -305,7 +363,7 @@ final class GameWindow with ChangeNotifier {
 
   /// Returns the mouse position relative to the top left corner of the window.
   /// May throw a [WindowClosedException] if the window was not open.
-  /// Returns [null] if the cursor is currently outside of the window (see [isWithinWindow])!
+  /// Returns [null] if the cursor is currently outside of the window (don't use [isWithinWindow] with this)!
   ///
   /// Important: uses mouse position relative to top left window border, but [GameWindow.getWindowBounds] would also
   /// include a top window border in its height which is not included here!

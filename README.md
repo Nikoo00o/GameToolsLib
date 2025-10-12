@@ -55,6 +55,8 @@
 
 - The native tests that need to interact with a window are moved into `example/integration_test` to be able to work 
   and they also open a test window app
+- start those with own command prompt "cd example && flutter text integration_test/native_tests.dart" and don't move 
+  mouse / keyboard during tests and keep command prompt in focus for them to work normally!
 
 ### OpenCV build
 
@@ -70,6 +72,12 @@
   - then add the cpp source files to that folder (same for ios)
 - android would need an externalNativeBuild  with cmake section and then "path" "to"
 - but xcode and android could also be different for a plugin/package instead of an app! 
+
+#### Changing Native Code 
+
+- after changes to the native code, the `# define _NATIVE_CODE_VERSION 7` in "native_window.h" should be incremented 
+  in the c++ code, but also the `const int _nativeCodeVersion = 7;` in "native_window.dart" in the dart code 
+- and then for tests of course the dll has to be build and updated again
 
 #### If the native code would be used directly inside of an app and not the plugin
 

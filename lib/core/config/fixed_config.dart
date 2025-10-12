@@ -23,8 +23,9 @@ base class FixedConfig {
   /// [MutableConfig.currentLocale]! If that one is not supported, then the first entry of the list is used as
   /// default, so the first entry may never be null!
   ///
-  /// Only a translation file "en.json" is bundled with this library and it will be loaded before your "en.json"
-  /// file, but your values may replace the old ones! (also locale files from other packages will be loaded before)
+  /// Only the translation file "en.json" and "de.json" are bundled with this library and will be loaded before your
+  /// "en.json" and "de.json" files, but your values may replace the old ones! (also locale files from other packages
+  /// plugins will be loaded before your final application). Also see [GameToolsConfig.localeFolders].
   List<Locale?> get supportedLocales => const <Locale?>[Locale("en"), Locale("de"), null];
 
   /// if the logger should save log files
@@ -54,6 +55,15 @@ base class FixedConfig {
   /// How many times per second key events/etc are processed in the internal game tools lib loop and also how often
   /// [GameManager.onUpdate] is called! Per default with 40 each loop should take at least 25 milliseconds.
   int get updatesPerSecond => 40;
+
+  /// How many normal update ticks it would take until the window size is updated and the overlay ui elements are
+  /// refreshed/rebuild (see [OverlayManager.onWindowResize]).
+  ///
+  /// So the window size is checked [updatesPerSecond] / [overlayRefreshTicks] times per second! Setting this to 1
+  /// will refresh on every update tick!
+  ///
+  /// This offers another lever for performance vs interactivity and reaction time!
+  int get overlayRefreshTicks => 4;
 
   /// Like [MutableConfig.logLevel], but this here should instead constraint which logs are able to be logged into the
   /// UI (other logs can be accessed dynamically as well in the ui tho)

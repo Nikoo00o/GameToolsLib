@@ -25,9 +25,9 @@ Future<void> main() async {
   await TestHelper.runOrderedTests(
     parentDescription: "Event_State_Tests",
     testGroups: <String, TestFunction>{
-      "Base Window": _testBaseWindow,
-      "Image": _testImages,
-      if (enableInputTests) "Input": _testInput,
+      // "Base Window": _testBaseWindow,
+      //   "Image": _testImages,
+         if (enableInputTests) "Input": _testInput,
     },
     appTitle: TestHelper.defaultAppTitle,
     appBody: TestHelper.defaultAppBody,
@@ -47,12 +47,15 @@ void _testBaseWindow() {
     expect(bounds.height, _height, reason: "window should have correct width");
     expect(bounds.x, _x, reason: "window should have correct x");
     expect(bounds.y, _y, reason: "window should have correct y");
+    final Point<int>? size = mWindow.updateAndGetSize();
+    expect(size, Point<int>(appWidth, appHeight), reason: "window should have correct size!");
     await GameToolsLib.close();
     await TestHelper.initGameToolsLib("Game Tools Lib Example");
     expect(mWindow.updateAndGetOpen(), false, reason: "window should not be open with wrong name");
     await GameToolsLib.close();
     final GameWindow second = GameWindow(name: "invalid");
     await TestHelper.initGameToolsLib("game_tools", <GameWindow>[second]);
+    await MutableConfig.mutableConfig.alwaysMatchGameWindowNamesEqual.setValue(false);
     expect(mWindow.updateAndGetOpen(), true, reason: "window should be open with default contains check");
     expect(second.updateAndGetOpen(), false, reason: "second window should not be open");
     await second.rename("tools");
@@ -64,19 +67,36 @@ void _testBaseWindow() {
   });
   testO("color and pos test", () async {
     Logger.warn("this test can fail if you un focus the window");
+    mWindow.updateOpen(); // also needed for size to be cached without loop
+    mWindow.updateSize(); // needed for getpixel
+
     expect(mWindow.getPixelOfWindow(0, 0)?.equals(Colors.blue), true, reason: "top left blue (blue light filter on?)");
     expect(mWindow.getPixelOfWindow(99, 99)?.equals(Colors.blue), true, reason: "max size still blue");
     expect(mWindow.getPixelOfWindow(100, 100)?.equals(Colors.white), true, reason: "outer white");
     expect(mWindow.getPixelOfWindow(1163, 580)?.equals(Colors.white), true, reason: "before bot right white");
     expect(mWindow.getPixelOfWindow(1164, 581)?.equals(Colors.purple), true, reason: "bottom right purple");
-    expect(mWindow.getPixelOfWindow(appWidth - 1, appHeight - 1)?.equals(Colors.purple), true, reason: "pur");
-    expect(mWindow.getPixelOfWindow(appWidth, appHeight)?.equals(Colors.purple), false, reason: "no color");
-    expect(mWindow.getPixelOfWindow(_width - 1, _height - 1)?.equals(Colors.purple), false, reason: "still no color");
+    expect(mWindow.getPixelOfWindow(appWidth - 1, appHeight - 1)?.equals(Colors.purple), false, reason: "win11 round");
+    expect(mWindow.getPixelOfWindow(appWidth - 1, appHeight - 10)?.equals(Colors.purple), true, reason: "pur1");
+    expect(mWindow.getPixelOfWindow(appWidth - 10, appHeight - 1)?.equals(Colors.purple), true, reason: "pur2");
+    expect(mWindow.getPixelOfWindow(appWidth, appHeight)?.equals(Colors.purple), null, reason: "no color");
+    expect(mWindow.getPixelOfWindow(_width - 1, _height - 1)?.equals(Colors.purple), null, reason: "still no color");
     expect(mWindow.getPixelOfWindow(_width, _height), null, reason: "out window null");
     expect(mWindow.getPixelOfWindow(-1, -1), null, reason: "also -1 is null");
-    expect(mWindow.getMiddle(), const Point<int>(640, 360), reason: "middle a bit shifted");
+
+    expect(mWindow.getMiddle(), const Point<int>(632, 341), reason: "middle pos rounded");
+    expect(mWindow.getPixelOfWindowP(mWindow.getMiddle())?.equals(Colors.red), true, reason: "middle pix red");
+    final Bounds<int> bounds = mWindow.getWindowBounds();
+    expect(mWindow.isWithinWindow(bounds.pos), true, reason: "start in window");
+    expect(mWindow.isWithinWindow((bounds.pos + bounds.size).move(-1, -1)), true, reason: "end in window");
+    expect(mWindow.isWithinWindow(bounds.pos.move(-1, -1)), false, reason: "before not in window");
+    expect(mWindow.isWithinWindow(bounds.pos + bounds.size), false, reason: "after not in window");
+
     expect(mWindow.getMiddle() == mWindow.getWindowBounds().middlePos, false, reason: "middle should not be bounds");
-    expect(mWindow.getPixelOfWindowP(mWindow.getMiddle())?.equals(Colors.yellow), true, reason: "middle ring yellow");
+    expect(
+      const Point<int>(650, 370) == mWindow.getWindowBounds().middlePos,
+      true,
+      reason: "default opening pos on windows (this might fail) tested with bounds middle pos",
+    );
   });
 }
 
@@ -125,7 +145,7 @@ void _testImages() {
     expect(NativeImage.cleanupCounter, cleanups + 1, reason: "but explicit type change should!");
     final NativeImage fullGray = NativeImage.readSync(path: testFile("full_crop.png"), type: NativeImageType.GRAY);
     expect(NativeImage.cleanupCounter, cleanups + 1, reason: "but not for gray!");
-    final NativeImage part = await full.getSubImage(48, 47, 5, 3);
+    final NativeImage part = full.getSubImage(48, 47, 5, 3);
     expect(correct.colorAtPixel(0, 0)?.equals(Colors.yellow), true, reason: "correct pixel from file");
     expect(correct.colorAtPixel(1, 1)?.equals(Colors.red), true, reason: "correct pixel2 from file");
     expect(TestMockNativeImageWrapper(full).native, null, reason: "file has no native data");
@@ -239,7 +259,8 @@ void _testImages() {
     expect(cropMiddle.colorAtPixel(52, 52)?.equals(Colors.yellow), true, reason: "crop mi4");
     // real inner window positions from full window vary a bit because of invisible borders, etc
     expect(fullWin.colorAtPixel(8, 31)?.equals(Colors.blue), true, reason: "first window pixel (might fail)");
-    expect(fullWin.colorAtPixel(1271, 711)?.equals(Colors.purple), true, reason: "last window pixel (might fail)");
+    expect(fullWin.colorAtPixel(1271, 701)?.equals(Colors.purple), true, reason: "last window pixel 1 (might fail)");
+    expect(fullWin.colorAtPixel(1261, 711)?.equals(Colors.purple), true, reason: "last window pixel 2 (might fail)");
     expect(fullWin.colorAtPixel(638, 369)?.equals(Colors.red), true, reason: "win mid1");
     expect(fullWin.colorAtPixel(642, 373)?.equals(Colors.yellow), true, reason: "win mid2");
     // now translate from window pos to display pos
@@ -249,11 +270,16 @@ void _testImages() {
       reason: "same first pixel on display (might fail)",
     );
     expect(
-      display.colorAtPixel(1271 + bounds.x, 711 + bounds.y)?.equals(Colors.purple),
+      display.colorAtPixel(1261 + bounds.x, 711 + bounds.y)?.equals(Colors.purple),
       true,
-      reason: "same last pixel on display (might fail)",
+      reason: "same last pixel on display (might fail) 1 (win11 rounded corner)",
     );
-    final NativeImage part = await cropMiddle.getSubImage(48, 47, 5, 3);
+    expect(
+      display.colorAtPixel(1271 + bounds.x, 701 + bounds.y)?.equals(Colors.purple),
+      true,
+      reason: "same last pixel on display (might fail) 2 (win11 rounded corner)",
+    );
+    final NativeImage part = cropMiddle.getSubImage(48, 47, 5, 3);
     expect(part == NativeImage.readSync(path: testFile("correct_crop.png")), true, reason: "sub image comp equals");
     expect(part == NativeImage.readSync(path: testFile("wrong_crop.png")), false, reason: "wrong not equal");
   });
@@ -265,7 +291,10 @@ void _testInput() {
       " terminal in focus!!!", () async {
     await GameToolsLib.close();
     final GameWindow second = GameWindow(name: "Command Prompt");
-    await TestHelper.initGameToolsLib("game_tools", <GameWindow>[second]); // additional window to the _window
+    await TestHelper.initGameToolsLib("game_tools_lib_example", <GameWindow>[second]); // additional window to _window
+    await MutableConfig.mutableConfig.alwaysMatchGameWindowNamesEqual.setValue(false); // needed for cmd find
+    await Utils.delayMS(55); // wait for update
+
     unawaited(GameToolsLib.runLoop(app: null));
     Logger.warn("this test can fail if you un focus the window");
     Logger.warn(

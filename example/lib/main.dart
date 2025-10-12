@@ -38,13 +38,15 @@ final class ExamplePage extends GTNavigationPage {
         final bool windowFound = GameToolsLib.mainGameWindow.updateAndGetOpen();
         String windowText = "window ${GameToolsLib.mainGameWindow.name} found: $windowFound";
         if (windowFound) {
-          windowText = "$windowText at Pos ${GameToolsLib.mainGameWindow.getWindowBounds()}";
+          windowText = "$windowText with size ${GameToolsLib.mainGameWindow.updateAndGetSize()}";
         }
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
+              SizedBox(height: 5),
+              Text(windowText),
               SizedBox(height: 5),
               FilledButton(onPressed: () => GameToolsLib.mainGameWindow.moveMouse(0, 0), child: Text("move mouse")),
               SizedBox(height: 5),

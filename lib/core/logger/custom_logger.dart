@@ -5,6 +5,7 @@ import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/enums/log_level.dart';
 import 'package:game_tools_lib/core/logger/log_message.dart';
 import 'package:game_tools_lib/core/utils/file_utils.dart';
+import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_stream.dart';
 import 'package:intl/intl.dart' show DateFormat;
@@ -14,6 +15,8 @@ import 'package:intl/intl.dart' show DateFormat;
 /// This will also provide the option to listen to new logs from the ui with [SimpleChangeStream].
 ///
 /// Very important: look at [sensitiveDataToRemove] so that sensitive data will not be stored to a file!!
+///
+/// [showErrorLogsInOverlay] can be overridden to disable this feature in sub classes
 base class CustomLogger extends Logger with SimpleChangeStream<List<LogMessage>> {
   /// Will always remove 10% of the latest logs
   static int maxLogsToKeepForUI = 1000;
@@ -54,21 +57,43 @@ base class CustomLogger extends Logger with SimpleChangeStream<List<LogMessage>>
     }
   }
 
+  /// Used in [logToUi] to send a message to the ui
   void sendToUi(LogMessage logMessage) {
     changeValue.add(logMessage);
     if (changeValue.length >= maxLogsToKeepForUI) {
       changeValue.removeRange(0, maxLogsToKeepForUI ~/ 10 + 1);
     }
     addEvent(); // uses SimpleChangeStream
+    showErrorLogsInOverlay(logMessage);
   }
+
+  /// This is used in [sendToUi] to log only [LogLevel.ERROR] logs to the overlay.
+  ///
+  /// Can be overridden in the subclass to disable this feature.
+  void showErrorLogsInOverlay(LogMessage logMessage) {
+    if (logMessage.level == LogLevel.ERROR && logMessage.message != null) {
+      if (_lastLog == logMessage.message) {
+        return;
+      }
+      _lastLog = logMessage.message;
+      try {
+        OverlayManager.overlayManager().showToast(TS.raw(logMessage.message!));
+      } catch (_) {
+        // might throw not initialized error for overlaymanager for earlier logs
+      }
+    }
+  }
+
+  /// Used for [showErrorLogsInOverlay] to prevent recursion
+  String? _lastLog;
 
   /// Can be overridden in the subclass to store the final log message in a file.
   ///
   /// Important: the call to this method will not be awaited, but it will be synchronized, so that only ever one log call
   /// is writing to it at the same time!
   ///
-  /// The default is just a call to do nothing. 
-  /// 
+  /// The default is just a call to do nothing.
+  ///
   /// For sensitive data [LogMessage.getSensitiveString] is used with [logMessage] and [sensitiveDataToRemove]!
   @override
   Future<void> logToStorage(LogMessage logMessage) async {

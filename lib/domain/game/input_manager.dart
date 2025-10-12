@@ -25,17 +25,18 @@ abstract final class InputManager {
 
   /// Returns the mouse position relative to the top left corner of the window.
   /// May throw a [WindowClosedException] if the window was not open.
-  /// Returns [null] if the cursor is currently outside of the window (see [GameWindow.isWithinWindow])!
+  /// Returns [null] if the cursor is currently outside of the window (in screen space)!
   /// There is also [getWindowMousePosNonNull] if preferred.
   ///
   /// Important: uses mouse position relative to top left window border, but [GameWindow.getWindowBounds] would also
   /// include a top window border in its height which is not included here!
   static Point<int>? getWindowMousePos(GameWindow window) {
     final Point<int>? pos = _nativeWindow.getWindowMousePos(window._windowID);
-    if (pos == null) {
+    final Point<int>? size = window.size;
+    if (pos == null || size == null) {
       throw const WindowClosedException(message: "Cant get mouse pos inside window");
     }
-    if (window.isWithinWindow(pos) == false) {
+    if (pos.x < 0 || pos.y < 0 || pos.x >= size.x || pos.y >= size.y) {
       return null;
     }
     return pos;

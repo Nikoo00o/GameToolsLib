@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:game_tools_lib/core/enums/overlay_mode.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
+import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_app.dart';
 import 'package:game_tools_lib/presentation/pages/debug/gt_debug_page.dart';
 import 'package:game_tools_lib/presentation/pages/home/gt_window_status.dart';
@@ -58,25 +60,25 @@ base class GTHomePage extends GTNavigationPage {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         Text(const TranslationString("page.home.overlay.warning").tl(context)),
+        const SizedBox(height: 20),
         FilledButton(
+          onPressed: () => OverlayManager.overlayManager().changeMode(OverlayMode.VISIBLE),
+          child: const Text("switch to overlay"),
+        ),
+        const SizedBox(height: 10),
+        FilledButton.tonal(
+          onPressed: () => OverlayManager.overlayManager().changeMode(OverlayMode.EDIT_UI),
+          child: const Text("Edit UI"),
+        ),
+        const SizedBox(height: 15),
+        FilledButton.tonal(
           onPressed: () {
             pushPage(context, const GTDebugPage());
           },
           child: Text("$open ${const TS("page.debug.title").tl(context)}"),
         ),
-        const SizedBox(height: 10),
-        // todo: implement and translate
-        FilledButton(
-          onPressed: () {},
-          child: const Text("Edit UI"),
-        ),
-        const SizedBox(height: 10),
-        FilledButton(
-          onPressed: () {},
-          child: const Text("switch to overlay"),
-        ),
-        const SizedBox(height: 10),
-        FilledButton(
+        const SizedBox(height: 15),
+        FilledButton.tonal(
           onPressed: () {
             pushPage(context, const GTLogsPage());
           },

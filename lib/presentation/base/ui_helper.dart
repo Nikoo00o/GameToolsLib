@@ -8,7 +8,6 @@ import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_listener.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_notifier.dart';
 import 'package:provider/provider.dart';
-import 'package:provider/single_child_widget.dart';
 
 /// Useful helper methods for building the ui of the app.
 /// For example to listen for config option changes, use [configProvider] with [configConsumer].
@@ -59,12 +58,26 @@ abstract final class UIHelper {
   /// You have to create a new object of your [T] in [createValue] which you can then modify below in the widget
   /// tree with [modifySimpleValue] (without rebuilding) and also listen to changes of it and rebuild with
   /// [simpleConsumer], or [simpleSelector].
-  static SingleChildWidget simpleProvider<T>({
+  ///
+  /// To use an existing static [SimpleChangeNotifier] value, use [simpleValueProvider] instead!
+  static ChangeNotifierProvider<SimpleChangeNotifier<T>> simpleProvider<T>({
     required T Function(BuildContext context) createValue,
     Key? key,
     Widget? child,
   }) => ChangeNotifierProvider<SimpleChangeNotifier<T>>(
     create: (BuildContext context) => SimpleChangeNotifier<T>(createValue.call(context)),
+    key: key,
+    child: child,
+  );
+
+  /// Special variant of [simpleProvider] which provides a static [SimpleChangeNotifier] member value directly
+  /// instead of creating a new one!
+  static ChangeNotifierProvider<SimpleChangeNotifier<T>> simpleValueProvider<T>({
+    required SimpleChangeNotifier<T> value,
+    Key? key,
+    Widget? child,
+  }) => ChangeNotifierProvider<SimpleChangeNotifier<T>>.value(
+    value: value,
     key: key,
     child: child,
   );
@@ -80,7 +93,7 @@ abstract final class UIHelper {
 
   /// This is used to listen to changes from a value of [T] provided higher up the widget tree with
   /// [simpleProvider], but the [child] is build outside for performance reason! Uses a [Consumer] widget.
-  static Widget simpleConsumer<T>({
+  static Consumer<SimpleChangeNotifier<T>> simpleConsumer<T>({
     Key? key,
     required Widget Function(BuildContext context, T value, Widget? child) builder,
     Widget? child,
@@ -94,7 +107,7 @@ abstract final class UIHelper {
   /// This is similar to [simpleConsumer], but for performance reasons it can select a member of [MemberType] from
   /// the value [ValueType] and only rebuild when that exact member changes and that member has to be filtered with
   /// [getMemberFromValue]. Uses a [Selector] widget.
-  static Widget simpleSelector<ValueType, MemberType>({
+  static Selector<SimpleChangeNotifier<ValueType>, MemberType> simpleSelector<ValueType, MemberType>({
     Key? key,
     required MemberType Function(BuildContext context, ValueType value) getMemberFromValue,
     required Widget Function(BuildContext context, MemberType value, Widget? child) builder,
@@ -169,7 +182,7 @@ abstract final class UIHelper {
 
   /// This can be used with one of either [onOpenChange], [onFocusChange], or [onRename] to listen to one of these
   /// changes in the [GameWindow] from [GameToolsLib.mainGameWindow]!
-  static Widget listenToMainWindowChange({
+  static Selector<GameWindow, dynamic> listenToMainWindowChange({
     Key? key,
     // ignore: avoid_positional_boolean_parameters
     Widget Function(BuildContext context, bool hasFocus, Widget? child)? onFocusChange,
