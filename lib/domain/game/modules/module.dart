@@ -54,6 +54,9 @@ abstract base class Module<GameManagerType extends GameManagerBaseType> {
   /// Don't use any delays inside of this! Important: the first and last state on start and end of the game itself will
   /// always be [GameClosedState] and this callback will only be called after the initial state is set, so [oldState]
   /// will never be null (but the callback will also be called at the end)!
+  ///
+  /// For example this would be a good place to add and remove periodic [GameEvent]'s depending on the state change
+  /// that maybe have a static [CompareImage] and always check if it matches!
   Future<void> onStateChange(GameState oldState, GameState newState) async {}
 
   /// Should be overridden to provide additional [LogInputListener] in addition to the ones in the constructor of

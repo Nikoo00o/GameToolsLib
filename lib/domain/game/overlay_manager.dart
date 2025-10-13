@@ -3,7 +3,8 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 // todo: doc comments
 /// This (or sub classes of this) is the interaction point between your data code layer and a transparent overlay
 /// ([GTOverlay]) on top of your window (per default the [GameToolsLib.mainGameWindow]) where you can draw ui
-/// elements (todo: reference) and also modify them!
+/// [OverlayElement]'s like for example also [CompareImage] which can be created and used anywhere! For more info
+/// look at doc comments there!
 ///
 /// The [overlayMode] can be used to access or modify the current mode (might also be used to render elements
 /// conditionally)!
@@ -20,8 +21,18 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
   /// in [GTOverlay]! Prefer to use [changeMode] instead to change the overlay mode.
   final SimpleChangeNotifier<OverlayMode> overlayMode;
 
+  /// Contains all the cached [OverlayElement]'s (see doc comments of [OverlayElementsList] ) and can be used to
+  /// add/remove elements, or modify elements, or build them!
+  final OverlayElementsList overlayElements;
+
+  /// Sub folder of [GameToolsConfig.dynamicData] where the [OverlayElement]'s are stored into simple json files!
+  ///
+  /// Can be overridden in sub classes.
+  String get overlayElementSubFolder => "overlay";
+
   OverlayManager([OverlayMode initialOverlayMode = OverlayMode.APP_OPEN])
-    : overlayMode = SimpleChangeNotifier<OverlayMode>(initialOverlayMode) {
+    : overlayMode = SimpleChangeNotifier<OverlayMode>(initialOverlayMode),
+      overlayElements = OverlayElementsList() {
     overlayMode.addListener(_overlayModeListener);
   }
 
@@ -84,10 +95,13 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
 
   /// This is called when the size of the [window] changes (for example when switching to full screen). This will
   /// also be called when the window opens for the first time with the initial size of it. And also when the window
-  /// closes this will be called and the [GameWindow.size] will then be null!
+  /// closes this will be called and the [GameWindow.size] will then be null! (the overlay ui elements will be
+  /// rebuild automatically on size change, because they consume the window)
   @mustCallSuper
   Future<void> onWindowResize(GameWindow window) async {
-    if (overlayMode.value != OverlayMode.APP_OPEN) {}
+    if (overlayMode.value != OverlayMode.APP_OPEN) {
+      // todo: resize window
+    }
 
     // todo: remove after min and maximize test
     if (window.size != null) {
@@ -96,12 +110,27 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
   }
 
   /// Is called after the [overlayMode] was changed with the old value being [lastMode] (null the first time!).
+  ///
+  /// Important: if [changedBetweenHiddenAndVisible] is true, then a change happened exactly between
+  /// [OverlayMode.HIDDEN] and [OverlayMode.VISIBLE] which may happen quite often and which will not trigger
+  /// [GameEvent.onOverlayModeChanged] and also not [OverlayElement.saveToStorage]!
+  ///
+  /// In your subclass override of this be careful what you do without checking if [changedBetweenHiddenAndVisible]
+  /// is true for performance reasons!
   @mustCallSuper
-  void onOverlayModeChanged(OverlayMode? lastMode) {
-    Logger.verbose("Switched Overlay from $lastMode to ${overlayMode.value}");
-    _GameToolsLibEventLoop._runForAllEvents((GameEvent event) {
-      event.onOverlayModeChanged(lastMode, overlayMode.value);
-    });
+  @protected
+  void onOverlayModeChanged(OverlayMode? lastMode, {required bool changedBetweenHiddenAndVisible}) {
+    if (changedBetweenHiddenAndVisible == false) {
+      Logger.verbose(
+        "Switched Overlay from $lastMode to ${overlayMode.value} with ${overlayElements.countOfElements} overlay "
+        "elements",
+      );
+      _GameToolsLibEventLoop._runForAllEvents((GameEvent event) {
+        event.onOverlayModeChanged(lastMode, overlayMode.value);
+      });
+      overlayElements.doForAll((OverlayElement element) => element.saveToStorage());
+    }
+    // todo: switch mode of window inside if or outside?
   }
 
   /// Uses [GTOverlayState.showToast] to show a message on the bottom only if the overlay is currently active, but
@@ -135,8 +164,8 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
     return completer.future;
   }
 
-  /// Will execute [callback] after the current frame has been rendered (so every ui element should be available at that
-  /// point). The inner [BuildContext] context is not null if the [overlayContext] is mounted!
+  /// Will execute [callback] after the current frame has been rendered (so every overlay ui element should be available
+  /// at that point). The inner [BuildContext] context is not null if the [overlayContext] is mounted!
   ///
   /// Important: the [callback] will not be awaited here and should only modify UI stuff! If you have inner awaits in
   /// your callback, then you should check the mounted status of the [BuildContext] afterwards.
@@ -151,14 +180,18 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
     if (delay > Duration.zero) {
       await Future<void>.delayed(delay);
     }
-    SchedulerBinding.instance.addPostFrameCallback((Duration? timestamp) {
-      final BuildContext? context = overlayContext;
-      if (context?.mounted ?? false) {
-        callback(context!);
-      } else {
-        callback(null);
-      }
-    });
+    try {
+      SchedulerBinding.instance.addPostFrameCallback((Duration? timestamp) {
+        final BuildContext? context = overlayContext;
+        if (context?.mounted ?? false) {
+          callback(context!);
+        } else {
+          callback(null);
+        }
+      });
+    } catch (_) {
+      // ui is not available yet, ignore errors which only happen on startup!
+    }
   }
 
   /// Uses [overlayReference] to get the [GTOverlay]. This is not-null some time after [onCreate] is called
@@ -168,7 +201,7 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
   OverlayStateType? get overlayState => overlayReference.currentState;
 
   /// Changes the [overlayMode] to [newOverlayMode], but does not allow changes to the same exact mode.
-  /// Of course this will also trigger [onOverlayModeChanged]!
+  /// Of course this will also trigger [onOverlayModeChanged] and rebuild!
   void changeMode(OverlayMode newOverlayMode) {
     if (newOverlayMode != overlayMode.value) {
       overlayMode.value = newOverlayMode;
@@ -182,8 +215,12 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
 
   /// Listener for changes to [overlayMode]
   static void _overlayModeListener() {
-    _instance?.onOverlayModeChanged(_lastMode);
-    _lastMode = _instance?.overlayMode.value;
+    final OverlayMode? newValue = _instance?.overlayMode.value;
+    final bool hiddenVisibleChange =
+        (_lastMode == OverlayMode.HIDDEN && newValue == OverlayMode.VISIBLE) ||
+        (_lastMode == OverlayMode.VISIBLE && newValue == OverlayMode.HIDDEN);
+    _instance?.onOverlayModeChanged(_lastMode, changedBetweenHiddenAndVisible: hiddenVisibleChange);
+    _lastMode = newValue;
   }
 
   /// Returns the the [GameLogWatcher._instance] if already set, otherwise throws a [ConfigException]

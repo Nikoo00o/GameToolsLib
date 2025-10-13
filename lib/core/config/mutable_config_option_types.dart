@@ -86,6 +86,8 @@ base class EnumConfigOption<EnumType> extends MutableConfigOption<EnumType> {
 ///
 /// Normally you would directly create instances of this with callbacks, but of course you could also create a
 /// subclass which passes static callbacks!
+///
+/// You could also save the option on storage externally so that the user can edit it with [storeInExternalJsonFile]!
 base class ModelConfigOption<T extends Model?> extends MutableConfigOption<T> {
   /// function that creates a new instance of [T] by calling its fromJson factory constructor
   final T Function(Map<String, dynamic> json) _createNewModelInstance;
@@ -95,6 +97,22 @@ base class ModelConfigOption<T extends Model?> extends MutableConfigOption<T> {
   ///
   /// This may also be null if this model option is not contained in [MutableConfig.getConfigurableOptions]
   final ConfigOptionBuilderModel<T> Function(ModelConfigOption<T> option)? createModelBuilder;
+
+  /// If true, then this config option is stored in an external json file which the user can modify while the program
+  /// is closed. Per default it's false! It will be stored in
+  /// "[GameToolsConfig.dynamicData] / [jsonFolderName] / [title.identifier]"
+  ///
+  /// But important difference: here the [defaultValue] is only used for the first start if no json file is stored yet
+  /// and otherwise always the content of the json file is used! So the file should always exist for the user, but
+  /// user modifications have to be done while the program is closed and will be loaded/applied at the next start!
+  ///
+  /// Also if the user writes invalid json data in the file, then the default values will be used and the file data
+  /// may be overridden at any time when it is saved!
+  final bool storeInExternalJsonFile;
+
+  /// Name for the folder inside of [GameToolsConfig.dynamicData] that contains the files for [saveToExternalJsonFiles].
+  /// Can be overridden in sub classes!
+  String get jsonFolderName => "config";
 
   /// [createNewModelInstance] function that creates a new instance of [T] by calling its fromJson factory constructor
   /// [updateCallback] Optional update callback that is called after [setValue] to update data references elsewhere.
@@ -109,14 +127,18 @@ base class ModelConfigOption<T extends Model?> extends MutableConfigOption<T> {
     super.defaultValue,
     super.lazyLoaded,
     super.onInit,
+    this.storeInExternalJsonFile = false,
   }) : _createNewModelInstance = createNewModelInstance;
+
+  /// pretty json encoder
+  static const JsonEncoder _encoder = JsonEncoder.withIndent("    ");
 
   @override
   String? _dataToString(T? data) {
     if (data == null) {
       return null;
     }
-    return jsonEncode(data.toJson());
+    return _encoder.convert(data.toJson());
   }
 
   @override
@@ -128,7 +150,12 @@ base class ModelConfigOption<T extends Model?> extends MutableConfigOption<T> {
     if (json == null) {
       return null;
     }
-    return _createNewModelInstance.call(json);
+    try {
+      return _createNewModelInstance.call(json);
+    } catch (e, s) {
+      Logger.error("Could not load ModelConfigOption $title from json, OVERRIDING IT", e, s);
+      return null;
+    }
   }
 
   /// Example for how [_createNewModelInstance] functions should look with [ExampleModel]
@@ -140,6 +167,51 @@ base class ModelConfigOption<T extends Model?> extends MutableConfigOption<T> {
 
   @override
   ConfigOptionBuilder<T>? get builder => createModelBuilder?.call(this);
+
+  @override
+  Future<bool> _existsInStorage() async {
+    if (storeInExternalJsonFile) {
+      if (GameToolsLib.database.simpleJsonExists(subPath: <String>[jsonFolderName, title.identifier])) {
+        return true;
+      } else {
+        // special case, store default value if it does not exist on storage yet
+        await _write(_encoder.convert(defaultValue?.toJson() ?? <String, dynamic>{}));
+        return false;
+      }
+    } else {
+      return super._existsInStorage();
+    }
+  }
+
+  @override
+  Future<String?> _read() async {
+    if (storeInExternalJsonFile) {
+      final String path = FileUtils.combinePath(<String>[
+        GameToolsConfig.config().dynamicDataFolder,
+        jsonFolderName,
+        "${title.identifier}.json",
+      ]);
+      return FileUtils.readFile(path);
+    } else {
+      return super._read();
+    }
+  }
+
+  @override
+  Future<void> _write(String? str) async {
+    if (storeInExternalJsonFile) {
+      if (str != null) {
+        final String path = FileUtils.combinePath(<String>[
+          GameToolsConfig.config().dynamicDataFolder,
+          jsonFolderName,
+          "${title.identifier}.json",
+        ]);
+        await FileUtils.writeFile(path, str);
+      }
+    } else {
+      return super._write(str);
+    }
+  }
 }
 
 /// Custom Config option where you have the freedom of deciding how to convert a string into your data of type [T] by

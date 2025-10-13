@@ -69,17 +69,39 @@ final class HiveDatabaseMock extends HiveDatabase {
   }
 
   @override
-  Future<void> writeJson({required String localFilePath, required Map<String, dynamic> json}) async {
+  void writeJson({required String absoluteFilePath, required Map<String, dynamic> json}) {
     lastFileChange = DateTime.now();
-    files[localFilePath] = utf8.encode(jsonEncode(json));
+    files[absoluteFilePath] = utf8.encode(jsonEncode(json));
   }
 
   @override
-  Future<Map<String, dynamic>?> readJson({required String localFilePath}) async {
-    if (files[localFilePath] == null) {
+  Map<String, dynamic>? readJson({required String absoluteFilePath}) {
+    if (files[absoluteFilePath] == null) {
       return null;
     }
-    final String data = utf8.decode(files[localFilePath]!);
+    final String data = utf8.decode(files[absoluteFilePath]!);
+    return jsonDecode(data) as Map<String, dynamic>?;
+  }
+
+  @override
+  bool simpleJsonExists({required List<String> subPath}) {
+    return files.containsKey(FileUtils.combinePath(subPath));
+  }
+
+  @override
+  void storeSimpleJson({required List<String> subPath, required Model convertToJson}) {
+    lastFileChange = DateTime.now();
+    final String path = FileUtils.combinePath(subPath);
+    files[path] = utf8.encode(jsonEncode(convertToJson));
+  }
+
+  @override
+  Map<String, dynamic>? loadSimpleJson({required List<String> subPath}) {
+    final String path = FileUtils.combinePath(subPath);
+    if (files[path] == null) {
+      return null;
+    }
+    final String data = utf8.decode(files[path]!);
     return jsonDecode(data) as Map<String, dynamic>?;
   }
 

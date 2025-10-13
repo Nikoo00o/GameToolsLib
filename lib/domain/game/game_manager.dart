@@ -20,6 +20,7 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 ///
 /// You can also optionally retrieve the config values of the game directly with your custom sub class of
 /// [GameConfigLoader] in [gameConfigLoader]! Same with the [OverlayManager] in [overlayManager] for ui stuff!
+/// The [OverlayElement]'s like for example also [CompareImage] can be created and used anywhere!
 ///
 /// The [WebManager] for http requests can be retrieved with [webManager].
 ///
@@ -174,7 +175,9 @@ abstract base class GameManager<ConfigType extends GameToolsConfigBaseType> {
 
   /// Reference to the game config loader if it was used in [GameToolsLib.initGameToolsLib] (otherwise throws
   /// [ConfigException]!)
-  T gameConfigLoader<T extends GameConfigLoader>() => GameToolsLib.gameConfigLoader<T>();
+  ///
+  /// But this can also be accessed with a nullable type to not throw an exception in that case!
+  T gameConfigLoader<T extends GameConfigLoader?>() => GameToolsLib.gameConfigLoader<T>();
 
   /// Reference to [OverlayManager.overlayManager] for ui overlay displaying
   T overlayManager<T extends OverlayManagerBaseType>() => GameToolsLib.overlayManager<T>();

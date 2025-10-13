@@ -35,6 +35,8 @@ final class TranslationString {
 
   /// Special case to directly translate and combine the [strings] by using the [TranslationString.raw] constructor!
   ///
+  /// This just appends the strings to another!
+  ///
   /// To directly translate, use [combineS] instead!
   factory TranslationString.combine(List<TranslationString> strings, BuildContext context) {
     final StringBuffer buff = StringBuffer();

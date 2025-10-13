@@ -217,8 +217,8 @@ void _testConfigDB() {
     ],
   );
   const String modelJson =
-      "{\"JSON_SOME_DATA\":10,\"JSON_MODIFIABLE_DATA\":[{\"JSON_SOME_DATA\":20,\"JSON_MODIFIABLE_DATA\":"
-      "[{\"JSON_SOME_DATA\":null,\"JSON_MODIFIABLE_DATA\":[]}]}]}";
+      "{\"Some Data\":10,\"Modifiable Data\":[{\"Some Data\":20,\"Modifiable Data\":"
+      "[{\"Some Data\":null,\"Modifiable Data\":[]}]}]}";
 
   testO("testing database with complex model", () async {
     expect(jsonEncode(someModel), modelJson, reason: "model should be correct json text");

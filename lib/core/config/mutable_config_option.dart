@@ -16,7 +16,7 @@ part of 'package:game_tools_lib/core/config/mutable_config.dart';
 /// Use this if your config option needs to access other config options, or needs any initialisation!
 ///
 /// You can also access the cached value in a sync way with [cachedValue] (But [getValue] needs to be called at least
-/// once before!)
+/// once before!) (or also [cachedValueNotNull])
 ///
 /// Remember for the ui the [builder] has to be overridden and also [title] and [description] are needed if
 /// this option is included in [MutableConfig.getConfigurableOptions]!
@@ -41,6 +41,9 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
 
   /// Optional default value that will be used if saved data is null (if [setValue] is called with [null] then this
   /// will be ignored until [deleteValue] is called). Important: if [T] is not nullable, then this is required!
+  ///
+  /// If there is a lot of code that's needed to create a const default value, consider moving the declaration to a
+  /// different single file as a global static const object!
   final T? defaultValue;
 
   /// For larger data sets this should be [true] to only load the data into memory on demand when its used.
@@ -125,10 +128,7 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
       return _value;
     }
     await onInit();
-    final bool exists = await GameToolsLib.database.existsInHive(
-      key: _transformedKey,
-      databaseKey: _dataBase,
-    );
+    final bool exists = await _existsInStorage();
     final T? newData = exists ? _stringToData(await _read()) : null;
     if (updateListeners) {
       await _onValueChange(newData, exists); // update cache (only when current value not null)
@@ -239,6 +239,12 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
 
   @override
   String toString() => "$runtimeType(key: $title, value: $_value)";
+
+  /// First always check storage
+  Future<bool> _existsInStorage() => GameToolsLib.database.existsInHive(
+    key: _transformedKey,
+    databaseKey: _dataBase,
+  );
 
   /// Loads from storage
   Future<String?> _read() async {

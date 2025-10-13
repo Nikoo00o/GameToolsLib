@@ -36,7 +36,7 @@ final class ExampleMutableConfig extends MutableConfig {
   /// Private member instance is needed to supply different value to the overridden getter below!
   /// This translation key is only for showcase and not contained in the translation files!
   final LogLevelConfigOption _logLevelInstance = LogLevelConfigOption(
-    title: const TS("config.example.logLevel"),
+    title: TS.raw("config.example.logLevel"),
     defaultValue: LogLevel.SPAM,
   );
 

@@ -27,6 +27,9 @@ abstract final class FileUtils {
   static String combinePath(List<String> parts) {
     final StringBuffer output = StringBuffer("");
     for (int i = 0; i < parts.length; ++i) {
+      if (parts.elementAt(i).isEmpty) {
+        continue; // skip empty parts!
+      }
       output.write(parts.elementAt(i));
       if (i < parts.length - 1 && parts.elementAt(i).endsWith(Platform.pathSeparator) == false) {
         output.write(Platform.pathSeparator);

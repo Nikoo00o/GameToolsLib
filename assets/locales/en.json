@@ -51,6 +51,8 @@
   "page.home.window.status.open": "Opened",
   "page.home.window.status.focused": "Focused",
   "page.home.overlay.warning": "At this point no blue light filter or night mode should be used, because image comparison might not work",
+  "page.home.open.overlay": "Switch to Overlay",
+  "page.home.edit.overlay": "Edit Overlay UI",
   "page.settings.title": "Settings",
   "page.settings.group.general": "General",
   "page.settings.group.other": "Other",

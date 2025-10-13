@@ -21,16 +21,28 @@ base class UpdateChecker {
     }
   }
 
+  /// returns fixed config option after checking [ConfigException]
+  List<String> get _option {
+    final List<String> option = FixedConfig.fixedConfig.versionPathToGitProject;
+    if (option.length != 2) {
+      throw const ConfigException(message: "fixedConfig.versionPathToGitProject length is not 2!");
+    }
+    return option;
+  }
+
   /// The base path to the github repository like for example https://github.com/Nikoo00o/GameToolsLib
-  String get baseGitProjectPath => FixedConfig.fixedConfig.versionPathToGitProject;
+  /// Might throw [ConfigException]
+  String get baseGitProjectPath => _option.first;
 
   /// The download path to raw files of github for the main branch like for example
   /// https://raw.githubusercontent.com/Nikoo00o/GameToolsLib/refs/heads/main
+  ///
+  /// At the end [FixedConfig.versionPathToGitProject].last may be added for sub path!
   @protected
   String get rawGitFilePath {
     String path = baseGitProjectPath;
     path = path.substring("https://github.com/".length);
-    return "https://raw.githubusercontent.com/$path/refs/heads/main/";
+    return "https://raw.githubusercontent.com/$path/refs/heads/main/${_option.last}";
   }
 
   /// Download raw file path like for example

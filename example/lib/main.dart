@@ -7,6 +7,8 @@ import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/domain/game/helper/example/example_event.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_app.dart';
+import 'package:game_tools_lib/presentation/overlay/ui_elements/canvas_overlay_element.dart';
+import 'package:game_tools_lib/presentation/overlay/ui_elements/overlay_element.dart';
 import 'package:game_tools_lib/presentation/pages/logs/gt_logs_page.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigation_page.dart';
 import 'package:provider/provider.dart';
@@ -14,7 +16,28 @@ import 'package:provider/provider.dart';
 // todo: create template with either template as prefix or "my" for the different overrides
 
 /// Used for quick tests/debugging on button click
-Future<void> _testSomething() async {}
+Future<void> _testOverlay() async {
+  final OverlayElement someElement1 = OverlayElement.forPos(
+    x: 10,
+    y: 10,
+    width: 100,
+    height: 200,
+    identifier: TS.raw("overlay.example.1"),
+  );
+  someElement1.visible = !someElement1.visible;
+
+  final CanvasOverlayElement someElement2 = CanvasOverlayElement.forPos(
+    x: 200,
+    y: 200,
+    width: 150,
+    height: 250,
+    identifier: TS.raw("overlay.example.2"),
+    color: Colors.green,
+  );
+  someElement2.visible = !someElement2.visible;
+
+  Logger.info("Example overlay test: $someElement1 and $someElement2");
+}
 
 final class ExamplePage extends GTNavigationPage {
   const ExamplePage({
@@ -60,7 +83,7 @@ final class ExamplePage extends GTNavigationPage {
                 child: Text("Screenshot"),
               ),
               SizedBox(height: 5),
-              OutlinedButton(onPressed: _testSomething, child: Text("Test Something")),
+              OutlinedButton(onPressed: _testOverlay, child: Text("Test Something")),
               SizedBox(height: 5),
               Text("oem1: ${InputManager.isKeyDown(BoardKey.oem1)}"),
               Text("oem2: ${InputManager.isKeyDown(BoardKey.oem2)}"),
@@ -70,9 +93,8 @@ final class ExamplePage extends GTNavigationPage {
               Text("oem6: ${InputManager.isKeyDown(BoardKey.oem6)}"),
               Text("oem7: ${InputManager.isKeyDown(BoardKey.oem7)}"),
               SizedBox(height: 5),
-              Text("Translate 1: ${TS("empty.1").tl(context)}"),
+              Text("Translate: ${TS("empty.3").tl(context)}"),
               SizedBox(height: 5),
-              Text("Translate 2: ${TS("empty.3").tl(context)}"),
               TextButton(
                 onPressed: () {
                   pushPage(context, GTLogsPage());

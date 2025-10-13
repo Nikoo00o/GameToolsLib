@@ -1,4 +1,5 @@
 import 'dart:math' show Point;
+import 'dart:ui' show Rect;
 import 'package:game_tools_lib/core/utils/bounds.dart';
 import 'package:game_tools_lib/domain/entities/base/model.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
@@ -23,32 +24,39 @@ final class ScaledBounds<T extends num> implements Model {
 
   /// The initial width of the related window that this was created with which is the baseline for any scaling for
   /// [unscaledBounds]
-  final int creationWidth;
+  late final int creationWidth;
 
   /// The initial height of the related window that this was created with which is the baseline for any scaling for
   /// [unscaledBounds]
-  final int creationHeight;
+  late final int creationHeight;
 
   /// Reference to the window this is related to (most of the times just the default [GameToolsLib.mainGameWindow])
   final GameWindow gameWindow;
 
-  /// [gameWindow] defaults to [GameToolsLib.mainGameWindow] if null
+  /// [gameWindow] defaults to [GameToolsLib.mainGameWindow] if null.
+  ///
+  /// [creationWidth] and [creationHeight] may be null and then the size will be taken from the [gameWindow].
   ScaledBounds(
     this.unscaledBounds, {
-    required this.creationWidth,
-    required this.creationHeight,
+    required int? creationWidth,
+    required int? creationHeight,
     GameWindow? gameWindow,
-  }) : gameWindow = gameWindow ?? GameToolsLib.mainGameWindow;
+  }) : gameWindow = gameWindow ?? GameToolsLib.mainGameWindow {
+    this.creationWidth = creationWidth ?? this.gameWindow.width;
+    this.creationHeight = creationHeight ?? this.gameWindow.height;
+  }
 
   /// The (x, y) scale factor for the current [gameWindow]'s [GameWindow.size] in relation to the initial
   /// [creationWidth] and [creationHeight].
-  Point<double> get scaleFactor => Point<double>(creationWidth / gameWindow.width, creationHeight / gameWindow.height);
+  ///
+  /// So for example [gameWindow.width] / [creationWidth]
+  Point<double> get scaleFactor => Point<double>(gameWindow.width / creationWidth, gameWindow.height / creationHeight);
 
   /// See [scaleFactor]
-  double get scaleFactorX => creationWidth / gameWindow.width;
+  double get scaleFactorX => gameWindow.width / creationWidth;
 
   /// See [scaleFactor]
-  double get scaleFactorY => creationHeight / gameWindow.height;
+  double get scaleFactorY => gameWindow.height / creationHeight;
 
   T _scaleX(T input) {
     if (T == int) {
@@ -64,10 +72,24 @@ final class ScaledBounds<T extends num> implements Model {
     return input * scaleFactorY as T;
   }
 
-  /// Returns the [unscaledBounds] scaled by [scaleFactor]
+  /// Returns the [unscaledBounds] scaled by [scaleFactor].
+  ///
+  /// For better precision you can also use [scaledBoundsD]
   Bounds<T> get scaledBounds {
     final Point<double> scaleFactor = this.scaleFactor;
     return unscaledBounds.scale(scaleFactor.x, scaleFactor.y);
+  }
+
+  /// Returns the [scaledBounds] as [double]
+  Bounds<double> get scaledBoundsD {
+    final Point<double> scaleFactor = this.scaleFactor;
+    final Bounds<double> doubleBounds = Bounds<double>(
+      x: unscaledBounds.x.toDouble(),
+      y: unscaledBounds.y.toDouble(),
+      width: unscaledBounds.width.toDouble(),
+      height: unscaledBounds.height.toDouble(),
+    );
+    return doubleBounds.scale(scaleFactor.x, scaleFactor.y);
   }
 
   /// Accesses [unscaledBounds] scaled by [scaleFactor]!
@@ -126,20 +148,31 @@ final class ScaledBounds<T extends num> implements Model {
   /// Scaling is applied here!
   String toStringAsPos() => "x: $x, y: $y,     width: $width, height: $height";
 
-  static const String JSON_BOUNDS = "JSON_BOUNDS";
-  static const String JSON_WIDTH = "JSON_WIDTH";
-  static const String JSON_HEIGHT = "JSON_HEIGHT";
+  static const String JSON_BOUNDS = "Bounds";
+  static const String JSON_CREATION_WIDTH = "Creation Width";
+  static const String JSON_CREATION_HEIGHT = "Creation Height";
 
   @override
   Map<String, dynamic> toJson() => <String, dynamic>{
     JSON_BOUNDS: unscaledBounds.toJson(),
-    JSON_WIDTH: creationWidth,
-    JSON_HEIGHT: creationHeight,
+    JSON_CREATION_WIDTH: creationWidth,
+    JSON_CREATION_HEIGHT: creationHeight,
   };
 
   factory ScaledBounds.fromJson(Map<String, dynamic> json) => ScaledBounds<T>(
     Bounds<T>.fromJson(json[JSON_BOUNDS] as Map<String, dynamic>),
-    creationWidth: json[JSON_WIDTH] as int,
-    creationHeight: json[JSON_HEIGHT] as int,
+    creationWidth: json[JSON_CREATION_WIDTH] as int,
+    creationHeight: json[JSON_CREATION_HEIGHT] as int,
   );
+
+  /// Converts the [scaledBounds] to a UI [Rect] for drawing!
+  Rect toRect() {
+    final Bounds<T> bounds = scaledBounds;
+    return Rect.fromLTRB(
+      bounds.left.toDouble(),
+      bounds.top.toDouble(),
+      bounds.right.toDouble(),
+      bounds.bottom.toDouble(),
+    );
+  }
 }

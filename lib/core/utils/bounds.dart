@@ -95,8 +95,8 @@ final class Bounds<T extends num> implements Model {
 
   String toStringAsPos() => "x: $x, y: $y,     width: $width, height: $height";
 
-  static const String JSON_POS = "JSON_POS";
-  static const String JSON_SIZE = "JSON_SIZE";
+  static const String JSON_POS = "Position";
+  static const String JSON_SIZE = "Size";
 
   @override
   Map<String, dynamic> toJson() => <String, dynamic>{JSON_POS: pos.toJson(), JSON_SIZE: size.toJson()};

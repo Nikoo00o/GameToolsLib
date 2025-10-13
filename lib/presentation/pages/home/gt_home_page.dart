@@ -63,12 +63,12 @@ base class GTHomePage extends GTNavigationPage {
         const SizedBox(height: 20),
         FilledButton(
           onPressed: () => OverlayManager.overlayManager().changeMode(OverlayMode.VISIBLE),
-          child: const Text("switch to overlay"),
+          child: Text(const TS("page.home.open.overlay").tl(context)),
         ),
         const SizedBox(height: 10),
         FilledButton.tonal(
           onPressed: () => OverlayManager.overlayManager().changeMode(OverlayMode.EDIT_UI),
-          child: const Text("Edit UI"),
+          child: Text(const TS("page.home.edit.overlay").tl(context)),
         ),
         const SizedBox(height: 15),
         FilledButton.tonal(

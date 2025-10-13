@@ -335,12 +335,12 @@ final class BoardKey implements Model {
       "BoardKey(id: ${logicalKey.keyId}, shift: $withShift, ctrl: $withControl, alt: $withAlt, "
       "meta: $withMeta, hint: $keyTextHint)";
 
-  static const String JSON_ID = "JSON_ID";
-  static const String JSON_SHIFT = "JSON_SHIFT";
-  static const String JSON_CTRL = "JSON_CTRL";
-  static const String JSON_ALT = "JSON_ALT";
-  static const String JSON_META = "JSON_META";
-  static const String JSON_KEY_TEXT_HINT = "JSON_KEY_TEXT_HINT";
+  static const String JSON_ID = "ID";
+  static const String JSON_SHIFT = "Shift";
+  static const String JSON_CTRL = "Ctrl";
+  static const String JSON_ALT = "Alt";
+  static const String JSON_META = "Meta";
+  static const String JSON_KEY_TEXT_HINT = "Key Text Hint";
 
   @override
   Map<String, dynamic> toJson() => <String, dynamic>{

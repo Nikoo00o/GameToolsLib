@@ -141,6 +141,9 @@ abstract base class GameEvent {
   /// This can optionally be overridden to react to changes when the [OverlayMode] of [OverlayManager] changes to
   /// maybe render something conditionally like for example only in [OverlayMode.VISIBLE].
   /// The [oldMode] will only be null for the first call!
+  ///
+  /// This will not listen to changes exactly between [OverlayMode.HIDDEN] and [OverlayMode.VISIBLE] which happen
+  /// quite often!
   void onOverlayModeChanged(OverlayMode? oldMode, OverlayMode newMode) {}
 
   /// Shortcut that returns the [GameToolsLib.currentState] as [StateType]

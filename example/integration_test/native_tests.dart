@@ -25,9 +25,9 @@ Future<void> main() async {
   await TestHelper.runOrderedTests(
     parentDescription: "Event_State_Tests",
     testGroups: <String, TestFunction>{
-      // "Base Window": _testBaseWindow,
-      //   "Image": _testImages,
-         if (enableInputTests) "Input": _testInput,
+      "Base Window": _testBaseWindow,
+      "Image": _testImages,
+      if (enableInputTests) "Input": _testInput,
     },
     appTitle: TestHelper.defaultAppTitle,
     appBody: TestHelper.defaultAppBody,
@@ -122,7 +122,7 @@ void _testImages() {
       await img.scale(1.5, 2.5); // scale with null
     }, throwsA(predicate((Object e) => e is ImageException)));
     expect(() async {
-      await img.getSubImage(0, 0, 1, 1); // subimg with null
+      img.getSubImage(0, 0, 1, 1); // subimg with null
     }, throwsA(predicate((Object e) => e is ImageException)));
     await img.resize(10, 10); // resize is fine, but does nothing
     expect(img.width == 0 && img.height == 0, true, reason: "still 0 size");

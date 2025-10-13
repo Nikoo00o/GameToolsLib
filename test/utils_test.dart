@@ -143,7 +143,7 @@ void _testGeneral() {
     expect(b1.contains(const Point<int>(10, 21)), false, reason: "not contain bottom out");
 
     const String modelJson =
-        "{\"JSON_POS\":{\"JSON_X\":3.0,\"JSON_Y\":5.0},\"JSON_SIZE\":{\"JSON_X\":13.0,\"JSON_Y\":15.0}}";
+        "{\"Position\":{\"X\":3.0,\"Y\":5.0},\"Size\":{\"X\":13.0,\"Y\":15.0}}";
     expect(jsonEncode(b2), modelJson, reason: "bounds model should match");
     expect(
       Bounds<double>.fromJson(jsonDecode(modelJson) as Map<String, dynamic>),

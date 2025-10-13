@@ -181,8 +181,8 @@ extension PointExtension<T extends num> on Point<T> {
     return x == other.x && y == other.y;
   }
 
-  static const String JSON_X = "JSON_X";
-  static const String JSON_Y = "JSON_Y";
+  static const String JSON_X = "X";
+  static const String JSON_Y = "Y";
 
   Map<String, dynamic> toJson() => <String, dynamic>{JSON_X: x, JSON_Y: y};
 

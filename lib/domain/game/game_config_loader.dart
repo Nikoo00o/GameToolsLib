@@ -114,8 +114,13 @@ base class GameConfigLoader {
   static GameConfigLoader? _instance;
 
   /// Returns the the [GameConfigLoader._instance] if it is set, otherwise throws a [ConfigException]
-  static T configLoader<T extends GameConfigLoader>() {
+  ///
+  /// But this can also be accessed with a nullable type to not throw an exception in that case!
+  static T configLoader<T extends GameConfigLoader?>() {
     if (_instance == null) {
+      if (null is T) {
+        return null as T; // special case accessed with nullable type
+      }
       throw const ConfigException(message: "GameConfigLoader was not initialized yet ");
     } else if (_instance is T) {
       return _instance as T;

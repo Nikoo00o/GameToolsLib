@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/enums/overlay_mode.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
@@ -5,13 +7,17 @@ import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/base/ui_helper.dart';
+import 'package:game_tools_lib/presentation/overlay/ui_elements/canvas_overlay_element.dart';
+import 'package:game_tools_lib/presentation/overlay/ui_elements/helper/canvas_painter.dart';
+import 'package:game_tools_lib/presentation/overlay/ui_elements/helper/overlay_elements_list.dart';
+import 'package:game_tools_lib/presentation/overlay/ui_elements/overlay_element.dart';
 import 'package:game_tools_lib/presentation/overlay/widgets/gt_settings_button.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigator.dart';
 import 'package:provider/provider.dart';
 
 // todo: doc comments
 /// This is shown in a separate second flutter window as a transparent overlay on top of your game (per default
-/// [GameToolsLib.mainGameWindow]) and can be used to show or move some ui elements (todo: reference).
+/// [GameToolsLib.mainGameWindow]) and can be used to show or move some overlay ui elements (todo: reference).
 ///
 /// Provides the widgets below with changes if main window focus or open status changed which can be accessed with a
 /// [Consumer] of [GameWindow], but per default only uses the main window! At this point if the target main game
@@ -51,43 +57,86 @@ base class GTOverlayState extends State<GTOverlay> {
   List<ChangeNotifierProvider<dynamic>> _buildProvider() {
     return <ChangeNotifierProvider<dynamic>>[
       ChangeNotifierProvider<GameWindow>.value(value: GameToolsLib.mainGameWindow),
+      ChangeNotifierProvider<OverlayElementsList>.value(value: overlayManager().overlayElements),
       UIHelper.simpleValueProvider(value: overlayManager().overlayMode),
     ];
   }
 
-  /// Can be overridden in sub classes to display some centered ui element, but per default returns centered nothing
-  Widget buildCenterChild(BuildContext context, OverlayMode overlayMode) {
-    return const Center(child: SizedBox());
+  /// Can be overridden in sub classes which per default displays full screen transparent canvas that can be drawn on!
+  Widget buildCanvas(BuildContext context, OverlayElementsList elements, OverlayMode overlayMode) {
+    if (overlayMode == OverlayMode.HIDDEN ||
+        overlayMode == OverlayMode.EDIT_UI ||
+        overlayMode == OverlayMode.EDIT_COMP_IMAGES) {
+      return const Center(child: SizedBox());
+    }
+    final UnmodifiableListView<CanvasOverlayElement> canvasElements = elements.canvasElements;
+    if (canvasElements.isEmpty) {
+      return const Center(child: SizedBox());
+    }
+    return CustomPaint(
+      painter: CanvasPainter(canvasElements),
+      child: const Center(child: SizedBox()),
+    );
   }
 
-  /// Can be overridden to not display the top right settings icon to switch back to full app mode
+  /// Can be overridden in sub classes which per default displays full screen transparent canvas that can be drawn on!
+  /// builds the elements of [OverlayElementsList] nested for performance reasons!
+  List<Widget> buildOverlayElements(BuildContext context, OverlayElementsList elements, OverlayMode overlayMode) {
+    if (overlayMode == OverlayMode.HIDDEN) {
+      return const <Widget>[SizedBox()];
+    }
+    final List<Widget> children = <Widget>[];
+    if (overlayMode == OverlayMode.VISIBLE) {
+      children.addAll(
+        elements.staticElements.map((OverlayElement element) => element.build(context, editInsteadOfOverlay: false)),
+      );
+      children.addAll(
+        elements.dynamicElements.map((OverlayElement element) => element.build(context, editInsteadOfOverlay: false)),
+      );
+    } else if (overlayMode == OverlayMode.EDIT_UI) {
+      children.addAll(
+        elements.canvasElements.map((OverlayElement element) => element.build(context, editInsteadOfOverlay: true)),
+      );
+      children.addAll(
+        elements.staticElements.map((OverlayElement element) => element.build(context, editInsteadOfOverlay: true)),
+      );
+    } else if (overlayMode == OverlayMode.EDIT_COMP_IMAGES) {
+      children.addAll(
+        elements.compareImages.map((OverlayElement element) => element.build(context, editInsteadOfOverlay: true)),
+      );
+    }
+    return children;
+  }
+
+  /// Can be overridden to not display the top right settings icon to switch back to full app mode!
   // todo: MULTI-WINDOW IN THE FUTURE: remove this
   Widget buildTopRightSettings(BuildContext context, OverlayMode overlayMode) {
     return const Positioned(top: 1, right: 1, child: GtSettingsButton());
   }
 
-  /// Decides depending on the [overlayMode] what to build and is the main logic part of this widget
+  /// Decides depending on the [overlayMode] what to build and is the main logic part of this widget. Also builds a a
+  /// [Consumer] to listen to changes of [OverlayElementsList] list sizes!
   Widget buildWithState(BuildContext context, GameWindow window, OverlayMode overlayMode) {
-    // todo: gibt constraints für home page und baut im overlay mode den settings knopf oben rechts (ggf togglebar und
-    // auch hotkey einstellbar? aber dann würde erkennung nicht gehen? ggf dazu schreiben! oder vorher noch andere
-    // methode testen!)
-
     if (overlayMode == OverlayMode.APP_OPEN) {
       return widget.navigatorChild;
     }
-
     return Scaffold(
       key: _overlayScaffold,
       backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
-      body: Stack(
-        children: <Widget>[
-          // draw middle center child first
-          buildCenterChild(context, overlayMode),
-
-          // draw settings as last top most child
-          buildTopRightSettings(context, overlayMode),
-        ],
+      body: Consumer<OverlayElementsList>(
+        builder: (BuildContext context, OverlayElementsList elements, Widget? child) {
+          return Stack(
+            children: <Widget>[
+              // draw canvas first
+              buildCanvas(context, elements, overlayMode),
+              // then ui overlay elements
+              ...buildOverlayElements(context, elements, overlayMode),
+              // and draw settings as last top most child
+              buildTopRightSettings(context, overlayMode),
+            ],
+          );
+        },
       ),
     );
   }
@@ -98,10 +147,10 @@ base class GTOverlayState extends State<GTOverlay> {
       providers: _buildProvider(),
       child: Consumer<GameWindow>(
         builder: (BuildContext context, GameWindow window, Widget? child) {
-          // this also rebuilds when main game window bounds change to rebuilds all ui elements!
+          // this also rebuilds when main game window bounds change to rebuilds all overlay ui elements!
           Logger.verbose(
             "Main GameWindow ${window.name} is ${window.isOpen == false ? "not " : ""}open and has "
-            "${window.hasFocus == false ? "no " : ""}focus",
+            "${window.hasFocus == false ? "no " : ""}focus with size ${window.size}",
           );
           return UIHelper.simpleConsumer(
             builder: (BuildContext context, OverlayMode overlayMode, Widget? child) {

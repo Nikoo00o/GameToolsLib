@@ -70,8 +70,10 @@ base class FixedConfig {
   LogLevel get defaultUiLogLevel => LogLevel.DEBUG;
 
   /// The path to the root dir github project of the pubspec.yaml file of the project that contains the "version" which
-  /// is used for the version update checker. Important: this is just the base github repository url
-  String get versionPathToGitProject => "https://github.com/Nikoo00o/GameToolsLib";
+  /// is used for the version update checker. Important: the first part of the list is just the base github repository
+  /// url and the second path might be a sub folder of the root project where the pubspec.yaml (with the version) and
+  /// changelog.md files are put (if they are root, then second part must be empty)!
+  List<String> get versionPathToGitProject => <String>["https://github.com/Nikoo00o/GameToolsLib", ""];
 
   /// Direct reference to the current instance of this
   static FixedConfig get fixedConfig => GameToolsConfig.baseConfig.fixed;

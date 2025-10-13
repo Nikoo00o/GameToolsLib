@@ -1,17 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:game_tools_lib/core/utils/locale_extension.dart';
-import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
-import 'package:game_tools_lib/domain/game/helper/example/example_event.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
-import 'package:game_tools_lib/presentation/base/gt_app.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/pages/debug/gt_debug_page.dart';
 
-/// Used in [GTDebugPage] and constantly rebuilds and refreshes!
+/// Used in [GTDebugPage] and constantly rebuilds and refreshes a part of this!
 class GTDebugStatus extends StatefulWidget {
   static const int rebuildEveryMS = 80;
 
@@ -26,21 +22,26 @@ class _GTDebugStatusState extends State<GTDebugStatus> with GTBaseWidget {
 
   TextEditingController controller = TextEditingController();
 
-  /// called inside of setState
-  void _rebuild() {}
-
   GameWindow get window => GameToolsLib.mainGameWindow;
 
   GameToolsConfigBaseType get config => GameToolsLib.baseConfig;
+
+  Color? oldColor;
 
   void _updateColorText(Color? color) {
     if (color != null) {
       String text = color.rgb.substring(6);
       text = text.substring(0, text.length - 1);
-      if (controller.text != text) {
+      if (controller.text != text && window.isOpen && window.hasFocus) {
         controller.text = text;
       }
+      if (color != oldColor) {
+        setState(() {
+          // full rebuild on color change!
+        });
+      }
     }
+    oldColor = color;
   }
 
   Widget _buildColorWidget(BuildContext context, Color? color) {
@@ -98,76 +99,64 @@ class _GTDebugStatusState extends State<GTDebugStatus> with GTBaseWidget {
   @override
   Widget build(BuildContext context) {
     final bool isOpen = window.isOpen;
-    final Color? color = isOpen ? InputManager.getPixelAtCursor(window) : null;
-    _updateColorText(color);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+      margin: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.all(
+          Radius.circular(12.0),
+        ),
+        color: colorSurfaceContainerLow(context),
+      ),
+      child: Column(
+        children: <Widget>[
+          Text("Main GameWindow: ${window.name} at pos ${isOpen ? window.getWindowBounds().toStringAsPos() : "null"}"),
+          const SizedBox(height: 2),
+          Text(
+            "Is Open: $isOpen   And Has Focus: ${window.hasFocus}.        Running from IDE: ${FileUtils.wasRunFromTests}",
+          ),
+          const SizedBox(height: 2),
+          StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) => buildWithState(context, setState, isOpen),
+          ),
+        ],
+      ),
+    );
+  }
+
+  StateSetter? _stateSetter;
+
+  //ignore: avoid_positional_boolean_parameters
+  Widget buildWithState(BuildContext context, StateSetter setState, bool isOpen) {
+    _stateSetter = setState;
     return Column(
       children: <Widget>[
-        Text("Main GameWindow: ${window.name} at pos ${isOpen ? window.getWindowBounds().toStringAsPos() : "null"}"),
-        Text("Is Open: $isOpen"),
-        Text("Has Focus: ${window.hasFocus}"),
-        Text("Display Cursor Pos: ${InputManager.displayMousePos}"),
-        Text("Window Cursor Pos: ${isOpen ? window.windowMousePos : "null"}"),
-        _buildColorWidget(context, color),
-        const SizedBox(height: 15),
         Text(
-          "Recognized test dir (should only be true when debugging from IDE): ${FileUtils.wasRunFromTests} and "
-          "test database (should always be false): ${GameToolsLib.database is HiveDatabaseMock}",
+          "Display Cursor Pos: ${InputManager.displayMousePos} and Window Cursor Pos: ${isOpen ? window.windowMousePos : "null"}",
         ),
-        Text("Current database dir: ${config.databaseFolder}"),
-        const SizedBox(height: 2),
-        Text(
-          "Current locale directories (from asset folders from all packages and self) for ${GTApp.currentLocale?.fileName}:",
-        ),
-        Text(config.localeFolders.join("\n")),
-        const SizedBox(height: 2),
-        Text("Press \"A\" and this should be true: ${InputManager.isKeyDown(BoardKey.a)}"),
-        Text("And if you press \"CTRL+A\" to test event and clipboard, this should be true: $didEventAndClipboardWork"),
-        const SizedBox(height: 15),
+        _buildColorWidget(context, oldColor),
       ],
     );
+  }
+
+  void _rebuildState(Timer timer) {
+    if (mounted) {
+      // performance reason: check color periodically and in update setstate if changed
+      final Color? color = window.isOpen ? InputManager.getPixelAtCursor(window) : null;
+      _updateColorText(color);
+      _stateSetter?.call(() {});
+    }
   }
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(milliseconds: GTDebugStatus.rebuildEveryMS), (Timer timer) {
-      if (mounted) {
-        setState(() {
-          _rebuild();
-        });
-      }
-    });
-    didEventAndClipboardWork = null;
-    GameToolsLib.gameManager().addInputListener(listener);
+    _timer = Timer.periodic(const Duration(milliseconds: GTDebugStatus.rebuildEveryMS), _rebuildState);
   }
-
-  static final KeyInputListener listener = KeyInputListener(
-    configLabel: const TS("page.debug.status.test.listener"),
-    createEventCallback: () => ExampleEvent(isInstant: false, additionalWorkInStep1: _testEventAndClipboard),
-    alwaysCreateNewEvents: true,
-    defaultKey: BoardKey.ctrlA,
-    eventCreateCondition: () => true,
-  );
-
-  static Future<void> _testEventAndClipboard() async {
-    try {
-      final String userData = await InputManager.getClipboard();
-      await InputManager.setClipboard("12345");
-      final String myData = await InputManager.getClipboard();
-      await InputManager.setClipboard(userData); // with an instant event the user could still override his clipboard
-      // if he is spamming the button!
-      didEventAndClipboardWork = myData == "12345";
-    } catch (_) {
-      didEventAndClipboardWork = false;
-    }
-  }
-
-  static bool? didEventAndClipboardWork;
 
   @override
   void dispose() {
     _timer?.cancel();
-    GameToolsLib.gameManager().removeInputListener(listener);
     super.dispose();
   }
 }

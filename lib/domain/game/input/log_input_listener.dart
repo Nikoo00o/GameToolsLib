@@ -12,7 +12,7 @@ import 'package:game_tools_lib/game_tools_lib.dart';
 /// [GameToolsLib]!
 abstract base class LogInputListener {
   /// This will be called first when the [GameLogWatcher] is processing a game log line and it should return if this
-  /// listener matches and should be executed for the [line].
+  /// listener matches and should be executed for the [line] with [processLine].
   bool matchesLine(String line);
 
   /// This should do the work of adding a new event with [addEvent] with the data of [line].

@@ -21,6 +21,7 @@ import 'package:game_tools_lib/core/logger/log_color.dart';
 import 'package:game_tools_lib/core/logger/log_message.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
+import 'package:game_tools_lib/data/json_asset.dart';
 import 'package:game_tools_lib/data/native/ffi_loader.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/data/native/native_window.dart' show NativeWindow;
@@ -35,10 +36,14 @@ import 'package:game_tools_lib/domain/game/states/child_game_state.dart';
 import 'package:game_tools_lib/domain/game/states/game_closed_state.dart';
 import 'package:game_tools_lib/domain/game/web_manager.dart';
 import 'package:game_tools_lib/presentation/overlay/gt_overlay.dart';
+import 'package:game_tools_lib/presentation/overlay/ui_elements/compare_image.dart';
+import 'package:game_tools_lib/presentation/overlay/ui_elements/overlay_element.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_notifier.dart';
 import 'package:hive/hive.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:synchronized/synchronized.dart';
+
+import 'presentation/overlay/ui_elements/helper/overlay_elements_list.dart';
 
 part 'package:game_tools_lib/core/config/game_tools_config.dart';
 
@@ -86,7 +91,9 @@ part 'package:game_tools_lib/domain/game/overlay_manager.dart';
 /// the stuff from below can of course be used in [Module]'s as well)!
 ///
 /// For Logging use static methods [Logger.error], [Logger.warn], [Logger.info], [Logger.debug], [Logger.verbose].
-/// For other file, or data storage, use [HiveDatabase] with [database].
+/// For other file, or data storage, use [HiveDatabase] with [database]. For simple user modifiable json files, use
+/// [HiveDatabase.loadSimpleJson] and [HiveDatabase.storeSimpleJson] instead! And for static asset json files directly
+/// create and use an instance of [JsonAsset] anywhere. look at doc comments there for info!).
 ///
 /// Config Values should be saved in a subclass of [GameToolsConfig] and can be used with the correct type in [config].
 /// But you can also access this and every other instances from below in [gameManager].
@@ -116,6 +123,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   ///
   /// [overlayManager] may optionally be your custom subclass for [OverlayManager.overlayManager] which is your
   /// interaction point with the overlay UI. Per default this will be an instance of [OverlayManagerBaseType] if null!
+  /// The [OverlayElement]'s like for example also [CompareImage] can be created and used anywhere!
   ///
   /// [isCalledFromTesting] should only be set to true in tests to use mock classes instead of the default ones (so
   /// nothing is saved to local storage and is instead kept in memory. and other lib paths are used).
@@ -417,8 +425,10 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   /// Removes the [listener] from the internal list of log input listeners
   static void removeLogInputListener(LogInputListener listener) => GameLogWatcher._instance!.removeListener(listener);
 
-  /// Reference to the game config loader if it was used in [initGameToolsLib] (otherwise throws [ConfigException]!)
-  static T gameConfigLoader<T extends GameConfigLoader>() => GameConfigLoader.configLoader<T>();
+  /// Reference to the game config loader if it was used in [initGameToolsLib] (otherwise throws [ConfigException]!).
+  ///
+  /// But this can also be accessed with a nullable type to not throw an exception in that case!
+  static T gameConfigLoader<T extends GameConfigLoader?>() => GameConfigLoader.configLoader<T>();
 
   /// Reference to [OverlayManager.overlayManager] for ui overlay displaying
   static T overlayManager<T extends OverlayManagerBaseType>() => OverlayManager.overlayManager<T>();

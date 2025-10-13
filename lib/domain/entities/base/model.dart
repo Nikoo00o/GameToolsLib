@@ -12,8 +12,8 @@ abstract interface class Model {
 
 /// Example Model class that extends from [ExampleEntity] and implements [Model]
 final class ExampleModel extends ExampleEntity implements Model {
-  static const String JSON_SOME_DATA = "JSON_SOME_DATA";
-  static const String JSON_MODIFIABLE_DATA = "JSON_MODIFIABLE_DATA";
+  static const String JSON_SOME_DATA = "Some Data";
+  static const String JSON_MODIFIABLE_DATA = "Modifiable Data";
 
   /// Default constructor with same params as entity
   ExampleModel({super.someData, required super.modifiableData});

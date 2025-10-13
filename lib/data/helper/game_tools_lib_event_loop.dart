@@ -167,17 +167,17 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
     for (final GameWindow window in GameToolsLib.gameWindows) {
       final int openStatus = window.updateOpen();
       if (openStatus > 0) {
-        Logger.verbose("Open status change: $window");
+        Logger.verbose("${window.name} ${window.isOpen ? "opened" : "closed"}");
         await _updateOpen(window);
       }
       await Utils.delayMS(1); // needed so that other async tasks may be processed in the meantime
       if (openStatus == 2) {
         // special case, window closed and reset focus, so also call update focus!
-        Logger.verbose("Focus status changed from close: $window");
+        Logger.verbose("${window.name} lost focus because it closed");
         await _updateFocus(window);
       } else {
         if (window.updateFocus()) {
-          Logger.verbose("Focus status change: $window");
+          Logger.verbose("${window.hasFocus ? "Focused" : "Unfocused"} ${window.name}");
           await _updateFocus(window);
         }
       }
@@ -185,7 +185,7 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
       if (_currentResizeTick++ >= _maxResizeTicks) {
         _currentResizeTick = 0;
         if (window.updateSize()) {
-          Logger.verbose("$window resized to ${window.size}");
+          Logger.verbose("${window.name} resized to ${window.size}");
           await OverlayManager._instance!.onWindowResize(window); // resize only needs to affect overlay manager and
           // may be slower
         }

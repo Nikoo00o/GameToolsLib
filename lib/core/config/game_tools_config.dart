@@ -4,7 +4,11 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// class to return new objects which store config variables that may change either at compile time, or run time.
 ///
 /// Constant config values that are only unique per application and won't change can be stored inside of this (like
-/// [appTitle]).
+/// [appTitle]). For example this also contains many paths where different files are stored like the [logFolder] or
+/// the [dynamicDataFolder] which are both created during runtime. But also asset folders like [localeFolders] are
+/// included in a slightly different way (see cached [FileUtils.getAssetFoldersFor] below), because this contains the
+/// asset files that are stored in the source code from each package and are shipped with the application (mostly
+/// static)!
 ///
 /// Sub classes should also use extend with the custom types for [FixedConfigType] and [MutableConfigType], but
 /// sub classes of this should not have any dynamic member variables and the getters should always return const objects!
@@ -33,6 +37,12 @@ base class GameToolsConfig<FixedConfigType extends FixedConfig, MutableConfigTyp
 
   /// Absolute path to the stored database files (for mutable config values) and other database files
   String get databaseFolder => FileUtils.combinePath(<String>[resourceFolderPath, "database"]);
+
+  /// Absolute path to the dynamic data folder where there are sub folders for different json files that the user may
+  /// edit like for example [OverlayElement], or directly json modifiable mutable config values!
+  ///
+  /// The subfolders and files will only be created at runtime!
+  String get dynamicDataFolder => FileUtils.combinePath(<String>[resourceFolderPath, "dynamic_data"]);
 
   /// The name of the folder containing all locales in the assets directory which is the following:
   /// "data/flutter_assets/assets" for your application assets and "data/flutter_assets/packages/game_tools_lib/assets"

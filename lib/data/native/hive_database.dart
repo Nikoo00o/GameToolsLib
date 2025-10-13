@@ -3,7 +3,11 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// Used to interact with a local database with [writeToHive] and [readFromHive].
 ///
 /// You can also manipulate files in the [GameToolsConfig.databaseFolder] with [readFile], [writeFile], [renameFile],
-/// [deleteFile], [readJson] and [writeJson] directly!
+/// [deleteFile] directly!
+///
+/// For simple user modifiable json files, use [loadSimpleJson] and [storeSimpleJson] instead!
+/// And if you have static asset json files that the user may also modify, use [readJson] and [writeJson] (or better
+/// yet, directly create and use an instance of [JsonAsset] anywhere. look at doc comments there!).
 ///
 /// Everything here is stored in the [GameToolsConfig.databaseFolder] and can be deleted with [deleteDatabaseFolder].
 final class HiveDatabase {
@@ -155,28 +159,82 @@ final class HiveDatabase {
     _hiveDatabases = null;
   }
 
-  /// Saves the [bytes] to a file in [localFilePath] relative to [GameToolsConfig.databaseFolder]
+  /// Saves the [bytes] to a file in [localFilePath] relative to [GameToolsConfig.databaseFolder]. Uses [_getAbsolutePath]
   Future<void> writeFile({required String localFilePath, required List<int> bytes}) async {
     return FileUtils.writeFileAsBytes(await _getAbsolutePath(localFilePath), bytes);
   }
 
-  /// Loads the file in [localFilePath] relative to [GameToolsConfig.databaseFolder] as bytes
+  /// Loads the file in [localFilePath] relative to [GameToolsConfig.databaseFolder] as bytes. Uses [_getAbsolutePath]
   Future<Uint8List?> readFile({required String localFilePath}) async {
     return FileUtils.readFileAsBytes(await _getAbsolutePath(localFilePath));
   }
 
   static const JsonEncoder _encoder = JsonEncoder.withIndent("    ");
 
-  /// Same as [writeFile], but with a [json] map instead of bytes!
-  Future<void> writeJson({required String localFilePath, required Map<String, dynamic> json}) async {
+  /// Similar to [writeFile], but with a [json] map instead of bytes and takes in an absolute file path!
+  /// If this is called from testing, it will modify no file!
+  ///
+  /// The [absoluteFilePath] should be constructed with [FileUtils.combinePath] and should start with any asset path
+  /// [FileUtils.getAssetFoldersFor] like for example [GameToolsConfig.localeFolders] (and add ".json" ending)!
+  void writeJson({required String absoluteFilePath, required Map<String, dynamic> json}) {
     final String data = _encoder.convert(json);
-    return FileUtils.writeFile(await _getAbsolutePath(localFilePath), data);
+    File(absoluteFilePath).writeAsStringSync(data, flush: true);
   }
 
-  /// Same as [readFile], but returns a json map instead!
-  Future<Map<String, dynamic>?> readJson({required String localFilePath}) async {
-    final String data = await FileUtils.readFile(await _getAbsolutePath(localFilePath));
+  /// Same as [readFile], but returns a json map instead and takes in an absolute file path!
+  /// If the file does not exist, it will return null!
+  /// If this is called from testing, it will modify no file!
+  ///
+  /// The [absoluteFilePath] should be constructed with [FileUtils.combinePath] and should start with any asset path
+  /// [FileUtils.getAssetFoldersFor] like for example [GameToolsConfig.localeFolders] (and add ".json" ending)!
+  Map<String, dynamic>? readJson({required String absoluteFilePath}) {
+    if (FileUtils.fileExists(absoluteFilePath) == false) {
+      return null;
+    }
+    final String data = File(absoluteFilePath).readAsStringSync();
     return jsonDecode(data) as Map<String, dynamic>?;
+  }
+
+  /// Can be used before [loadSimpleJson], [loadSimpleJson] to check if it exists first for performance reason
+  bool simpleJsonExists({required List<String> subPath}) {
+    final String path = FileUtils.combinePath(<String>[GameToolsConfig.config().dynamicDataFolder, ...subPath]);
+    return FileUtils.fileExists("$path.json");
+  }
+
+  /// Used to store simple json modifiable files within subfolders of [GameToolsConfig.dynamicData] with the ending
+  /// ".json".
+  ///
+  /// Of course [convertToJson] must contain the [Model.toJson] method from the interface!
+  ///
+  /// If this is called from testing, it will modify no file!
+  void storeSimpleJson({required List<String> subPath, required Model convertToJson}) {
+    final String path = FileUtils.combinePath(<String>[GameToolsConfig.config().dynamicDataFolder, ...subPath]);
+    final String data = _encoder.convert(convertToJson);
+    final File file = File("$path.json");
+    if (file.existsSync() == false) {
+      file.createSync(recursive: true);
+    }
+    file.writeAsStringSync(data, flush: true);
+  }
+
+  /// Used to load simple json modifiable files within subfolders of [GameToolsConfig.dynamicData] with the ending
+  /// ".json".
+  ///
+  /// If the file does not exist yet, this will return null!
+  ///
+  /// Of course you have to convert the returned map to your object with a fromJson constructor!
+  ///
+  /// If this is called from testing, it will modify no file!
+  Map<String, dynamic>? loadSimpleJson({required List<String> subPath}) {
+    final String path = FileUtils.combinePath(<String>[GameToolsConfig.config().dynamicDataFolder, ...subPath]);
+    final File file = File("$path.json");
+    if (file.existsSync() == false) {
+      return null;
+    }
+    final String data = file.readAsStringSync();
+    final Map<String, dynamic>? json = jsonDecode(data) as Map<String, dynamic>?;
+    Logger.warn("Simple JSON file existed at $subPath but had invalid format");
+    return json;
   }
 
   /// Deletes the file in [localFilePath] relative to [GameToolsConfig.databaseFolder]

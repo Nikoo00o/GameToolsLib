@@ -3,6 +3,7 @@ import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_page.dart';
 import 'package:game_tools_lib/presentation/pages/debug/gt_debug_status.dart';
+import 'package:game_tools_lib/presentation/pages/debug/gt_extended_debug_info.dart';
 
 /// Only for testing/debugging to see all material colors
 base class GTDebugPage extends GTBasePage {
@@ -32,6 +33,7 @@ base class GTDebugPage extends GTBasePage {
             calledFromInnerGroup: false,
           ),
         ),
+        const GtExtendedDebugInfo(),
       ],
     );
   }

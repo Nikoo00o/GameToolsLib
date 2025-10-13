@@ -11,6 +11,9 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// together with [delayForOldLines] if you want to modify the behaviour how to process old lines if the game was
 /// already running for a while and this tool just started! And you may also override [additionalListeners] as an
 /// alternative if you want (for an example you can also look at the [ExampleLogWatcher] that is used for testing.
+/// Important: if your log file has a specific open/start signal for each session, then you can use
+/// [onlyHandleLastLinesUntil] to only handle last lines until the line matches it and then stop (to avoid false
+/// events), but per default it is null and [handleLastLine] is executed until it returns true.
 ///
 /// You also don't have to decide on listeners in the constructor call and can use [addListener], or [removeListener]
 /// later. If your game does not have a log file, then just use the [GameLogWatcher.empty] constructor. And you can
@@ -23,6 +26,15 @@ base class GameLogWatcher {
   File? _file;
   DateTime? _lastModified;
   int _currentPos = 0;
+
+  /// Quick getter to get resulting path used for debugging
+  String get readingFromPath => _file?.absolute.path ?? "";
+
+  /// The [handleLastLine] with old lines on startup will only check lines until a line matches this listener if its
+  /// not null. Per default its null and ignored, but it can be used to add a stop if your log file has a specific
+  /// session start line it always prints! So [handleLastLine] will not be called if an earlier line succeeds the
+  /// [LogInputListener.matchesLine] with this [onlyHandleLastLinesUntil] listener.
+  final LogInputListener? onlyHandleLastLinesUntil;
 
   /// Can be overridden in your subclass to define the maximum amount of time it may take for the last log of the game
   /// to still call [handleLastLine] during [_init].
@@ -40,6 +52,7 @@ base class GameLogWatcher {
   GameLogWatcher({
     required List<String>? gameLogFilePaths,
     required List<LogInputListener>? listeners,
+    this.onlyHandleLastLinesUntil,
   }) : _listeners = listeners ?? <LogInputListener>[],
        _gameLogFilePaths = gameLogFilePaths;
 
@@ -66,6 +79,9 @@ base class GameLogWatcher {
   /// You can override this to have different behaviour depending on the type of the [lastListener].
   /// Per default this just calls [LogInputListener.processLine] and returns true to only process the last listener!
   /// You can also override the [delayForOldLines] for a different timeframe.
+  ///
+  /// Important: this will not be called if a previous line matched the [onlyHandleLastLinesUntil] if its not null
+  /// (to avoid false positives for too old events)!
   ///
   /// Important: this will be called during [GameToolsLib.runLoop] after [GameManager.onStart] and the current state
   /// will be [GameClosedState] at the current point only if it didn't change in the start of a custom game manager
@@ -179,7 +195,8 @@ base class GameLogWatcher {
   }
 
   /// called after [GameManager.onStart] to process old lines if the game was already running longer.
-  /// calls [handleLastLine] until it returns true
+  /// calls [handleLastLine] until it returns true. It will stop when a line matches [onlyHandleLastLinesUntil] if
+  /// its not null!
   Future<void> _handleOldLastLines() async {
     if (_file != null) {
       _lastModified = await _file!.lastModified(); // update to current last modified time and pos!
@@ -195,20 +212,25 @@ base class GameLogWatcher {
       bool wasHandled = false;
       int skippedLines = 0;
       while (endPos > 0 && !done) {
+        // first read previous line
         final (String line, int newPos) = await FileUtils.readFileLineAtPosBackwards(file: _file!, endPos: endPos);
+        if (onlyHandleLastLinesUntil?.matchesLine(line) ?? false) {
+          done = true; // if explicit stop is set, then stop when it succeeds
+          break;
+        }
         if (line.isNotEmpty) {
           for (final LogInputListener listener in _listeners) {
             if (listener.matchesLine(line)) {
               Logger.spam("Handling old log line \"", line, "\" in listener ", listener);
               wasHandled = true;
               if (handleLastLine(listener, line)) {
-                done = true;
+                done = true; // completely done if the [handleLastLine] returns true
                 break;
               }
             }
           }
           if (wasHandled == false) {
-            skippedLines++;
+            skippedLines++; // wasHandled check for debug log which lines were executed
           }
         }
         endPos = newPos;
