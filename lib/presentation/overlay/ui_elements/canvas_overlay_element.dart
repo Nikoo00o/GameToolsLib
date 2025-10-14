@@ -18,6 +18,8 @@ import 'package:game_tools_lib/presentation/overlay/ui_elements/overlay_element.
 /// Important: sub classes with additional members that are used in [paintOnCanvas] must override the [operator==] to
 /// also compare those and also override the [createDeepCopy] method and create a new instance of the sub type with
 /// the additional member values set (like for example [color])!
+///
+/// Also important: [clickable] will always be false for this!
 base class CanvasOverlayElement extends OverlayElement {
   /// Additional mutable member which can be used to influence the paint brush in [paintOnCanvas]
   Color color;
@@ -76,6 +78,28 @@ base class CanvasOverlayElement extends OverlayElement {
     return overlayElement as CanvasOverlayElement;
   }
 
+  /// Just a simple constructor for the current [GameToolsLib.mainGameWindow]!
+  factory CanvasOverlayElement.forPos({
+    required TranslationString identifier,
+    required int x,
+    required int y,
+    required int width,
+    required int height,
+    required Color color,
+    bool visible = true,
+    bool editable = false,
+  }) => CanvasOverlayElement(
+    identifier: identifier,
+    editable: editable,
+    visible: visible,
+    bounds: ScaledBounds<int>(
+      Bounds<int>(x: x, y: y, width: width, height: height),
+      creationWidth: null,
+      creationHeight: null,
+    ),
+    color: color,
+  );
+
   /// New instance constructor should only be called internally from sub classes to create a new object instance!
   /// From the outside, use the default factory constructor instead!
   @protected
@@ -85,25 +109,7 @@ base class CanvasOverlayElement extends OverlayElement {
     required super.visible,
     required super.bounds,
     required this.color,
-  }) : super.newInstance();
-
-  /// Just a simple constructor for the current [GameToolsLib.mainGameWindow]!
-  factory CanvasOverlayElement.forPos({
-    required TranslationString identifier,
-    required int x,
-    required int y,
-    required int width,
-    required int height,
-    required Color color,
-  }) => CanvasOverlayElement(
-    identifier: identifier,
-    bounds: ScaledBounds<int>(
-      Bounds<int>(x: x, y: y, width: width, height: height),
-      creationWidth: null,
-      creationHeight: null,
-    ),
-    color: color,
-  );
+  }) : super.newInstance(clickable: false);
 
   /// Used for the [CanvasPainter] for performance during comparison. This needs to be overridden in sub classes to
   /// call the newInstance constructor with new values and create a real new instance and not return a cached reference!

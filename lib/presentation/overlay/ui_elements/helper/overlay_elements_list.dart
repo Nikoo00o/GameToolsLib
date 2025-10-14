@@ -35,11 +35,16 @@ final class OverlayElementsList with ChangeNotifier {
   /// The [CompareImage]'s which have their own edit mode and don't draw no overlay
   UnmodifiableListView<CompareImage> get compareImages => UnmodifiableListView<CompareImage>(_compareImages.values);
 
+  /// Only contains reference to the overlay ui elements with [OverlayElement.clickable] being true and is managed
+  /// automatically!
+  final List<OverlayElement> clickableElements;
+
   OverlayElementsList()
     : _staticElements = <String, OverlayElement>{},
       _dynamicElements = <String, DynamicOverlayElement>{},
       _canvasElements = <String, CanvasOverlayElement>{},
-      _compareImages = <String, CompareImage>{};
+      _compareImages = <String, CompareImage>{},
+      clickableElements = <OverlayElement>[];
 
   Map<String, OverlayElement>? _containingKey(String key) {
     if (_staticElements.containsKey(key)) {
@@ -88,6 +93,9 @@ final class OverlayElementsList with ChangeNotifier {
     final Map<String, OverlayElement> map = _containingType(element);
     if (map.containsKey(key) == false) {
       map[key] = element;
+      if (element.clickable) {
+        clickableElements.add(element);
+      }
       notifyListeners();
       return true;
     }
@@ -100,6 +108,9 @@ final class OverlayElementsList with ChangeNotifier {
     final Map<String, OverlayElement> map = _containingType(element);
     if (map.containsKey(key) == true) {
       map.remove(key);
+      if (element.clickable) {
+        clickableElements.remove(element);
+      }
       notifyListeners();
       return true;
     }

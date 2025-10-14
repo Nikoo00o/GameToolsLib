@@ -30,8 +30,8 @@ part 'package:game_tools_lib/core/enums/input/board_key.dart';
 /// [InputManager.leftClick], [InputManager.keyPress], [InputManager.isKeyDown], [InputManager.isMouseDown].
 ///
 /// Here you can only use the methods: [getPixelOfWindow], [isWithinWindow], [windowMousePos] and [moveMouse] for
-/// inputs and you can also check if the window [isOpen], or [hasFocus] (or if you don't want to wait for the loop,
-/// [updateAndGetOpen] and [updateAndGetFocus]).
+/// inputs and you can also check if the window [isOpen], or [hasFocus], or [size] (or if you don't want to wait for
+/// the loop, [updateAndGetOpen] and [updateAndGetFocus] and [updateAndGetSize]).
 ///
 /// UI App elements can also use this as a [ChangeNotifier] in a [ChangeNotifierProvider] to listen to changes from
 /// [name], [isOpen] and [hasFocus] updated from [rename], [updateOpen], [updateFocus], but also [size] with
@@ -39,6 +39,8 @@ part 'package:game_tools_lib/core/enums/input/board_key.dart';
 ///
 /// Remember that [size] returns the inner size of the window and [getWindowBounds] returns the outer positions in
 /// relation to the screen/display!
+///
+/// For comparison the [operator==] only compares the [name] of this window!
 final class GameWindow with ChangeNotifier {
   /// This is set in the constructor only once and used to identify/find the window.
   /// Name Examples: "Path of Exile", "TL", "League of Legends".
@@ -377,6 +379,12 @@ final class GameWindow with ChangeNotifier {
 
   @override
   String toString() => "GameWindow(name: $_name, id: $_windowID, open: $_isOpen, focus: $_hasFocus)";
+
+  @override
+  bool operator ==(Object other) => other is GameWindow && other._name == _name;
+
+  @override
+  int get hashCode => _name.hashCode;
 
   /// This needs to be called when one of each config variables changes to update the native code:
   /// [alwaysMatchEqual] controls how the window names will be matched ([false] = the window title only has to

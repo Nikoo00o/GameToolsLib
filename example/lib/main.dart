@@ -36,6 +36,16 @@ Future<void> _testOverlay() async {
   );
   someElement2.visible = !someElement2.visible;
 
+  final OverlayElement someElement3 = OverlayElement.forPos(
+    x: 220,
+    y: 220,
+    width: 150,
+    height: 150,
+    identifier: TS.raw("overlay.example.3"),
+    clickable: true,
+  );
+  someElement3.visible = !someElement3.visible;
+
   Logger.info("Example overlay test: $someElement1 and $someElement2");
 }
 

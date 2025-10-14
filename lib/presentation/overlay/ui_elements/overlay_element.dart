@@ -4,6 +4,7 @@ import 'package:game_tools_lib/core/utils/bounds.dart';
 import 'package:game_tools_lib/core/utils/scaled_bounds.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/domain/entities/base/model.dart';
+import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/overlay/ui_elements/canvas_overlay_element.dart';
 import 'package:game_tools_lib/presentation/overlay/ui_elements/compare_image.dart';
@@ -39,6 +40,8 @@ import 'package:provider/provider.dart';
 /// replaced by those from storage! This includes for example the position with [bounds], etc so that users can
 /// adjust the ui!
 ///
+/// You can set [clickable] to true to receive mouse events (clicks/focus) instead of the underlying window.
+///
 /// Subclasses should override [buildOverlay] and [buildEdit] to build the layout depending on the [OverlayMode] in
 /// [OverlayManager.overlayMode]. And subclasses must create a separate [OverlayElement.newInstance] constructor that
 /// calls the same constructor of the super class to create new instances. And then the default unnamed constructor
@@ -73,6 +76,10 @@ base class OverlayElement with ChangeNotifier implements Model {
   /// Important: this also controls if the members of this object are saved to storage, or not!
   final bool editable;
 
+  /// Optionally this can be set to true to allow mouse events like clicks, etc to affect the overlay instead of the
+  /// underlying window. be careful when using this!
+  final bool clickable;
+
   bool _visible;
 
   /// Controls if this [buildOverlay] is called or an empty sized box is displayed instead as an extra toggle.
@@ -94,6 +101,7 @@ base class OverlayElement with ChangeNotifier implements Model {
     notifyListeners();
   }
 
+  // see below
   ScaledBounds<int> _bounds;
 
   /// The position and size of this ui element in relation to the size of the window it was created with.
@@ -102,6 +110,14 @@ base class OverlayElement with ChangeNotifier implements Model {
   ///
   /// You don't have to worry about the window resizing here!
   ScaledBounds<int> get bounds => _bounds;
+
+  // see below
+  Bounds<double>? _displayDimension;
+
+  /// Set periodically during the build in [buildOverlay] to contain the final already scaled position of the widget!
+  ///
+  /// Used in [OverlayManager._checkMouseForClickableOverlayElements].
+  Bounds<double>? get displayDimension => _displayDimension;
 
   /// The position and size of this ui element in relation to the size of the window it was created with.
   ///
@@ -118,6 +134,7 @@ base class OverlayElement with ChangeNotifier implements Model {
   factory OverlayElement({
     required TranslationString identifier,
     bool editable = true,
+    bool clickable = false,
     bool visible = true,
     required ScaledBounds<int> bounds,
   }) =>
@@ -126,6 +143,7 @@ base class OverlayElement with ChangeNotifier implements Model {
         OverlayElement.newInstance(
           identifier: identifier,
           editable: editable,
+          clickable: clickable,
           visible: visible,
           bounds: bounds,
         ),
@@ -138,8 +156,14 @@ base class OverlayElement with ChangeNotifier implements Model {
     required int y,
     required int width,
     required int height,
+    bool editable = true,
+    bool clickable = false,
+    bool visible = true,
   }) => OverlayElement(
     identifier: identifier,
+    editable: editable,
+    clickable: clickable,
+    visible: visible,
     bounds: ScaledBounds<int>(
       Bounds<int>(x: x, y: y, width: width, height: height),
       creationWidth: null,
@@ -153,6 +177,7 @@ base class OverlayElement with ChangeNotifier implements Model {
   OverlayElement.newInstance({
     required this.identifier,
     required this.editable,
+    required this.clickable,
     required bool visible,
     required ScaledBounds<int> bounds,
   }) : _visible = visible,
@@ -223,7 +248,12 @@ base class OverlayElement with ChangeNotifier implements Model {
   ///
   /// Just returns the [newInstance] after caching it after calling [loadOrSaveToStorage] on it!
   static OverlayElement storeToCache(OverlayElement newInstance) {
-    OverlayManager.overlayManager().overlayElements.add(newInstance);
+    final OverlayManagerBaseType overlayManager = OverlayManager.overlayManager();
+    final GameWindow otherWindow = newInstance.bounds.gameWindow;
+    overlayManager.overlayElements.add(newInstance);
+    if (overlayManager.windowToTrack != otherWindow) {
+      Logger.warn("OverlayElement ${newInstance.identifier} window ${otherWindow.name} did not match OverlayManager");
+    }
     newInstance.loadOrSaveToStorage();
     Logger.spamPeriodic(_cacheLog, "Created new: ", newInstance);
     return newInstance;
@@ -259,15 +289,15 @@ base class OverlayElement with ChangeNotifier implements Model {
 
   /// This will be called automatically to build the overlay content of this overlay ui element if [visible] is true
   /// (otherwise nothing is displayed). Per default this just calls the helper method [buildContent] inside of a
-  /// [Positioned] widget!
+  /// [Positioned] widget! Also sets the [displayDimension] for the final already scaled size!
   Widget buildOverlay(BuildContext context) {
-    final Bounds<double> scaledBounds = bounds.scaledBoundsD;
+    _displayDimension = bounds.scaledBoundsD;
     return Positioned(
-      left: scaledBounds.x,
-      top: scaledBounds.y,
-      width: scaledBounds.width,
-      height: scaledBounds.height,
-      child: buildContent(context, scaledBounds),
+      left: _displayDimension!.x,
+      top: _displayDimension!.y,
+      width: _displayDimension!.width,
+      height: _displayDimension!.height,
+      child: buildContent(context, _displayDimension!),
     );
   }
 

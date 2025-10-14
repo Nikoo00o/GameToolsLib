@@ -26,6 +26,7 @@ base class DynamicOverlayElement extends OverlayElement {
   /// Factory constructor should always be used from the outside to add the unique objects automatically!
   /// Checks [cachedInstance] first and then [storeToCache] with [OverlayElement.newInstance] otherwise.
   factory DynamicOverlayElement({
+    bool clickable = false,
     bool visible = true,
     required ScaledBounds<int> bounds,
   }) {
@@ -35,6 +36,7 @@ base class DynamicOverlayElement extends OverlayElement {
         OverlayElement.storeToCache(
           DynamicOverlayElement.newInstance(
             identifier: identifier,
+            clickable: clickable,
             visible: visible,
             bounds: bounds,
           ),
@@ -42,28 +44,33 @@ base class DynamicOverlayElement extends OverlayElement {
     return overlayElement as DynamicOverlayElement;
   }
 
-  /// New instance constructor should only be called internally from sub classes to create a new object instance!
-  /// From the outside, use the default factory constructor instead!
-  @protected
-  DynamicOverlayElement.newInstance({
-    required super.identifier,
-    required super.visible,
-    required super.bounds,
-  }) : super.newInstance(editable: false);
-
   /// Just a simple constructor for the current [GameToolsLib.mainGameWindow]!
   factory DynamicOverlayElement.forPos({
     required int x,
     required int y,
     required int width,
     required int height,
+    bool clickable = false,
+    bool visible = true,
   }) => DynamicOverlayElement(
+    clickable: clickable,
+    visible: visible,
     bounds: ScaledBounds<int>(
       Bounds<int>(x: x, y: y, width: width, height: height),
       creationWidth: null,
       creationHeight: null,
     ),
   );
+
+  /// New instance constructor should only be called internally from sub classes to create a new object instance!
+  /// From the outside, use the default factory constructor instead!
+  @protected
+  DynamicOverlayElement.newInstance({
+    required super.identifier,
+    required super.clickable,
+    required super.visible,
+    required super.bounds,
+  }) : super.newInstance(editable: false);
 
   @override
   Widget buildEdit(BuildContext context) {

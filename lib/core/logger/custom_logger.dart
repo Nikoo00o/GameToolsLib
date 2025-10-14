@@ -16,10 +16,16 @@ import 'package:intl/intl.dart' show DateFormat;
 ///
 /// Very important: look at [sensitiveDataToRemove] so that sensitive data will not be stored to a file!!
 ///
-/// [showErrorLogsInOverlay] can be overridden to disable this feature in sub classes
+/// [showErrorLogsInOverlay] can be overridden to disable this feature in sub classes.
+///
+/// You can also override [onlyLogToStorageAbove].
 base class CustomLogger extends Logger with SimpleChangeStream<List<LogMessage>> {
   /// Will always remove 10% of the latest logs
-  static int maxLogsToKeepForUI = 1000;
+  static int maxLogsToKeepForUI = 2000;
+
+  /// This can be used to discard this [LogLevel] and those higher from saving to storage. Per default ignores
+  /// [LogLevel.SPAM], but can also be overridden in sub classes (returning null would save everything to storage).
+  LogLevel? get onlyLogToStorageAbove => LogLevel.SPAM;
 
   /// A list of strings that may appear in logs before sensitive data which will be removed when logging to storage.
   ///
@@ -99,6 +105,9 @@ base class CustomLogger extends Logger with SimpleChangeStream<List<LogMessage>>
   Future<void> logToStorage(LogMessage logMessage) async {
     if (fixedConfig?.logIntoStorage ?? false) {
       try {
+        if (logMessage.level.index >= (onlyLogToStorageAbove?.index ?? LogLevel.values.length)) {
+          return; // skip saving to storage
+        }
         final String logString = logMessage.getSensitiveString(sensitiveDataToRemove: sensitiveDataToRemove);
         final String date = DateFormat("yyyy-MM-dd").format(DateTime.now());
         final String path = FileUtils.combinePath(<String>[Logger.config!.logFolder, "$date.txt"]);

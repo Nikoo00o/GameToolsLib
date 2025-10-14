@@ -26,6 +26,7 @@ dependencies:
   opencv_dart: 1.4.2+1 # image processing (IMPORTANT: when updating, rebuild libs in "build/test" folder!)
   flutter_colorpicker: 1.1.0 # color pick dialog
   archive: 4.0.7 # extract zip after download
+  window_manager: 0.5.1 # for switching overlay modes (make flutter app maximized with transparent background)
 
   flutter_localizations:
     sdk: flutter

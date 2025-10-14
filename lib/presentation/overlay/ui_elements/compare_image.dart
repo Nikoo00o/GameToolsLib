@@ -7,6 +7,8 @@ import 'package:game_tools_lib/presentation/overlay/ui_elements/helper/editable_
 import 'package:game_tools_lib/presentation/overlay/ui_elements/overlay_element.dart';
 
 /// The [buildOverlay] method does nothing here!
+///
+/// Important: [clickable] will always be false for this!
 base class CompareImage extends OverlayElement {
   /// Factory constructor that will cache and reuse instances for [identifier] and should always be used from the
   /// outside! Checks [cachedInstance] first and then [storeToCache] with [OverlayElement.newInstance] otherwise.
@@ -29,6 +31,26 @@ base class CompareImage extends OverlayElement {
     return overlayElement as CompareImage;
   }
 
+  /// Just a simple constructor for the current [GameToolsLib.mainGameWindow]!
+  factory CompareImage.forPos({
+    required TranslationString identifier,
+    required int x,
+    required int y,
+    required int width,
+    required int height,
+    bool editable = true,
+    bool visible = true,
+  }) => CompareImage(
+    identifier: identifier,
+    editable: editable,
+    visible: visible,
+    bounds: ScaledBounds<int>(
+      Bounds<int>(x: x, y: y, width: width, height: height),
+      creationWidth: null,
+      creationHeight: null,
+    ),
+  );
+
   /// New instance constructor should only be called internally from sub classes to create a new object instance!
   /// From the outside, use the default factory constructor instead!
   @protected
@@ -37,23 +59,7 @@ base class CompareImage extends OverlayElement {
     required super.editable,
     required super.visible,
     required super.bounds,
-  }) : super.newInstance();
-
-  /// Just a simple constructor for the current [GameToolsLib.mainGameWindow]!
-  factory CompareImage.forPos({
-    required TranslationString identifier,
-    required int x,
-    required int y,
-    required int width,
-    required int height,
-  }) => CompareImage(
-    identifier: identifier,
-    bounds: ScaledBounds<int>(
-      Bounds<int>(x: x, y: y, width: width, height: height),
-      creationWidth: null,
-      creationHeight: null,
-    ),
-  );
+  }) : super.newInstance(clickable: false);
 
   @override
   Widget buildOverlay(BuildContext context) {
