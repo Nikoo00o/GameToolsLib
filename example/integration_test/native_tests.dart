@@ -8,13 +8,16 @@ import 'package:game_tools_lib/core/enums/native_image_type.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
+import 'package:game_tools_lib/data/native/native_overlay_window.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'helper/test_widgets.dart';
 
-/// Set this to true to also test input and focus (needs to be started from cmd/terminal and also moves your mouse)
+/// Set this to true to also test input and focus (needs to be started from normal cmd/terminal and also moves your
+/// mouse, so may not use it!): cd example && flutter test integration_test/native_tests.dart
 bool enableInputTests = true;
 
+/// If [enableInputTests] is true you may not run this from the IDE!
 Future<void> main() async {
   await TestHelper.runDefaultTests(
     testGroups: <String, TestFunction>{
@@ -54,21 +57,43 @@ void _testBaseWindow() {
     expect(mWindow.updateAndGetOpen(), false, reason: "window should not be open with wrong name");
     await GameToolsLib.close();
     final GameWindow second = GameWindow(name: "invalid");
-    await TestHelper.initGameToolsLib("game_tools", <GameWindow>[second]);
+    await TestHelper.initGameToolsLib("game_tools_lib_exa", <GameWindow>[second]);
     await MutableConfig.mutableConfig.alwaysMatchGameWindowNamesEqual.setValue(false);
     expect(mWindow.updateAndGetOpen(), true, reason: "window should be open with default contains check");
     expect(second.updateAndGetOpen(), false, reason: "second window should not be open");
     await second.rename("tools");
     expect(second.updateAndGetOpen(), true, reason: "after rename second should also be open");
     await GameToolsLib.close();
-    await TestHelper.initGameToolsLib("game_tools");
+    await TestHelper.initGameToolsLib("game_tools_lib_exa");
     await MutableConfig.mutableConfig.alwaysMatchGameWindowNamesEqual.setValue(true);
     expect(mWindow.updateAndGetOpen(), false, reason: "but not anymore when checking for equal");
   });
+
   testO("color and pos test", () async {
     Logger.warn("this test can fail if you un focus the window");
     mWindow.updateOpen(); // also needed for size to be cached without loop
     mWindow.updateSize(); // needed for getpixel
+
+    final Bounds<int> bounds = mWindow.getWindowBounds();
+    final Point<int> size = mWindow.updateAndGetSize()!;
+    final Bounds<int> overlayBounds = NativeOverlayWindow.getInnerOverlayAreaForWindow(mWindow);
+    Logger.info(
+      "Test Window Bounds $bounds related to $_width, $_height and Size $size related to app $appWidth, "
+      "$appHeight. Additional overlay bounds: $overlayBounds",
+    );
+    expect(bounds.width == _width && bounds.height == _height, true, reason: "bounds should match test values");
+    expect(size.x == appWidth && size.y == appHeight, true, reason: "size should match test values");
+    expect(mWindow.isWithinWindow(bounds.pos), true, reason: "start in window");
+    expect(mWindow.isWithinWindow((bounds.pos + bounds.size).move(-1, -1)), true, reason: "end in window");
+    expect(mWindow.isWithinWindow(bounds.pos.move(-1, -1)), false, reason: "before not in window");
+    expect(mWindow.isWithinWindow(bounds.pos + bounds.size), false, reason: "after not in window");
+
+    expect(mWindow.isWithinInnerWindow(bounds.right - 1, size.y - 1), false, reason: "bounds x not in window");
+    expect(mWindow.isWithinInnerWindow(size.x - 1, bounds.bottom - 1), false, reason: "bounds y not in window");
+    expect(mWindow.isWithinInnerWindow(0, 0), true, reason: "first pos is in window");
+    expect(mWindow.isWithinInnerWindow(-1, -1), false, reason: "negative not in window");
+    expect(mWindow.isWithinInnerWindow(size.x, size.y), false, reason: "size not in window");
+    expect(mWindow.isWithinInnerWindow(size.x - 1, size.y - 1), true, reason: "size -1 is in window");
 
     expect(mWindow.getPixelOfWindow(0, 0)?.equals(Colors.blue), true, reason: "top left blue (blue light filter on?)");
     expect(mWindow.getPixelOfWindow(99, 99)?.equals(Colors.blue), true, reason: "max size still blue");
@@ -83,13 +108,19 @@ void _testBaseWindow() {
     expect(mWindow.getPixelOfWindow(_width, _height), null, reason: "out window null");
     expect(mWindow.getPixelOfWindow(-1, -1), null, reason: "also -1 is null");
 
+    expect(overlayBounds.size, size, reason: "overlay size should be same as normal");
+    expect(
+      overlayBounds.width < bounds.width && overlayBounds.height < bounds.height,
+      true,
+      reason: "but overlay size smaller than bounds size",
+    );
+    expect(overlayBounds.left, bounds.left + 8, reason: "overlay left +8");
+    expect(overlayBounds.right, bounds.right + -8, reason: "overlay right -8");
+    expect(overlayBounds.top, bounds.top + 31, reason: "overlay top +31");
+    expect(overlayBounds.bottom, bounds.bottom - 8, reason: "overlay bot -8");
+
     expect(mWindow.getMiddle(), const Point<int>(632, 341), reason: "middle pos rounded");
     expect(mWindow.getPixelOfWindowP(mWindow.getMiddle())?.equals(Colors.red), true, reason: "middle pix red");
-    final Bounds<int> bounds = mWindow.getWindowBounds();
-    expect(mWindow.isWithinWindow(bounds.pos), true, reason: "start in window");
-    expect(mWindow.isWithinWindow((bounds.pos + bounds.size).move(-1, -1)), true, reason: "end in window");
-    expect(mWindow.isWithinWindow(bounds.pos.move(-1, -1)), false, reason: "before not in window");
-    expect(mWindow.isWithinWindow(bounds.pos + bounds.size), false, reason: "after not in window");
 
     expect(mWindow.getMiddle() == mWindow.getWindowBounds().middlePos, false, reason: "middle should not be bounds");
     expect(
@@ -234,21 +265,25 @@ void _testImages() {
     expect(histComp.isEqual(0.94073455), true, reason: "hist comp shows 94% similarity");
     expect(pixComp.isEqual(0.26637687), true, reason: "per pixel comp only shows 26%");
   });
+
   testO("getting images from window and comparing pixel", () async {
     Logger.warn("this test can fail if you un focus the window");
+    expect(mWindow.updateAndGetOpen(), true, reason: "windows open");
+    mWindow.updateAndGetFocus(); // focus and size do not really matter here
+    mWindow.updateAndGetSize();
     final Bounds<int> bounds = mWindow.getWindowBounds();
     final int cleanups = NativeImage.cleanupCounter; // other tests could change this static val
     final NativeImage cropMiddle = await mWindow.getImage(582, 290, 100, 100);
     final NativeImage display = await GameWindow.getDisplayImage();
     expect(NativeImage.cleanupCounter, cleanups, reason: "cleanup still 0(can fail cause of other tests)");
-    final NativeImage fullWin = await mWindow.getFullImage(NativeImageType.RGB);
+    final NativeImage fullWin = await mWindow.getFullImage(type: NativeImageType.RGB);
     expect(NativeImage.cleanupCounter, cleanups + 1, reason: "cleanup still 0(can fail cause of other tests)");
     expect(cropMiddle.type, NativeImageType.RGBA, reason: "default rgba");
     expect(fullWin.type, NativeImageType.RGB, reason: "explicit rgb type");
     expect(TestMockNativeImageWrapper(cropMiddle).native, isNotNull, reason: "rgba has native data");
     expect(TestMockNativeImageWrapper(fullWin).native, null, reason: "rgb has no native data");
 
-    expect(fullWin.width == 1280 && fullWin.height == 720, true, reason: "correct window dimensions");
+    expect(fullWin.width == appWidth && fullWin.height == appHeight, true, reason: "correct window dimensions");
     expect(cropMiddle.colorAtPixel(-1, -1), null, reason: "pixel null");
     expect(cropMiddle.colorAtPixel(100, 100), null, reason: "pixel also null");
     expect(cropMiddle.colorAtPixel(0, 0)?.equals(Colors.yellow), true, reason: "crop tl");
@@ -259,10 +294,18 @@ void _testImages() {
     expect(cropMiddle.colorAtPixel(52, 52)?.equals(Colors.yellow), true, reason: "crop mi4");
     // real inner window positions from full window vary a bit because of invisible borders, etc
     expect(fullWin.colorAtPixel(8, 31)?.equals(Colors.blue), true, reason: "first window pixel (might fail)");
-    expect(fullWin.colorAtPixel(1271, 701)?.equals(Colors.purple), true, reason: "last window pixel 1 (might fail)");
-    expect(fullWin.colorAtPixel(1261, 711)?.equals(Colors.purple), true, reason: "last window pixel 2 (might fail)");
-    expect(fullWin.colorAtPixel(638, 369)?.equals(Colors.red), true, reason: "win mid1");
-    expect(fullWin.colorAtPixel(642, 373)?.equals(Colors.yellow), true, reason: "win mid2");
+    expect(fullWin.colorAtPixel(appWidth, appHeight)?.equals(Colors.purple), null, reason: "end of win pix");
+    expect(fullWin.colorAtPixel(appWidth - 1, appHeight - 1)?.equals(Colors.purple), false, reason: "ROUND CORNER");
+    expect(fullWin.colorAtPixel(appWidth - 3, appHeight - 3)?.equals(Colors.purple), true, reason: "last window pixel");
+    expect(
+      fullWin.colorAtPixel(appWidth - 100, appHeight - 100)?.equals(Colors.purple),
+      true,
+      reason: "from last calculating",
+    );
+
+    final Point<int> mid = mWindow.getMiddle();
+    expect(fullWin.colorAtPixel(mid.x, mid.y)?.equals(Colors.red), true, reason: "win mid1");
+    expect(fullWin.colorAtPixel(mid.x + 1, mid.y + 1)?.equals(Colors.yellow), true, reason: "win mid2");
     // now translate from window pos to display pos
     expect(
       display.colorAtPixel(8 + bounds.x, 31 + bounds.y)?.equals(Colors.blue),
@@ -295,7 +338,7 @@ void _testInput() {
     await MutableConfig.mutableConfig.alwaysMatchGameWindowNamesEqual.setValue(false); // needed for cmd find
     await Utils.delayMS(55); // wait for update
 
-    unawaited(GameToolsLib.runLoop(app: null));
+    unawaited(GameToolsLib.runLoop(app: null, appWasAlreadyStarted: true));
     Logger.warn("this test can fail if you un focus the window");
     Logger.warn(
       "Remember to start the tests from the terminal command prompt and not with the run configuration: "

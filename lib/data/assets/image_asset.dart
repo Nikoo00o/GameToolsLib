@@ -17,7 +17,11 @@ part of 'gt_asset.dart';
 /// image is contained in the last app project dir, then it replaces the previous ones and will get loaded instead!
 ///
 /// The [NativeImage] can directly be accessed in [content] or [validContent]. But if the image is corrupted this
-/// might throw an exception on access!
+/// might throw an exception on access! And remember that [validContent] also throws if the image was null (file not
+/// found)!
+///
+/// In addition to reloading an image with [loadFromFile], you can also save the image to the file here with
+/// [saveToFile] (and replace data)!
 base class ImageAsset extends GTAsset<NativeImage> {
   /// Additional param to specify the color of the image for [NativeImage.readSync] which is RGB per default!
   final NativeImageType type;
@@ -39,14 +43,41 @@ base class ImageAsset extends GTAsset<NativeImage> {
   static String _combineSubFolderPath(String baseImageFolder, String subFolder) =>
       subFolder.isEmpty ? baseImageFolder : FileUtils.combinePath(<String>[baseImageFolder, subFolder]);
 
-  /// Cached in [loadFromFile] and then used in [initContentIfNeeded] and reset afterwards!
+  /// Cached in [loadFromFile] and then used in [initContentIfNeeded] and reset in next [loadContent]!
+  ///
+  /// Used for [saveToFile]! Returns a fallback path (as the last possible location) of [possibleFolders.last] and
+  /// first of [possibleFileNames].
+  String get path {
+    if (_path != null) {
+      return _path!;
+    }
+    final (String first, String second) = possibleFileNames;
+    return FileUtils.combinePath(<String>[possibleFolders.last, first]);
+  }
+
+  /// See [path]
   String? _path;
 
   /// Overridden to replace paths at first and only load the image at the end in [initContentIfNeeded] with the most
-  /// recent path
+  /// recent path!
   @override
   void loadFromFile(String absolutePath) {
     _path = absolutePath;
+  }
+
+  /// Saves the [content] to the [path], or if [replaceWith] is not null, then it will first replace the [content]
+  /// and afterwards saves it to the path! If both [content] and [replaceWith] are null, then an [AssetException]
+  /// will be thrown!
+  void saveToFile({NativeImage? replaceWith}) {
+    if (content == null) {
+      _loadedContent = replaceWith;
+    }
+    if (content != null) {
+      content!.saveSync(path);
+      Logger.spam(runtimeType, replaceWith != null ? " replaced and" : "", " saved new image data to ", path);
+    } else {
+      throw AssetException(message: "$runtimeType.saveToFile both content and replaceWith are null for $_path");
+    }
   }
 
   /// Overridden to perform loading of the image only at the end with the most recent path and using that as loaded
@@ -56,8 +87,14 @@ base class ImageAsset extends GTAsset<NativeImage> {
     if (_path != null) {
       _loadedContent = NativeImage.readSync(path: _path!);
       Logger.spam(runtimeType, " loaded image data from path ", _path);
-      _path = null;
     }
     super.initContentIfNeeded(_loadedContent);
+  }
+
+  /// Overridden to first always reset the internal path to null
+  @override
+  NativeImage? loadContent() {
+    _path = null;
+    return super.loadContent();
   }
 }

@@ -1,14 +1,16 @@
 import 'dart:math' show Point;
+import 'dart:ui';
 import 'package:game_tools_lib/core/utils/num_utils.dart';
 import 'package:game_tools_lib/domain/entities/base/model.dart';
 
 export 'package:game_tools_lib/core/utils/num_utils.dart';
 
 /// Either Point + size based access with [x], [y], [width], [height].
-/// Or Sides access with [left], [top], [right], [bottom].
+/// Or Sides access with [left], [top], [right], [bottom]. Important: this class is half open like [Rect], so only
+/// [left]/[top] contain positions inside of this and [right]/[bottom] would be the outside borders!
 /// Also provides [scale] with doubles and the +/- operators with other bounds to change all members.
 /// To only return new bounds with changed [pos], use [move] instead.
-/// Also contains other utilty functions like [contains]
+/// Also contains other utility functions like [contains]
 /// The Comparison Operator may also return true for different types for [T] if the values are equal!
 /// And this class is immutable (like an entity, but for better performance not extending it), so members cannot be
 /// changed! Also Supports JSON Conversion if needed!
@@ -26,25 +28,29 @@ final class Bounds<T extends num> implements Model {
 
   const Bounds.pos({required this.pos, required this.size});
 
+  /// [pos.x]
   T get x => pos.x;
 
+  /// [pos.y]
   T get y => pos.y;
 
+  /// [size.x]
   T get width => size.x;
 
+  /// [size.y]
   T get height => size.y;
 
-  /// returns [pos.x]
+  /// Returns [x] as the most left position inside
   T get left => x;
 
-  /// returns [pos.y]
+  /// Returns [y] as the most top position inside
   T get top => y;
 
-  /// returns [pos.x] + [size.x]
-  T get right => x + width as T;
+  /// Returns [x] + [width] as the right side outer border (so not logically inside!)
+  T get right => pos.x + size.x as T;
 
-  /// returns [pos.y] + [size.y]
-  T get bottom => y + height as T;
+  /// Returns [y] + [height] as the bottom side outer border (so not logically inside!)
+  T get bottom => pos.y + size.y as T;
 
   /// Returns [x] + [width], [y] + [height]
   Point<T> get middlePos {
@@ -71,15 +77,15 @@ final class Bounds<T extends num> implements Model {
   /// Returns true if [p] is within the area of this
   bool contains(Point<T> p) {
     if (T == double) {
-      if ((p.x as double).isLessThan(left as double) || (p.x as double).isMoreThan(right as double)) {
+      if ((p.x as double).isLessThan(left as double) || (p.x as double).isMoreOrEqualThan(right as double)) {
         return false;
       }
-      if ((p.y as double).isLessThan(top as double) || (p.y as double).isMoreThan(bottom as double)) {
+      if ((p.y as double).isLessThan(top as double) || (p.y as double).isMoreOrEqualThan(bottom as double)) {
         return false;
       }
       return true;
     }
-    return p.x >= left && p.x <= right && p.y >= top && p.y <= bottom;
+    return p.x >= left && p.x < right && p.y >= top && p.y < bottom;
   }
 
   @override

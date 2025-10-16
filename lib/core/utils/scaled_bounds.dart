@@ -104,16 +104,16 @@ final class ScaledBounds<T extends num> implements Model {
   /// Accesses [unscaledBounds] scaled by [scaleFactor]!
   T get height => _scaleY(unscaledBounds.height);
 
-  /// Accesses [unscaledBounds] scaled by [scaleFactor]!
+  /// Accesses [unscaledBounds] scaled by [scaleFactor]! Remember this is the first left pixel inside of this!
   T get left => x;
 
-  /// Accesses [unscaledBounds] scaled by [scaleFactor]!
+  /// Accesses [unscaledBounds] scaled by [scaleFactor]! Remember this is the first top pixel inside of this!
   T get top => y;
 
-  /// Accesses [unscaledBounds] scaled by [scaleFactor]!
+  /// Accesses [unscaledBounds] scaled by [scaleFactor]! Remember this is the right border outside of this!
   T get right => x + width as T;
 
-  /// Accesses [unscaledBounds] scaled by [scaleFactor]!
+  /// Accesses [unscaledBounds] scaled by [scaleFactor]! Remember this is the bottom border outside of this!
   T get bottom => y + height as T;
 
   /// Accesses [unscaledBounds] scaled by [scaleFactor]!
@@ -165,7 +165,8 @@ final class ScaledBounds<T extends num> implements Model {
     creationHeight: json[JSON_CREATION_HEIGHT] as int,
   );
 
-  /// Converts the [scaledBounds] to a UI [Rect] for drawing!
+  /// Converts the [scaledBounds] to a UI [Rect] for drawing! (same half-open interval notation of left, top, right,
+  /// bottom)
   Rect toRect() {
     final Bounds<T> bounds = scaledBounds;
     return Rect.fromLTRB(

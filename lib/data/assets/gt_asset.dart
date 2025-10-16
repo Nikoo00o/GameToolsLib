@@ -68,7 +68,12 @@ abstract base class GTAsset<T> {
   /// If this is null, then the files were invalid, or could not be read! The error check and handling has to be done
   /// elsewhere and this will never throw! But you may call (and override) [validContent] which throws an
   /// [AssetException] if the content is null and otherwise returns it not nullable!
-  // todo: comment how files are loaded and modified
+  ///
+  /// This will load files in order from the [possibleFolders] (from game tools plugin package first and final app
+  /// project last) in the parent folder [GameToolsConfig.staticAssetFolders] and with the file names
+  /// [possibleFileNames] (look at other docs!). How newer files replace the [_loadedContent] is defined in the sub
+  /// classes with [loadFromFile]!
+
   T? get content => _loadedContent;
 
   /// Will be set to cache results of [loadContent]
@@ -103,7 +108,8 @@ abstract base class GTAsset<T> {
   }
 
   /// Returns the [GameToolsConfig.staticAssetFolders] together with the [subFolderPath] as [FileUtils.combinePath]
-  /// to return all possible parent paths which may contain the files in the correct order lib -> app.
+  /// to return all possible parent paths which may contain the files in the correct order lib -> app (so that they
+  /// will be replaced in the correct way).
   List<String> get possibleFolders => subFolderPath.isEmpty
       ? GameToolsConfig.baseConfig.staticAssetFolders
       : GameToolsConfig.baseConfig.staticAssetFolders
@@ -115,7 +121,10 @@ abstract base class GTAsset<T> {
   /// Otherwise if true it returns the path with the [GameToolsLib.gameLanguage]'s [Locale.languageCode] first and
   /// then secondly the fallback with the first entry of [FixedConfig.supportedLocales].
   ///
-  /// The first file path then is always loaded and the second only if [_alsoLoadSecondPath] returns true!
+  /// The first file path then is always loaded and the second only if [_alsoLoadSecondPath] returns true which per
+  /// default only happens if no content was loaded from the first and the second is not empty!
+  ///
+  /// This will be [FileUtils.combinePath] with the [possibleFolders] for the full absolute path!
   (String, String) get possibleFileNames {
     if (isMultiLanguage == false) {
       return ("$fileName.$fileEnding", "");

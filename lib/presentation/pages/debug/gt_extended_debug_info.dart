@@ -30,7 +30,7 @@ class _GtExtendedDebugInfoState extends State<GtExtendedDebugInfo> with GTBaseWi
   GameToolsConfigBaseType get config => GameToolsLib.baseConfig;
 
   Widget buildAssetInfo(BuildContext context) {
-    final List<String> assetDirs = GameToolsConfig.baseConfig.staticAssetFolders;
+    final List<String> assetDirs = List<String>.of(GameToolsConfig.baseConfig.staticAssetFolders);
     assetDirs.insert(0, GameToolsConfig.resourceFolderPath); // root path to project "data" first
     final String baseAssetPath = FileUtils.parentPath(assetDirs.last); // last one is always direct asset dir of app
     final List<String> simplePaths = assetDirs.map((String path) {
@@ -44,12 +44,18 @@ class _GtExtendedDebugInfoState extends State<GtExtendedDebugInfo> with GTBaseWi
       }
     }
 
-    return Row(
+    return Column(
       children: <Widget>[
-        Text("Base resource data directory: ${GameToolsConfig.resourceFolderPath}"),
-        Text("And all asset directories from $baseAssetPath are: ${simplePaths.join(",    ")}"),
-        const Spacer(),
-        FilledButton(onPressed: openAssetsFoldersInExplorer, child: const Text("Open all Assets")),
+        Row(
+          children: <Widget>[
+            const Spacer(),
+            Text("Base resource data directory: ${GameToolsConfig.resourceFolderPath}"),
+            const Spacer(),
+            FilledButton(onPressed: openAssetsFoldersInExplorer, child: const Text("Open all Assets")),
+            const Spacer(),
+          ],
+        ),
+        Center(child: Text("And all asset directories from $baseAssetPath are:\n${simplePaths.join("\n")}")),
       ],
     );
   }

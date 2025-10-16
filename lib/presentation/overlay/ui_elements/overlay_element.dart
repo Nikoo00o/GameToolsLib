@@ -37,7 +37,7 @@ typedef OverlayContentBuilder = Widget Function(BuildContext, Bounds<double>, Ov
 /// Also during construction [loadOrSaveToStorage] is called automatically to synchronize the data with the storage
 /// (loads, or saves)! Afterwards [saveToStorage] is used! And the user may edit the json data while the program is
 /// closed (errors will lead to overriding user file with defaults again!)! For this sub classes must also override
-/// [toJson] and [fromJson] and extend them by the additional member.
+/// [toJson] and [fromJson] and extend them by the additional member. Stored in [OverlayManager.overlayElementSubFolder].
 ///
 /// If you set [editable] to true, then [buildEdit] will be called and this object will be saved to storage. And you
 /// can also toggle visibility with [visible] for [buildOverlay] to hide/show this.
@@ -135,7 +135,7 @@ base class OverlayElement with ChangeNotifier implements Model {
   /// Set periodically during the build in [buildOverlay] to contain the final already scaled position of the widgets
   /// [bounds] by using [ScaledBounds.scaledBoundsD]!
   ///
-  /// Used in [OverlayManager._checkMouseForClickableOverlayElements] and [onMouseEnter].
+  /// Used in [OverlayManager.checkMouseForClickableOverlayElements] and [onMouseEnter].
   Bounds<double>? get displayDimension => _displayDimension;
 
   /// Optionally can be used to build the inner content of this in the default [buildContent] if you dont want to
@@ -225,6 +225,8 @@ base class OverlayElement with ChangeNotifier implements Model {
   ///
   /// If the user modified the data to be invalid, then it will be overridden by default data at some point when the
   /// [OverlayManager.overlayMode] changes the next time!
+  ///
+  /// Stored under [GameToolsConfig.dynamicDataFolder] / [OverlayManager.overlayElementSubFolder].
   void loadOrSaveToStorage() {
     if (editable) {
       final Map<String, dynamic>? json = GameToolsLib.database.loadSimpleJson(
@@ -251,6 +253,8 @@ base class OverlayElement with ChangeNotifier implements Model {
   ///
   /// This will not listen to changes exactly between [OverlayMode.HIDDEN] and [OverlayMode.VISIBLE] which happen
   /// quite often!
+  ///
+  /// Stored under [GameToolsConfig.dynamicDataFolder] / [OverlayManager.overlayElementSubFolder].
   void saveToStorage() {
     if (editable == true) {
       GameToolsLib.database.storeSimpleJson(

@@ -6,7 +6,7 @@
 
 /// Simple integer to detect dll library mismatches. Has to be incremented when native code is modified!
 /// Also Modify the version in native_window.dart!
-# define _NATIVE_CODE_VERSION 8
+# define _NATIVE_CODE_VERSION 9
 
 /// Simple integer to detect dll library mismatches. Has to be incremented when native code is modified!
 /// Also Modify the version in native_window.dart!
@@ -66,21 +66,18 @@ EXPORT unsigned char *getFullMainDisplay();
 /// For this function, the window must be opened, otherwise this will just return 0 (nullptr)
 EXPORT unsigned char *getFullWindow(int windowID);
 
-/// Part of the window start pos with size (from top left corner).
-/// To translate this into a specific window, the getWindowBounds are needed
+/// This will need display/screen coordinates that match the area of a window (or area inside it) !
 /// This is DPI Aware (see CMakeLists.txt)!
 /// IMPORTANT: the memory management (cleanup of the returned data) must be done on the outside!!!
 /// An Image can be created from the data with "cv::Mat(height, width, CV_8UC4, data);" but will not cleanup
 /// automatically! So it needs to be freed manually!
-/// For this function, the window must be opened, otherwise this will just return 0 (nullptr)
 EXPORT unsigned char *getImageOfWindow(int windowID, int x, int y, int width, int height);
 
 /// RGB values of pixel on display in hex format: 0x00bbggrr
 /// R: val & 0xff
 /// G: (val >> 8) & 0xff
 /// B: (val >> 16) & 0xff
-/// For this function, the window must be opened, otherwise this will just return 0
-EXPORT unsigned long getPixelOfWindow(int windowID, int x, int y);
+EXPORT unsigned long getPixelOfWindow(int x, int y);
 
 /// Returns the raw screen mouse position
 EXPORT POINT getDisplayMousePos();

@@ -59,7 +59,7 @@ base class GTOverlayState extends State<GTOverlay> with GTBaseWidget {
     return <ChangeNotifierProvider<dynamic>>[
       ChangeNotifierProvider<GameWindow>.value(value: GameToolsLib.mainGameWindow),
       ChangeNotifierProvider<OverlayElementsList>.value(value: overlayManager().overlayElements),
-      UIHelper.simpleValueProvider(value: overlayManager().overlayMode),
+      UIHelper.simpleValueProvider(value: overlayManager().overlayModeNotifier),
     ];
   }
 

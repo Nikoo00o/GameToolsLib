@@ -1,38 +1,48 @@
 part of 'package:game_tools_lib/game_tools_lib.dart';
 
-// todo: doc comments
 /// This (or sub classes of this) is the interaction point between your data code layer and a transparent overlay
 /// ([GTOverlay]) on top of your window (per default the [GameToolsLib.mainGameWindow]) where you can draw ui
-/// [OverlayElement]'s like for example also [CompareImage] which can be created and used anywhere! For more info
-/// look at doc comments there!
+/// [OverlayElement]'s (stored in [overlayElementSubFolder]) like for example also [CompareImage] which can be created
+/// and used anywhere! For more info look at doc comments there! As a helper it also uses static functions of
+/// [NativeOverlayWindow]. Some parts of this are also implemented in [DelayedOverlayChecks]!
+///
+/// Mostly you probably won't interact with this class that much except maybe using [changeMode].
 ///
 /// The [overlayMode] can be used to access or modify the current mode (might also be used to render elements
 /// conditionally)! Always use [changeMode] or [changeModeAsync] to modify the mode instead of doing it directly!
 ///
+/// Otherwise this provides the helper methods [showToast], [showCustomDialog] and [scheduleUIWork].
+///
+/// The list of [overlayElements] is handled automatically and should not be modified directly. [windowToTrack]
+/// returns the current window ref (main window per default).
+///
+/// The [overlayState] or [overlayContext] can be accessed for the [overlayReference] (also see [GTOverlay])!
+///
+/// Subclasses may override first [init], then [onCreate] after which [active] is true until [onDispose], but also
+/// [onUpdate], [onOpenChange], [onFocusChange], [onWindowResize] and [onOverlayModeChanged] callbacks!
+///
 /// todo: reference what to override of this
-base class OverlayManager<OverlayStateType extends GTOverlayState> {
-  /// This is used to get the [overlayState] and [overlayContext] from the the [GTOverlay]!
-  final GlobalKey<OverlayStateType> overlayReference = GlobalKey<OverlayStateType>();
-
-  /// This is set optionally in the constructor while defaulting to [OverlayMode.APP_OPEN] and it is used to render
-  /// the different overlay states depending on the mode!
-  ///
-  /// You can modify this directly to change the overlay mode and changes will arrive in [onOverlayModeChanged] and
-  /// in [GTOverlay]! Prefer to use [changeMode], or better [changeModeAsync] instead to change the overlay mode.
-  final SimpleChangeNotifier<OverlayMode> overlayMode;
-
-  /// Contains all the cached [OverlayElement]'s (see doc comments of [OverlayElementsList] ) and can be used to
-  /// add/remove elements, or modify elements, or build them!
-  final OverlayElementsList overlayElements;
-
-  /// Sub folder of [GameToolsConfig.dynamicData] where the [OverlayElement]'s are stored into simple json files!
+base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedOverlayChecks<OverlayStateType> {
+  /// Sub folder of [GameToolsConfig.dynamicDataFolder] where the [OverlayElement]'s are stored into simple json files!
   ///
   /// Can be overridden in sub classes.
   String get overlayElementSubFolder => "overlay";
 
+  /// This is set optionally in the constructor while defaulting to [OverlayMode.APP_OPEN] and it is used to render
+  /// the different overlay states depending on the mode! Provided to [GTOverlay] with a provider!
+  ///
+  /// You can modify this directly to change the overlay mode and changes will arrive in [onOverlayModeChanged] and
+  /// in [GTOverlay]! Prefer to use [changeMode], or better [changeModeAsync] instead to change the overlay mode.
+  final SimpleChangeNotifier<OverlayMode> overlayModeNotifier;
+
+  /// Returns the value of [overlayModeNotifier] (see doc comments there)
+  @override
+  OverlayMode get overlayMode => overlayModeNotifier.value;
+
   /// Per default always [GameToolsLib.mainGameWindow] set in [init], but can be overridden in the constructor.
   ///
   /// In overlay mode this will be the target window that determines size and position of the overlay
+  @override
   GameWindow get windowToTrack => _win!;
 
   /// set in [init] or constructor.
@@ -41,20 +51,26 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
   /// Internal debug check between [onCreate] and [onDispose] checked in [changeMode] first!
   bool _active = false;
 
+  /// If this overlay manager is active and running (as in an app ui was created at all)!
+  @override
+  bool get active => _active;
+
+  /// This is used to get the [overlayState] and [overlayContext] from the the [GTOverlay]!
+  final GlobalKey<OverlayStateType> overlayReference = GlobalKey<OverlayStateType>();
+
+  /// Contains all the cached [OverlayElement]'s (see doc comments of [OverlayElementsList] ) and can be used to
+  /// add/remove elements, or modify elements, or build them!
+  final OverlayElementsList overlayElements;
+
+  @override
+  List<OverlayElement> get clickableElements => overlayElements.clickableElements;
+
   /// Awaited in [changeModeAsync] if not null!
   Future<void>? _pendingWindowChange;
 
-  /// used in [_checkWindowPosition]
-  Point<int>? _lastWindowPos;
-
-  /// The delay for the calls to [_checkMouseForClickableOverlayElements] from [onUpdate] which is a bit slower for
-  /// better performance. But this can be overridden in sub classes because it might miss a fast mouse click on an
-  /// [OverlayElement] with a long delay! If this returns null, then it is called every [onUpdate]!
-  Duration? get clickableMouseCheckDelay => const Duration(milliseconds: 100);
-
   /// [windowToTrackOverride] can rarely be used to override [windowToTrack]
   OverlayManager([OverlayMode initialOverlayMode = OverlayMode.APP_OPEN, GameWindow? windowToTrackOverride])
-    : overlayMode = SimpleChangeNotifier<OverlayMode>(initialOverlayMode),
+    : overlayModeNotifier = SimpleChangeNotifier<OverlayMode>(initialOverlayMode),
       overlayElements = OverlayElementsList(),
       _win = windowToTrackOverride {
     _lastMode = initialOverlayMode;
@@ -82,7 +98,7 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
   void onCreate(BuildContext context) {
     Logger.spam("onCreate ", runtimeType, " for ", windowToTrack.name);
     _active = true;
-    overlayMode.addListener(_overlayModeListener);
+    overlayModeNotifier.addListener(_overlayModeListener);
     // todo: MULTI-WINDOW IN THE FUTURE: maximise and hide transparent overlay window (or is it started that way?)
   }
 
@@ -95,7 +111,7 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
   void onDispose(BuildContext context) {
     Logger.spam("onDispose ", runtimeType, " for ", windowToTrack.name);
     _active = false;
-    overlayMode.removeListener(_overlayModeListener);
+    overlayModeNotifier.removeListener(_overlayModeListener);
   }
 
   /// Is called at the start of the internal game tools lib event loop [FixedConfig.updatesPerSecond] times per second,
@@ -104,84 +120,12 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
   /// might have changed in the meantime (see [onFocusChange] and [onOpenChange])!
   /// This will be called before [GameManager] and [Module].
   ///
-  /// Calls [_checkMouseForClickableOverlayElements] periodically with [clickableMouseCheckDelay].
+  /// This will call [executeDelayedUpdates] periodically (check doc comments there!)
+  ///
+  /// Subclasses that override this should also check [active] for additional work and maybe also the [overlayMode], etc
   @mustCallSuper
   Future<void> onUpdate() async {
-    if (clickableMouseCheckDelay != null) {
-      await Utils.executePeriodicAsync(
-        delay: clickableMouseCheckDelay!,
-        callback: _checkMouseForClickableOverlayElements,
-      );
-    } else {
-      await _checkMouseForClickableOverlayElements();
-    }
-  }
-
-  /// Used to call [OverlayElement.onMouseLeave] in [_checkMouseForClickableOverlayElements]
-  OverlayElement? _mouseFocused;
-
-  /// This is called periodically from [onUpdate] with [clickableMouseCheckDelay] for the [OverlayElement]'s with
-  /// [OverlayElement.clickable] being true (and them being [OverlayElement.visible]) to call
-  /// [NativeOverlayWindow.setMouseEvents] depending on the mouse  position!
-  /// Only checks when [windowToTrack.isOpen] and [overlayMode] is [OverlayMode.VISIBLE]!
-  ///
-  /// This also checks the [GtSettingsButton] separately! And this checks [OverlayElement.onMouseEnter] first before
-  /// accepting mouse focus and then if it was true, then [OverlayElement.onMouseLeave] after the mouse left the area!
-  ///
-  /// And this will also call [_checkWindowPosition] first at the start if [OverlayMode.VISIBLE], but also for
-  /// [OverlayMode.EDIT_UI] and [OverlayMode.EDIT_COMP_IMAGES]!
-  Future<void> _checkMouseForClickableOverlayElements() async {
-    if (windowToTrack.isOpen && overlayMode.value == OverlayMode.VISIBLE) {
-      final bool change = await _checkWindowPosition();
-      if (change) {
-        return; // skip one turn if position changed
-      }
-      final Point<double>? mousePos = windowToTrack.windowMousePos?.toDoublePoint();
-      if (mousePos != null) {
-        for (final OverlayElement element in overlayElements.clickableElements) {
-          if (element.visible) {
-            if (element.displayDimension?.contains(mousePos) ?? false) {
-              if (element.onMouseEnter(mousePos)) {
-                if (_mouseFocused != element) {
-                  _mouseFocused?.onMouseLeave(); // check old element
-                  _mouseFocused = element;
-                }
-                await NativeOverlayWindow.setMouseEvents(ignore: false);
-                return; // found a clickable region, so skip until next try
-              }
-            }
-          }
-        }
-        if (_mouseFocused != null) {
-          _mouseFocused!.onMouseLeave(); // check old element
-          _mouseFocused = null;
-        }
-        // now also check the settings button
-        if (mousePos.y <= GtSettingsButton.sizeForClicks &&
-            mousePos.x >= windowToTrack.width - GtSettingsButton.sizeForClicks) {
-          await NativeOverlayWindow.setMouseEvents(ignore: false); // found click region
-        } else {
-          await NativeOverlayWindow.setMouseEvents(ignore: true); // no click region found, so ignore
-        }
-      } else {
-        // mouse out of window, or top bar
-        await NativeOverlayWindow.setMouseEvents(ignore: true); // no click region found, so ignore
-      }
-    } else if (overlayMode.value == OverlayMode.EDIT_UI || overlayMode.value == OverlayMode.EDIT_COMP_IMAGES) {
-      await _checkWindowPosition();
-    }
-  }
-
-  /// Used in [_checkMouseForClickableOverlayElements] to reposition the overlay if the window changed. returns true
-  /// if something changed
-  Future<bool> _checkWindowPosition() async {
-    final Point<int> pos = windowToTrack.getWindowBounds().pos;
-    if (pos != _lastWindowPos) {
-      _lastWindowPos = pos;
-      await NativeOverlayWindow.snapOverlay(windowToTrack);
-      return true;
-    }
-    return false;
+    await executeDelayedUpdates();
   }
 
   /// Is called when the open status changes for [window]. This will also be called when it opens for the first time!
@@ -193,7 +137,7 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
     if (window != windowToTrack) {
       return; // skip other windows
     }
-    if (window.isOpen == false && overlayMode.value != OverlayMode.APP_OPEN) {
+    if (window.isOpen == false && overlayMode != OverlayMode.APP_OPEN) {
       changeMode(OverlayMode.APP_OPEN);
     }
 
@@ -224,7 +168,7 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
       return; // skip other windows
     }
 
-    if (overlayMode.value != OverlayMode.APP_OPEN) {
+    if (overlayMode != OverlayMode.APP_OPEN) {
       await NativeOverlayWindow.snapOverlay(window);
     }
 
@@ -249,7 +193,7 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
   @protected
   void onOverlayModeChanged(OverlayMode? lastMode, {required bool changedBetweenHiddenAndVisible}) {
     if (changedBetweenHiddenAndVisible == false) {
-      final OverlayMode newMode = overlayMode.value;
+      final OverlayMode newMode = overlayMode;
       Logger.verbose(
         "Switched Overlay from $lastMode to $newMode with ${overlayElements.countOfElements} overlay elements",
       );
@@ -282,6 +226,8 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
   /// Additionally this contains a [delay] param to wait until displaying the toast message.
   ///
   /// Otherwise nothing will be shown/done! This may not be called during build (use post frame callback)!
+  ///
+  /// Only await this if you want to wait for the next frame to render, otherwise call this unawaited!
   Future<void> showToast(
     TranslationString message, {
     Duration duration = const Duration(seconds: 4),
@@ -296,26 +242,35 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
   ///
   /// If you choose a specific [t] then your dialog can use specific data in its [Navigator.pop] which will be
   /// returned here! Returns null if you return nothing or if there is no build context available.
+  ///
+  /// This will block until your dialog returned something (or if the context was null)
   Future<t?> showCustomDialog<t>(Widget Function(BuildContext context) buildDialog) async {
     final Completer<t?> completer = Completer<t?>();
-    await scheduleUIWork((BuildContext? context) async {
+    Future<void> callback(BuildContext? context) async {
       if (context == null) {
         completer.complete(null);
       } else {
         final t? result = await showDialog<t>(context: context, builder: buildDialog);
         completer.complete(result);
       }
-    });
+    }
+
+    unawaited(scheduleUIWork(callback));
     return completer.future;
   }
 
   /// Will execute [callback] after the current frame has been rendered (so every overlay ui element should be available
   /// at that point). The inner [BuildContext] context is not null if the [overlayContext] is mounted!
   ///
-  /// Important: the [callback] will not be awaited here and should only modify UI stuff! If you have inner awaits in
-  /// your callback, then you should check the mounted status of the [BuildContext] afterwards.
+  /// Important: the [callback] should only modify UI stuff and will only be awaited after its done with its work!
+  /// If you have inner awaits in your callback, then you should check the mounted status of the [BuildContext]
+  /// afterwards.
+  ///
+  /// Only await the call to this if you really want to wait until the next frame is rendered, otherwise call this
+  /// unawaited!
   ///
   /// Optionally a [delay] can also be used which is awaited before scheduling the work for the next frame.
+  @override
   Future<void> scheduleUIWork(
     FutureOr<void> Function(BuildContext? context) callback, [
     Duration delay = Duration.zero,
@@ -325,17 +280,33 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
     if (delay > Duration.zero) {
       await Future<void>.delayed(delay);
     }
+    bool done = false;
     try {
       SchedulerBinding.instance.addPostFrameCallback((Duration? timestamp) {
-        final BuildContext? context = overlayContext;
-        if (context?.mounted ?? false) {
-          callback(context!);
-        } else {
-          callback(null);
+        try {
+          final BuildContext? context = overlayContext;
+          dynamic result;
+          if (context?.mounted ?? false) {
+            result = callback(context!);
+          } else {
+            result = callback(null);
+          }
+          if (result is Future<void>) {
+            result.whenComplete(() => done = true);
+          } else {
+            done = false;
+          }
+        } catch (_) {
+          done = true;
+          rethrow; // some ui error
         }
       });
     } catch (_) {
+      done = true;
       // ui is not available yet, ignore errors which only happen on startup!
+    }
+    while (!done) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
     }
   }
 
@@ -363,14 +334,15 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
       return;
     }
 
-    if (newOverlayMode != overlayMode.value) {
-      overlayMode.value = newOverlayMode;
+    if (newOverlayMode != overlayMode) {
+      overlayModeNotifier.value = newOverlayMode;
     } else {
       Logger.warn("Tried to change to the same new overlay mode $newOverlayMode");
     }
   }
 
   /// Same as [changeMode], but also waits for the window modifications after activating/deactivating the overlay!
+  @override
   Future<void> changeModeAsync(OverlayMode newOverlayMode) async {
     changeMode(newOverlayMode);
     if (_pendingWindowChange != null) {
@@ -383,7 +355,7 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
 
   /// Listener for changes to [overlayMode]
   static void _overlayModeListener() {
-    final OverlayMode? newValue = _instance?.overlayMode.value;
+    final OverlayMode? newValue = _instance?.overlayMode;
     final bool hiddenVisibleChange =
         (_lastMode == OverlayMode.HIDDEN && newValue == OverlayMode.VISIBLE) ||
         (_lastMode == OverlayMode.VISIBLE && newValue == OverlayMode.HIDDEN);

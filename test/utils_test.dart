@@ -116,6 +116,8 @@ void _testGeneral() {
   testD("bounds ", () async {
     final Bounds<int> b1 = Bounds<int>(x: 3, y: 5, width: 13, height: 15);
     final Bounds<double> b2 = Bounds<double>.sides(left: 3.0, top: 5.0, right: 16.0, bottom: 20.0);
+    expect(b1.x == b1.left && b1.y == b1.top, true, reason: "start match");
+    expect(b1.x + b1.width == b1.right && b1.y + b1.height == b1.bottom, true, reason: "end match");
     expect(b1 == b2, true, reason: "different constructors and types should match!");
     expect(b1.middlePos, const Point<int>(10, 13), reason: "int middle pos rounded up");
     expect(b2.middlePos, const Point<double>(9.5, 12.5), reason: "double middle pos");
@@ -136,14 +138,14 @@ void _testGeneral() {
     expect(b1.contains(b1.middlePos), true, reason: "int middle contains");
     expect(b2.contains(b2.middlePos), true, reason: "double middle contains");
     expect(b2.contains(const Point<double>(3.0, 5.0)), true, reason: "contain top left corner");
-    expect(b2.contains(const Point<double>(16.0, 20.0)), true, reason: "contain bot right corner");
+    expect(b2.contains(const Point<double>(15.0, 19.0)), true, reason: "contain bot right corner");
     expect(b1.contains(const Point<int>(2, 10)), false, reason: "not contain left out");
     expect(b1.contains(const Point<int>(10, 4)), false, reason: "not contain top out");
-    expect(b1.contains(const Point<int>(17, 10)), false, reason: "not contain right out");
-    expect(b1.contains(const Point<int>(10, 21)), false, reason: "not contain bottom out");
-
-    const String modelJson =
-        "{\"Position\":{\"X\":3.0,\"Y\":5.0},\"Size\":{\"X\":13.0,\"Y\":15.0}}";
+    expect(b1.contains(const Point<int>(16, 10)), false, reason: "not contain right out");
+    expect(b1.contains(const Point<int>(10, 20)), false, reason: "not contain bottom out");
+    expect(b1.contains(Point<int>(b1.left, b1.top)), true, reason: "inclusive start");
+    expect(b1.contains(Point<int>(b1.right, b1.bottom)), false, reason: "exclusive end");
+    const String modelJson = "{\"Position\":{\"X\":3.0,\"Y\":5.0},\"Size\":{\"X\":13.0,\"Y\":15.0}}";
     expect(jsonEncode(b2), modelJson, reason: "bounds model should match");
     expect(
       Bounds<double>.fromJson(jsonDecode(modelJson) as Map<String, dynamic>),

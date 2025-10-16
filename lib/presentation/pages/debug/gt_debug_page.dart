@@ -16,25 +16,27 @@ base class GTDebugPage extends GTBasePage {
 
   @override
   Widget buildBody(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        const GTDebugStatus(),
-        Padding(
-          padding: const EdgeInsetsGeometry.symmetric(horizontal: 120),
-          child: MutableConfig.mutableConfig.alwaysMatchGameWindowNamesEqual.builder.buildProviderWithContent(
-            context,
-            calledFromInnerGroup: false,
+    return SingleChildScrollView(
+      child: Column(
+        children: <Widget>[
+          const GTDebugStatus(),
+          Padding(
+            padding: const EdgeInsetsGeometry.symmetric(horizontal: 120),
+            child: MutableConfig.mutableConfig.alwaysMatchGameWindowNamesEqual.builder.buildProviderWithContent(
+              context,
+              calledFromInnerGroup: false,
+            ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsetsGeometry.symmetric(horizontal: 120),
-          child: MutableConfig.mutableConfig.debugPrintGameWindowNames.builder.buildProviderWithContent(
-            context,
-            calledFromInnerGroup: false,
+          Padding(
+            padding: const EdgeInsetsGeometry.symmetric(horizontal: 120),
+            child: MutableConfig.mutableConfig.debugPrintGameWindowNames.builder.buildProviderWithContent(
+              context,
+              calledFromInnerGroup: false,
+            ),
           ),
-        ),
-        const GtExtendedDebugInfo(),
-      ],
+          const GtExtendedDebugInfo(),
+        ],
+      ),
     );
   }
 

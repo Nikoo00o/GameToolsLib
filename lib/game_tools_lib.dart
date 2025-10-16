@@ -30,6 +30,7 @@ import 'package:game_tools_lib/data/native/native_overlay_window.dart';
 import 'package:game_tools_lib/data/native/native_window.dart' show NativeWindow;
 import 'package:game_tools_lib/domain/entities/base/model.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
+import 'package:game_tools_lib/domain/game/helper/delayed_overlay_checks.dart';
 import 'package:game_tools_lib/domain/game/helper/example/example_config.dart';
 import 'package:game_tools_lib/domain/game/helper/example/example_event.dart';
 import 'package:game_tools_lib/domain/game/helper/example/example_game_manager.dart';
@@ -231,15 +232,24 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   /// This should always return true except when [OverlayManager.init] fails!
   ///
   /// [app] can also be null if you don't want any user interface (then [runApp] is not called to run the flutter app
-  /// and [OverlayManager.init] is not called, but this method will still return true)
-  static Future<bool> runLoop({required Widget? app}) async {
+  /// and [OverlayManager.init] is not called, but this method will still return true).
+  ///
+  /// But from tests you can also use [app] null and then pass [appWasAlreadyStarted] as true to still call
+  /// [OverlayManager.init] even tho there is no app! Otherwise leave it at false!
+  static Future<bool> runLoop({required Widget? app, bool appWasAlreadyStarted = false}) async {
     if (_GameToolsLibHelper._initialized == false) {
       Logger.error("initGameToolsLib was not called before runLoop!");
       throw const ConfigException(message: "initGameToolsLib was not called before runLoop");
     }
     late final bool overlayInit;
     if (app != null) {
+      if (appWasAlreadyStarted) {
+        Logger.error("initGameToolsLib app was not null, but appWasAlreadyStarted was true!");
+        return false;
+      }
       runApp(app);
+      overlayInit = await OverlayManager._instance?.init() ?? false;
+    } else if (appWasAlreadyStarted) {
       overlayInit = await OverlayManager._instance?.init() ?? false;
     } else {
       Logger.verbose("Displaying no app user interface for GameToolsLib (is this intended?)");
@@ -271,7 +281,9 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
         Logger.verbose("Closing Game Tools Lib... ${_GameToolsLibHelper._initialized}");
       }
 
-      await changeState(GameClosedState()); // first always change to game closed to trigger any cleanups
+      if (_GameToolsLibEventLoop._currentState != null && _GameToolsLibEventLoop._currentState is! GameClosedState) {
+        await changeState(GameClosedState()); // first always change to game closed to trigger any cleanups
+      }
       await _GameToolsLibEventLoop._stopLoop(); // then wait for loop to stop
       if (GameManager._instance != null) {
         for (final ModuleBaseType module in GameManager._instance!.modules) {

@@ -15,6 +15,9 @@ import 'package:provider/provider.dart';
 
 // todo: create template with either template as prefix or "my" for the different overrides
 
+/// used for testing screenshots
+int _saveCounter = 0;
+
 /// Used for quick tests/debugging on button click
 Future<void> _testOverlay() async {
   final OverlayElement someElement1 = OverlayElement.forPos(
@@ -43,6 +46,15 @@ Future<void> _testOverlay() async {
     height: 150,
     identifier: TS.raw("overlay.example.3"),
     clickable: true,
+    contentBuilder: (context, bounds, element) {
+      return ElevatedButton(
+        onPressed: () async {
+          final NativeImage img = await OverlayManager.overlayManager().cachedWindowImage;
+          await img.saveAsync("${GameToolsConfig.resourceFolderPath}\\test${_saveCounter++}.png");
+        },
+        child: const Text("take screenshot"),
+      );
+    },
   );
   someElement3.visible = !someElement3.visible;
 

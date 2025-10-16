@@ -5,12 +5,12 @@ import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/overlay/gt_overlay.dart';
 
 /// Used in top right corner of [GTOverlay] build with [GTOverlayState.buildTopRightSettings] and this can also receive
-/// clicks so it is checked in [OverlayManager._checkMouseForClickableOverlayElements]!
+/// clicks so it is checked in [OverlayManager.checkMouseForClickableOverlayElements]!
 class GtSettingsButton extends StatelessWidget with GTBaseWidget {
   const GtSettingsButton({super.key});
 
   /// This is used to calculate the position for this to receive clicks in
-  /// [OverlayManager._checkMouseForClickableOverlayElements]
+  /// [OverlayManager.checkMouseForClickableOverlayElements]
   static const int sizeForClicks = 24;
 
   /// If this changes, also change [sizeForClicks]

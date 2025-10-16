@@ -100,7 +100,7 @@ base class ModelConfigOption<T extends Model?> extends MutableConfigOption<T> {
 
   /// If true, then this config option is stored in an external json file which the user can modify while the program
   /// is closed. Per default it's false! It will be stored in
-  /// "[GameToolsConfig.dynamicData] / [jsonFolderName] / [title.identifier]"
+  /// "[GameToolsConfig.dynamicDataFolder] / [jsonFolderName] / [title.identifier]"
   ///
   /// But important difference: here the [defaultValue] is only used for the first start if no json file is stored yet
   /// and otherwise always the content of the json file is used! So the file should always exist for the user, but
@@ -110,7 +110,7 @@ base class ModelConfigOption<T extends Model?> extends MutableConfigOption<T> {
   /// may be overridden at any time when it is saved!
   final bool storeInExternalJsonFile;
 
-  /// Name for the folder inside of [GameToolsConfig.dynamicData] that contains the files for [saveToExternalJsonFiles].
+  /// Name for the folder inside of [GameToolsConfig.dynamicDataFolder] that contains the files for [storeInExternalJsonFile].
   /// Can be overridden in sub classes!
   String get jsonFolderName => "config";
 

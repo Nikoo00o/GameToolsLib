@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/enums/overlay_mode.dart';
+import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/utils/bounds.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
@@ -55,6 +56,28 @@ final class NativeOverlayWindow {
     }
   }
 
+  /// Utility method to calculate the inner bounds of the target [window] in screen space to get the correct position
+  /// and size that covers it! This may also call [GameWindow.updateAndGetSize] if size was null before and it may
+  /// also throw a [WindowClosedException] if the window was closed!
+  static Bounds<int> getInnerOverlayAreaForWindow(GameWindow window) {
+    final Bounds<int> bounds = window.getWindowBounds();
+    final Point<int> outerSize = bounds.size;
+    final Point<int>? innerSize = window.size ?? window.updateAndGetSize();
+    if (innerSize == null) {
+      throw WindowClosedException(message: "Cant get window size for $window");
+    }
+    final int xOffset = outerSize.x - innerSize.x;
+    final int yOffset = outerSize.y - innerSize.y;
+    return Bounds<int>(
+      x: xOffset == 0 ? bounds.left : bounds.left + xOffset ~/ 2,
+      y: yOffset == 0 ? bounds.top : bounds.top + yOffset - xOffset ~/ 2,
+      width: innerSize.x,
+      height: innerSize.y,
+    );
+  }
+
+  /// Uses [getInnerOverlayAreaForWindow] to calculate the bounds where the overlay should be put to only affect the
+  /// inner [window] without top border, etc and then tries to snap the overlay to the window by setting pos and size!
   static Future<void> snapOverlay(GameWindow window) async {
     if (_isActive) {
       if (window.isOpen == false) {
@@ -62,34 +85,26 @@ final class NativeOverlayWindow {
         return;
       }
       await _init();
-      final Bounds<int> bounds = window.getWindowBounds();
-      final Point<int> outerSize = bounds.size;
-      final Point<int> innerSize = window.size!;
-      final int xOffset = outerSize.x - innerSize.x;
-      final int yOffset = outerSize.y - innerSize.y;
+      final Bounds<int> bounds = getInnerOverlayAreaForWindow(window);
 
-      final int width = innerSize.x;
-      final int height = innerSize.y;
-      final int x = xOffset == 0 ? bounds.left : bounds.left + xOffset ~/ 2;
-      final int y = yOffset == 0 ? bounds.top : bounds.top + yOffset - xOffset ~/ 2;
-
-      if (width != _width || height != _height) {
-        await windowManager.setSize(Size(width.toDouble(), height.toDouble()));
-        _width = width;
-        _height = height;
-        Logger.spamPeriodic(_snapLog1, "NativeOverlayWindow snap size: ", width, ", ", height);
+      if (bounds.width != _width || bounds.height != _height) {
+        await windowManager.setSize(Size(bounds.width.toDouble(), bounds.height.toDouble()));
+        _width = bounds.width;
+        _height = bounds.height;
+        Logger.spamPeriodic(_snapLog1, "NativeOverlayWindow snap size: ", bounds.width, ", ", bounds.height);
       }
-      if (x != _x || y != _y) {
-        await windowManager.setPosition(Offset(x.toDouble(), y.toDouble()), animate: false);
-        _x = x;
-        _y = y;
-        Logger.spamPeriodic(_snapLog2, "NativeOverlayWindow snap pos: ", x, ", ", y);
+      if (bounds.x != _x || bounds.y != _y) {
+        await windowManager.setPosition(Offset(bounds.x.toDouble(), bounds.y.toDouble()), animate: false);
+        _x = bounds.x;
+        _y = bounds.y;
+        Logger.spamPeriodic(_snapLog2, "NativeOverlayWindow snap pos: ", bounds.x, ", ", bounds.y);
       }
     } else {
       Logger.warn("NativeOverlayWindow.snapOverlay called with no active overlay");
     }
   }
 
+  /// Switches to overlay mode
   static Future<void> activateOverlay(GameWindow window, OverlayMode mode) async {
     if (_isActive == false) {
       await _init();
@@ -115,6 +130,7 @@ final class NativeOverlayWindow {
     }
   }
 
+  /// Switches back to app mode
   static Future<void> deactivateOverlay() async {
     if (_isActive) {
       await _init();

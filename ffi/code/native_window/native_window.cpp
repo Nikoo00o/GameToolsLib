@@ -92,7 +92,9 @@ int __stdcall _enumWindows(HWND hwnd, LPARAM lParam)
                 isEqual = strcmp(windowTitle, helper->name) == 0;
             } else if ( _onlyCompareLastPart(windowTitle, helper->name))
             {
-                if(strncmp(windowTitle, helper->name, strlen(helper->name)) == 0)
+                size_t helperNameLength = strlen(helper->name);
+                if ( strncmp(windowTitle, helper->name, helperNameLength) == 0 && windowTitle[helperNameLength] == ' '
+                     && windowTitle[helperNameLength + 1] == '-' )
                 {
                     // special case after win11 console has syntax: "Command Prompt - some command..."
                     isEqual = true;
@@ -389,28 +391,13 @@ EXPORT unsigned char *getFullWindow(int windowID)
 
 EXPORT unsigned char *getImageOfWindow(int windowID, int x, int y, int width, int height)
 {
-    HWND handle = _getWindowHandle(windowID);
-    if ( handle == 0 )
-    {
-        return 0;
-    }
-    POINT pos{x, y};
-    POINT size{width, height};
-    ClientToScreen(handle, &pos);
-    return _getImage(pos.x, pos.y, size.x, size.y);
+    return _getImage(x, y, width, height);
 }
 
-EXPORT unsigned long getPixelOfWindow(int windowID, int x, int y)
+EXPORT unsigned long getPixelOfWindow(int x, int y)
 {
-    HWND handle = _getWindowHandle(windowID);
-    if ( handle == 0 )
-    {
-        return _INVALID_VALUE_UL;
-    }
-    POINT point{x, y};
-    ClientToScreen(handle, &point);
     HDC hdc = _getMainDisplay();
-    COLORREF colorRef = GetPixel(hdc, point.x, point.y);
+    COLORREF colorRef = GetPixel(hdc, x, y);
     return (unsigned long) colorRef;
 }
 

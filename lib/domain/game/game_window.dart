@@ -10,6 +10,7 @@ import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/utils/bounds.dart';
 import 'package:game_tools_lib/core/utils/utils.dart' show Utils;
 import 'package:game_tools_lib/data/native/native_image.dart';
+import 'package:game_tools_lib/data/native/native_overlay_window.dart';
 import 'package:game_tools_lib/data/native/native_window.dart';
 import 'package:game_tools_lib/domain/entities/base/model.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
@@ -29,9 +30,9 @@ part 'package:game_tools_lib/core/enums/input/board_key.dart';
 /// To interact with the input of the game in more detail, look at [InputManager] with for example
 /// [InputManager.leftClick], [InputManager.keyPress], [InputManager.isKeyDown], [InputManager.isMouseDown].
 ///
-/// Here you can only use the methods: [getPixelOfWindow], [isWithinWindow], [windowMousePos] and [moveMouse] for
-/// inputs and you can also check if the window [isOpen], or [hasFocus], or [size] (or if you don't want to wait for
-/// the loop, [updateAndGetOpen] and [updateAndGetFocus] and [updateAndGetSize]).
+/// Here you can only use the methods: [getPixelOfWindow], [isWithinWindow] / [isWithinInnerWindow], [windowMousePos]
+/// and [moveMouse] for  inputs and you can also check if the window [isOpen], or [hasFocus], or [size] (or if you
+/// don't want to wait for the loop, [updateAndGetOpen] and [updateAndGetFocus] and [updateAndGetSize]).
 ///
 /// UI App elements can also use this as a [ChangeNotifier] in a [ChangeNotifierProvider] to listen to changes from
 /// [name], [isOpen] and [hasFocus] updated from [rename], [updateOpen], [updateFocus], but also [size] with
@@ -245,21 +246,35 @@ final class GameWindow with ChangeNotifier {
     return size!.scaleB(0.5);
   }
 
-  /// Returns a cropped Sub Image relative to top left corner of the window.
-  /// May throw a [WindowClosedException] if the window was not open
+  /// Returns a cropped Sub Image relative to top left corner of the window (part of a screenshot).
+  /// May throw a [WindowClosedException] if the window was not open. This inner image will not contain any top
+  /// bar, or side borders and uses [NativeOverlayWindow.getInnerOverlayAreaForWindow] for it!
   ///
   /// Important: uses mouse position relative to top left window border, but [GameWindow.getWindowBounds] would also
   /// include a top window border in its height which is not included here!
   ///
   /// Default for [type] is [NativeImageType.RGBA] to make no copy (see docs of the type for more).
+  ///
+  /// [width] and [height] are nullable and will expand to the end of the window if null!
   Future<NativeImage> getImage(
     int x,
     int y,
-    int width,
-    int height, [
+    int? width,
+    int? height, [
     NativeImageType type = NativeImageType.RGBA,
   ]) async {
-    final NativeImage? image = await _nativeWindow.getImageOfWindow(_windowID, x, y, width, height, type);
+    final Bounds<int> innerBounds = NativeOverlayWindow.getInnerOverlayAreaForWindow(this);
+    final int finalWidth = width ?? (innerBounds.width - x);
+    final int finalHeight = height ?? (innerBounds.height - y);
+
+    final NativeImage? image = await _nativeWindow.getImageOfWindow(
+      _windowID,
+      innerBounds.x + x,
+      innerBounds.y + y,
+      finalWidth,
+      finalHeight,
+      type,
+    );
     if (image == null) {
       throw WindowClosedException(message: "Cant get image of window $this: $x, $y, $width, $height");
     }
@@ -270,11 +285,16 @@ final class GameWindow with ChangeNotifier {
   Future<NativeImage> getImageB(Bounds<int> b, [NativeImageType type = NativeImageType.RGBA]) async =>
       getImage(b.x, b.y, b.width, b.height, type);
 
-  /// Image of the whole full window (as a future!).
+  /// Image or screenshot of the whole full inner window window (as a future!) per default if [includeBorders] is
+  /// false, so the area from 0, 0 to [size] that is also used for the overlay window, etc. In that case [getImage]
+  /// is used. But if [includeBorders] is true, it will use the full outer [getWindowBounds] instead to also include
+  /// top bar and border shadow spaces, etc.
   /// May throw a [WindowClosedException] if the window was not open.
   /// Default for [type] is [NativeImageType.RGBA] to make no copy (see docs of the type for more).
-  Future<NativeImage> getFullImage([NativeImageType type = NativeImageType.RGBA]) async {
-    final NativeImage? image = await _nativeWindow.getFullWindow(_windowID, type);
+  Future<NativeImage> getFullImage({NativeImageType type = NativeImageType.RGBA, bool includeBorders = false}) async {
+    final NativeImage? image = includeBorders
+        ? await _nativeWindow.getFullOuterWindow(_windowID, type)
+        : await getImage(0, 0, null, null, type);
     if (image == null) {
       throw WindowClosedException(message: "Cant get full image of window: $this");
     }
@@ -286,8 +306,8 @@ final class GameWindow with ChangeNotifier {
   static Future<NativeImage> getDisplayImage([NativeImageType type = NativeImageType.RGBA]) =>
       _nativeWindow.getFullMainDisplay(type);
 
-  /// Returns the color of the pixel at [x], [y] relative to the top left corner of the window.
-  /// May throw a [WindowClosedException] if the window was not open.
+  /// Returns the color of the pixel at [x], [y] relative to the top left corner of the window (not top bar).
+  /// May throw a [WindowClosedException] if the window was not open. Uses [NativeOverlayWindow.getInnerOverlayAreaForWindow].
   /// Returns null if the position [x], [y] is outside of the window (relative to window space)!
   ///
   /// Important: uses mouse position relative to top left window border, but [GameWindow.getWindowBounds] would also
@@ -295,13 +315,15 @@ final class GameWindow with ChangeNotifier {
   ///
   /// To see rgb values from 0 to 255 as a string from color, use [Color.rgb].
   Color? getPixelOfWindow(int x, int y) {
-    final Color? color = _nativeWindow.getPixelOfWindow(_windowID, x, y);
-    final Point<int>? size = this.size;
-    if (color == null || size == null) {
-      throw WindowClosedException(message: "Cant get pixel of window $this: $x, $y");
-    }
-    if (x < 0 || y < 0 || x >= size.x || y >= size.y) {
+    if (isWithinInnerWindow(x, y) == false) {
       return null;
+    }
+    final Bounds<int> innerBounds = NativeOverlayWindow.getInnerOverlayAreaForWindow(this);
+    final int finalX = innerBounds.x + x;
+    final int finalY = innerBounds.y + y;
+    final Color? color = _nativeWindow.getPixelOfWindow(finalX, finalY);
+    if (color == null) {
+      throw WindowClosedException(message: "Cant get pixel of window $this: $x, $y");
     }
     return color;
   }
@@ -309,12 +331,27 @@ final class GameWindow with ChangeNotifier {
   /// Same as [getPixelOfWindow], but with [Point]
   Color? getPixelOfWindowP(Point<int> p) => getPixelOfWindow(p.x, p.y);
 
-  /// Returns if the [point] is inside of the visible space of the window (also border at the top) in relation to
+  /// Returns if the [point] is inside of the whole space of the window (also border at the top) in relation to
   /// screen space.
-  /// IMPORTANT: don't use this with a [point] that is relational to window screen space!
+  /// IMPORTANT: don't use this with a [point] that is relational to window screen space and use [isWithinInnerWindow]!
   bool isWithinWindow(Point<int> point) {
     final Bounds<int> bounds = getWindowBounds();
     if (point.x < bounds.left || point.y < bounds.top || point.x >= bounds.right || point.y >= bounds.bottom) {
+      return false;
+    }
+    return true;
+  }
+
+  /// Returns if [x], [y] are inside of the inner visible space of the window (without border at the top) in relation to
+  /// top left corner of the window in window space. Also look at [isWithinWindow] for screen space that includes the
+  /// top bar. Important: this may call [updateAndGetSize] if size was null before! If the window was closed, then
+  /// this will throw a [WindowClosedException]!
+  bool isWithinInnerWindow(int x, int y) {
+    final Point<int>? size = _size ?? updateAndGetSize();
+    if (size == null) {
+      throw WindowClosedException(message: "Cant get size for $this");
+    }
+    if (x < 0 || y < 0 || x >= size.x || y >= size.y) {
       return false;
     }
     return true;

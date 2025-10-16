@@ -19,7 +19,7 @@ import 'package:opencv_dart/opencv.dart' as cv;
 
 /// Simple integer to detect dll library mismatches. Has to be incremented when native code is modified!
 /// Also Modify the version in native_window.h
-const int _nativeCodeVersion = 8;
+const int _nativeCodeVersion = 9;
 
 /// First local conversions of classes/structs from c code that are used in the functions below
 final class _Rect extends Struct {
@@ -90,8 +90,8 @@ typedef getFullWindowD = Pointer<UnsignedChar> Function(int);
 typedef getImageOfWindowN = Pointer<UnsignedChar> Function(Int, Int, Int, Int, Int);
 typedef getImageOfWindowD = Pointer<UnsignedChar> Function(int, int, int, int, int);
 
-typedef getPixelOfWindowN = UnsignedLong Function(Int, Int, Int);
-typedef getPixelOfWindowD = int Function(int, int, int);
+typedef getPixelOfWindowN = UnsignedLong Function(Int, Int);
+typedef getPixelOfWindowD = int Function(int, int);
 
 typedef getDisplayMousePosN = _Point Function();
 
@@ -345,9 +345,10 @@ final class NativeWindow {
     return NativeImage.nativeAsync(width: width, height: height, data: data, targetType: imageType);
   }
 
-  /// Returns an image displaying the whole window
+  /// Returns an image displaying the whole outer window within the [getWindowBounds] with top bar, etc. Also look at
+  /// [getImageOfWindow].
   /// For [imageType], look at [NativeImageType] docs!
-  Future<NativeImage?> getFullWindow(int windowID, NativeImageType imageType) async {
+  Future<NativeImage?> getFullOuterWindow(int windowID, NativeImageType imageType) async {
     final Bounds<int>? bounds = getWindowBounds(windowID);
     final Pointer<UnsignedChar> data = _getFullWindow.call(windowID);
     if (bounds == null || data.address == 0) {
@@ -363,8 +364,9 @@ final class NativeWindow {
     );
   }
 
-  /// Returns a Sub image relative to top left corner of the window.
-  /// For [imageType], look at [NativeImageType] docs!
+  /// Returns an image, or screenshot in screen coordinates [x], [y], [width], [height] which does not check if the
+  /// window is open first. But this is used to retrieve the inner game window without top bar and bounds! Also look
+  /// at [getFullOuterWindow]. For [imageType], look at [NativeImageType] docs!
   Future<NativeImage?> getImageOfWindow(
     int windowID,
     int x,
@@ -387,9 +389,9 @@ final class NativeWindow {
     );
   }
 
-  /// relative to top left corner of window, alpha is always 255
-  Color? getPixelOfWindow(int windowID, int x, int y) {
-    final int pixel = _getPixelOfWindow(windowID, x, y);
+  /// Returns a pixel in screen coordinates [x], [y] (needs to be matched to window position)
+  Color? getPixelOfWindow(int x, int y) {
+    final int pixel = _getPixelOfWindow(x, y);
     if (pixel == _INVALID_VALUE) {
       return null;
     }
