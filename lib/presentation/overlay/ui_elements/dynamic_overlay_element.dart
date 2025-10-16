@@ -27,6 +27,7 @@ base class DynamicOverlayElement extends OverlayElement {
   /// Checks [cachedInstance] first and then [storeToCache] with [OverlayElement.newInstance] otherwise.
   factory DynamicOverlayElement({
     bool clickable = false,
+    OverlayContentBuilder contentBuilder,
     bool visible = true,
     required ScaledBounds<int> bounds,
   }) {
@@ -37,6 +38,7 @@ base class DynamicOverlayElement extends OverlayElement {
           DynamicOverlayElement.newInstance(
             identifier: identifier,
             clickable: clickable,
+            contentBuilder: contentBuilder,
             visible: visible,
             bounds: bounds,
           ),
@@ -51,9 +53,11 @@ base class DynamicOverlayElement extends OverlayElement {
     required int width,
     required int height,
     bool clickable = false,
+    OverlayContentBuilder contentBuilder,
     bool visible = true,
   }) => DynamicOverlayElement(
     clickable: clickable,
+    contentBuilder: contentBuilder,
     visible: visible,
     bounds: ScaledBounds<int>(
       Bounds<int>(x: x, y: y, width: width, height: height),
@@ -68,6 +72,7 @@ base class DynamicOverlayElement extends OverlayElement {
   DynamicOverlayElement.newInstance({
     required super.identifier,
     required super.clickable,
+    required super.contentBuilder,
     required super.visible,
     required super.bounds,
   }) : super.newInstance(editable: false);

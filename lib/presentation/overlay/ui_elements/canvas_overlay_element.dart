@@ -30,8 +30,9 @@ base class CanvasOverlayElement extends OverlayElement {
   /// Here per default [editable] is false instead of true!
   factory CanvasOverlayElement({
     required TranslationString identifier,
-    bool visible = true,
     bool editable = false,
+    OverlayContentBuilder contentBuilder,
+    bool visible = true,
     required ScaledBounds<int> bounds,
     required Color color,
   }) {
@@ -41,6 +42,7 @@ base class CanvasOverlayElement extends OverlayElement {
           CanvasOverlayElement.newInstance(
             identifier: identifier,
             editable: editable,
+            contentBuilder: contentBuilder,
             visible: visible,
             bounds: bounds,
             color: color,
@@ -59,6 +61,7 @@ base class CanvasOverlayElement extends OverlayElement {
   /// Important: here its even more important to explicitly [dispose] objects created with this constructor before
   /// they go out of scope! Otherwise you will have bad performance very quickly!
   factory CanvasOverlayElement.dynamic({
+    OverlayContentBuilder contentBuilder,
     bool visible = true,
     required ScaledBounds<int> bounds,
     required Color color,
@@ -70,6 +73,7 @@ base class CanvasOverlayElement extends OverlayElement {
           CanvasOverlayElement.newInstance(
             identifier: identifier,
             editable: false,
+            contentBuilder: contentBuilder,
             visible: visible,
             bounds: bounds,
             color: color,
@@ -86,11 +90,13 @@ base class CanvasOverlayElement extends OverlayElement {
     required int width,
     required int height,
     required Color color,
-    bool visible = true,
     bool editable = false,
+    OverlayContentBuilder contentBuilder,
+    bool visible = true,
   }) => CanvasOverlayElement(
     identifier: identifier,
     editable: editable,
+    contentBuilder: contentBuilder,
     visible: visible,
     bounds: ScaledBounds<int>(
       Bounds<int>(x: x, y: y, width: width, height: height),
@@ -106,6 +112,7 @@ base class CanvasOverlayElement extends OverlayElement {
   CanvasOverlayElement.newInstance({
     required super.identifier,
     required super.editable,
+    required super.contentBuilder,
     required super.visible,
     required super.bounds,
     required this.color,
@@ -117,6 +124,7 @@ base class CanvasOverlayElement extends OverlayElement {
     return CanvasOverlayElement.newInstance(
       identifier: identifier,
       editable: editable,
+      contentBuilder: contentBuilder,
       visible: visible,
       bounds: bounds,
       color: color,
@@ -152,6 +160,11 @@ base class CanvasOverlayElement extends OverlayElement {
 
   @override
   Widget buildEdit(BuildContext context) {
-    return EditableBuilder(borderColor: Colors.deepPurpleAccent, overlayElement: this);
+    return EditableBuilder(
+      borderColor: Colors.deepPurpleAccent,
+      overlayElement: this,
+      alsoColorizeMiddle: true,
+      child: null,
+    );
   }
 }

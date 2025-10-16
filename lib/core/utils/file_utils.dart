@@ -42,6 +42,7 @@ abstract final class FileUtils {
   /// folders relative to the execution of this (if this is compiled into a program) and returns a list of absolute
   /// file paths to the [subFolderPath] for the packages that include it (important: first entry will always be the
   /// "game_tools_lib" package and the last entry will always be your application!).
+  /// Of course the [subFolderPath] can also be empty to always return all asset folders!
   ///
   /// If this is run from tests, it will point to the project asset folder instead! But still contain the package
   /// assets directories if they are available!

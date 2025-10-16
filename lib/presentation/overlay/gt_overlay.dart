@@ -11,6 +11,7 @@ import 'package:game_tools_lib/presentation/overlay/ui_elements/canvas_overlay_e
 import 'package:game_tools_lib/presentation/overlay/ui_elements/helper/canvas_painter.dart';
 import 'package:game_tools_lib/presentation/overlay/ui_elements/helper/overlay_elements_list.dart';
 import 'package:game_tools_lib/presentation/overlay/ui_elements/overlay_element.dart';
+import 'package:game_tools_lib/presentation/overlay/widgets/gt_edit_done_button.dart';
 import 'package:game_tools_lib/presentation/overlay/widgets/gt_settings_button.dart';
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigator.dart';
 import 'package:provider/provider.dart';
@@ -39,7 +40,7 @@ base class GTOverlay extends StatefulWidget {
 }
 
 /// State base class for the [GTOverlay] (look at docs of that!) and the current [OverlayManager] in [overlayManager].
-base class GTOverlayState extends State<GTOverlay> {
+base class GTOverlayState extends State<GTOverlay> with GTBaseWidget {
   final GlobalKey<ScaffoldState> _overlayScaffold = GlobalKey<ScaffoldState>();
 
   @override
@@ -108,6 +109,11 @@ base class GTOverlayState extends State<GTOverlay> {
     return children;
   }
 
+  /// Can be overridden to not display the top right checkbox in [OverlayMode.EDIT_UI] or [OverlayMode.EDIT_COMP_IMAGES]
+  Widget buildEditCheckmark(BuildContext context) {
+    return const Positioned(top: 1, right: 26, child: GTEditDoneButton());
+  }
+
   /// Can be overridden to not display the top right settings icon to switch back to full app mode!
   // todo: MULTI-WINDOW IN THE FUTURE: remove this
   Widget buildTopRightSettings(BuildContext context, OverlayMode overlayMode) {
@@ -132,6 +138,9 @@ base class GTOverlayState extends State<GTOverlay> {
               buildCanvas(context, elements, overlayMode),
               // then ui overlay elements
               ...buildOverlayElements(context, elements, overlayMode),
+              // only draw edit checkbox during edit states
+              if (overlayMode == OverlayMode.EDIT_UI || overlayMode == OverlayMode.EDIT_COMP_IMAGES)
+                buildEditCheckmark(context),
               // and draw settings as last top most child
               buildTopRightSettings(context, overlayMode),
             ],
@@ -165,10 +174,10 @@ base class GTOverlayState extends State<GTOverlay> {
   /// Shows a bottom SnackBar with the translated [message] if this is currently displaying in any other than
   /// [OverlayMode.APP_OPEN]! Optionally a custom [duration] may be given.
   ///
-  /// Otherwise nothing will be shown/done!
+  /// Otherwise nothing will be shown/done! This will not listen to locale changes for translation!
   ///
   /// This may not be called during build (use post frame callback)!
-  void showToast(TranslationString message, [Duration duration = const Duration(seconds: 4)]) {
+  void showToastOverlay(TranslationString message, [Duration duration = const Duration(seconds: 4)]) {
     if (_overlayScaffold.currentContext?.mounted ?? false) {
       final SnackBar snackBar = SnackBar(
         content: Center(

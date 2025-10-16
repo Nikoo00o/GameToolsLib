@@ -170,6 +170,7 @@ base class GTApp extends StatelessWidget {
   static Locale? get currentLocale => _cachedLocale;
 
   /// Is called with the new [locale] when it changes (and of course once at init) to load all translation values
+  /// which is from the [LocaleConfigOption.activeLocale] in [MutableConfig.currentLocale]
   static void _loadLocale(Locale locale) {
     _cachedLocale = locale;
     final List<String> folders = _baseConfig.localeFolders; // sorted correctly: lib first, game last

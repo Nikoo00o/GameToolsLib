@@ -21,7 +21,7 @@ import 'package:game_tools_lib/core/logger/log_color.dart';
 import 'package:game_tools_lib/core/logger/log_message.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
-import 'package:game_tools_lib/data/json_asset.dart';
+import 'package:game_tools_lib/data/assets/json_asset.dart';
 import 'package:game_tools_lib/data/native/ffi_loader.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/data/native/native_overlay_window.dart';

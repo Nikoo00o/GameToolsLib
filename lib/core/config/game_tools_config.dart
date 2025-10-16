@@ -25,8 +25,10 @@ base class GameToolsConfig<FixedConfigType extends FixedConfig, MutableConfigTyp
   const GameToolsConfig({required this.fixed, required this.mutable});
 
   /// Absolute path to the folder from the working directory where all resource/assets/etc files for this are stored!
-  /// When running from debugger in android studio, or from tests, this will point to "project_dir/data" and
-  /// otherwise for a running app this points to "exe_dir/data"
+  /// When running from debugger in android studio, or from tests, this will point to "project_dir/data" (of course
+  /// without the assets being in there) and  otherwise for a running app this points to "exe_dir/data".
+  /// This folder path should only be used for dynamic files you save yourself during runtime and not the static
+  /// asset files!
   static final String resourceFolderPath = FileUtils.getLocalFilePath("data");
 
   /// You should override this to display the name of your tool in your app!

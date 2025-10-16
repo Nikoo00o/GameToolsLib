@@ -7,10 +7,12 @@ import 'package:game_tools_lib/presentation/overlay/ui_elements/overlay_element.
 /// Used to build the edit border and a drag and drop around an [OverlayElement] and is used in
 /// [OverlayElement.buildEdit].
 ///
-/// The translated [OverlayElement.identifier] will be shown as text in the center and the border with the [borderColor]
-/// will be shifted by 1 pixel to the outside so the whole content of the [overlayElement] is visible.
+/// The translated [OverlayElement.identifier] will be shown as text in the center (or optionally a custom [child] and
+/// the border with the [borderColor] will be shifted by 1 pixel to the outside so the whole content of the
+/// [overlayElement] is visible.
 class EditableBuilder extends StatefulWidget {
-  /// For the border on the outside
+  /// For the border on the outside (and also the slightly transparent effect in the middle which can be turned off
+  /// with [alsoColorizeMiddle])
   final Color borderColor;
 
   /// Reference to the object this builds the border for
@@ -19,7 +21,21 @@ class EditableBuilder extends StatefulWidget {
   /// Quick access to the bounds of the overlay element
   late final Bounds<double> scaledBounds = overlayElement.bounds.scaledBoundsD;
 
-  EditableBuilder({super.key, required this.borderColor, required this.overlayElement});
+  /// If this should also paint the [borderColor] semi transparent within the whole element as well (the center will
+  /// always be painted for the dragging around effect)!
+  final bool alsoColorizeMiddle;
+
+  /// Displayed in the middle of the element. If null, then just a [Text] will be shown with a translated
+  /// [OverlayElement.identifier].
+  final Widget? child;
+
+  EditableBuilder({
+    super.key,
+    required this.borderColor,
+    required this.overlayElement,
+    required this.alsoColorizeMiddle,
+    required this.child,
+  });
 
   @override
   State<EditableBuilder> createState() => _EditableBuilderState();
@@ -143,12 +159,12 @@ class _EditableBuilderState extends State<EditableBuilder> {
     final double innerWidth = width - borderSize * 4;
     final double innerHeight = height - borderSize * 4;
     return Container(
-      color: widget.borderColor.withValues(alpha: 0.15),
+      color: widget.alsoColorizeMiddle ? widget.borderColor.withValues(alpha: 0.15) : null,
       width: innerWidth,
       height: innerHeight,
       child: Stack(
         children: <Widget>[
-          Center(child: Text(widget.overlayElement.identifier.tl(context))),
+          Center(child: widget.child ?? Text(widget.overlayElement.identifier.tl(context))),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: innerWidth / 3, vertical: innerHeight / 3),
             child: buildDraggable(

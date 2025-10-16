@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/domain/game/update_checker.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
@@ -9,7 +10,7 @@ import 'package:game_tools_lib/presentation/pages/home/gt_home_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Uses [UpdateChecker] to display a widget mostly used in [GTHomePage] to check for updates every
-/// [updateEveryMinutes].
+/// [updateEveryMinutes]. The [_GTVersionCheckState] contains static variables to keep the state alive
 final class GTVersionCheck extends StatefulWidget {
   /// Per default 15
   static const int updateEveryMinutes = 15;
@@ -21,26 +22,34 @@ final class GTVersionCheck extends StatefulWidget {
 }
 
 final class _GTVersionCheckState extends State<GTVersionCheck> with GTBaseWidget {
-  Timer? timer;
-  String? myVersion;
-  String? newVersion;
-  String? changeLog;
+  static Timer? _timer;
+  static _GTVersionCheckState? _state;
+  static String? myVersion;
+  static String? newVersion;
+  static String? changeLog;
 
   @override
   void initState() {
     super.initState();
-    timer = Timer.periodic(const Duration(minutes: GTVersionCheck.updateEveryMinutes), updateCheck);
-    unawaited(updateCheck(timer!));
+    _state = this;
+    if (_timer == null) {
+      _timer = Timer.periodic(const Duration(minutes: GTVersionCheck.updateEveryMinutes), updateCheck);
+      SchedulerBinding.instance.addPostFrameCallback((_) => unawaited(updateCheck(_timer!)));
+    }
   }
 
   @override
   void dispose() {
-    timer?.cancel();
+    _state = null;
     super.dispose();
   }
 
   /// Called every [GTVersionCheck.updateEveryMinutes] from internal timer
-  Future<void> updateCheck(Timer timer) async {
+  static Future<void> updateCheck(Timer timer) async {
+    if (_state == null || _state!.mounted == false) {
+      _timer = null; // reset timer for next time!
+      return;
+    }
     try {
       myVersion ??= await _checker.getMyVersion();
       newVersion = await _checker.getNewestVersion();
@@ -50,7 +59,11 @@ final class _GTVersionCheckState extends State<GTVersionCheck> with GTBaseWidget
       newVersion = null;
       Logger.error("Error checking version", e, s);
     }
-    setState(() {});
+    if (_state == null || _state!.mounted == false) {
+      _timer = null; // reset timer for next time!
+    } else {
+      _state?.setState(() {});
+    }
   }
 
   @override
@@ -113,5 +126,5 @@ final class _GTVersionCheckState extends State<GTVersionCheck> with GTBaseWidget
     );
   }
 
-  UpdateChecker get _checker => UpdateChecker.updateChecker();
+  static UpdateChecker get _checker => UpdateChecker.updateChecker();
 }

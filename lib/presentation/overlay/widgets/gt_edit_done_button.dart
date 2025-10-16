@@ -3,18 +3,16 @@ import 'package:game_tools_lib/core/enums/overlay_mode.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/overlay/gt_overlay.dart';
+import 'package:game_tools_lib/presentation/overlay/widgets/gt_settings_button.dart';
 
-/// Used in top right corner of [GTOverlay] build with [GTOverlayState.buildTopRightSettings] and this can also receive
-/// clicks so it is checked in [OverlayManager._checkMouseForClickableOverlayElements]!
-class GtSettingsButton extends StatelessWidget with GTBaseWidget {
-  const GtSettingsButton({super.key});
-
-  /// This is used to calculate the position for this to receive clicks in
-  /// [OverlayManager._checkMouseForClickableOverlayElements]
-  static const int sizeForClicks = 24;
+/// Used in top right corner of [GTOverlay] left of [GtSettingsButton] and is build in [GTOverlayState.buildEditCheckmark]
+/// only for [OverlayMode.EDIT_UI] and [OverlayMode.EDIT_COMP_IMAGES]. Important: the position of this is set outside
+/// and needs to respect the size of the settings button.
+class GTEditDoneButton extends StatelessWidget with GTBaseWidget {
+  const GTEditDoneButton({super.key});
 
   /// If this changes, also change [sizeForClicks]
-  static const double iconSize = 16;
+  static const double iconSize = 18;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +30,7 @@ class GtSettingsButton extends StatelessWidget with GTBaseWidget {
     return InkWell(
       customBorder: const CircleBorder(),
       onTap: () {
-        OverlayManager.overlayManager().changeMode(OverlayMode.APP_OPEN);
+        OverlayManager.overlayManager().changeMode(OverlayMode.VISIBLE);
       },
       child: buildIcon(context),
     );
@@ -46,9 +44,9 @@ class GtSettingsButton extends StatelessWidget with GTBaseWidget {
         shape: BoxShape.circle,
       ),
       child: Icon(
-        Icons.settings,
+        Icons.check_circle_outlined,
         size: iconSize,
-        color: colorOnSurface(context).withValues(alpha: 0.80),
+        color: colorSuccess(context).withValues(alpha: 0.80),
       ),
     );
   }

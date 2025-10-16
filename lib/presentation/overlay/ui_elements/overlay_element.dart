@@ -1,3 +1,5 @@
+import 'dart:math' show Point;
+
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/enums/overlay_mode.dart';
 import 'package:game_tools_lib/core/utils/bounds.dart';
@@ -13,6 +15,9 @@ import 'package:game_tools_lib/presentation/overlay/ui_elements/helper/editable_
 import 'package:game_tools_lib/presentation/overlay/ui_elements/helper/overlay_element_widget.dart';
 import 'package:game_tools_lib/presentation/overlay/ui_elements/helper/overlay_elements_list.dart';
 import 'package:provider/provider.dart';
+
+/// Used for [OverlayElement.contentBuilder].
+typedef OverlayContentBuilder = Widget Function(BuildContext, Bounds<double>, OverlayElement)?;
 
 /// Base class for all ui overlay elements. Render Order: [CanvasOverlayElement] ([Colors.deepPurpleAccent] edit
 /// border)-> [CompareImage] ([Colors.pinkAccent] edit border) -> [OverlayElement] ([Colors.pink] edit border)
@@ -40,13 +45,16 @@ import 'package:provider/provider.dart';
 /// replaced by those from storage! This includes for example the position with [bounds], etc so that users can
 /// adjust the ui!
 ///
-/// You can set [clickable] to true to receive mouse events (clicks/focus) instead of the underlying window.
+/// You can set [clickable] to true to receive mouse events (clicks/focus) instead of the underlying window if
+/// [onMouseEnter] returns true (which is does per default, but can be overridden for some hover effects) and then
+/// also [onMouseLeave] is called.
 ///
-/// Subclasses should override [buildOverlay] and [buildEdit] to build the layout depending on the [OverlayMode] in
+/// Subclasses should override [buildContent] and [buildEdit] to build the layout depending on the [OverlayMode] in
 /// [OverlayManager.overlayMode]. And subclasses must create a separate [OverlayElement.newInstance] constructor that
 /// calls the same constructor of the super class to create new instances. And then the default unnamed constructor
 /// must be a factory constructor that returns [OverlayElement.cachedInstance] if not null and only otherwise calls the
-/// newly created newInstance constructor as param to [OverlayElement.storeToCache]. For example look at [CompareImage]
+/// newly created newInstance constructor as param to [OverlayElement.storeToCache]. For example look at [CompareImage].
+/// For simple elements, you can also just use the [contentBuilder] parameter instead!
 ///
 /// Important: for any additional member in your subclasses that affect displaying, you must add a call to
 /// [notifyListeners] in the setter for the property, because otherwise the overlay ui element will not automatically
@@ -111,14 +119,6 @@ base class OverlayElement with ChangeNotifier implements Model {
   /// You don't have to worry about the window resizing here!
   ScaledBounds<int> get bounds => _bounds;
 
-  // see below
-  Bounds<double>? _displayDimension;
-
-  /// Set periodically during the build in [buildOverlay] to contain the final already scaled position of the widget!
-  ///
-  /// Used in [OverlayManager._checkMouseForClickableOverlayElements].
-  Bounds<double>? get displayDimension => _displayDimension;
-
   /// The position and size of this ui element in relation to the size of the window it was created with.
   ///
   /// Best change this by setting it to [ScaledBounds.move] which automatically references the current window size!
@@ -129,12 +129,26 @@ base class OverlayElement with ChangeNotifier implements Model {
     notifyListeners();
   }
 
+  // see below
+  Bounds<double>? _displayDimension;
+
+  /// Set periodically during the build in [buildOverlay] to contain the final already scaled position of the widgets
+  /// [bounds] by using [ScaledBounds.scaledBoundsD]!
+  ///
+  /// Used in [OverlayManager._checkMouseForClickableOverlayElements] and [onMouseEnter].
+  Bounds<double>? get displayDimension => _displayDimension;
+
+  /// Optionally can be used to build the inner content of this in the default [buildContent] if you dont want to
+  /// create your own sub class of this!
+  final OverlayContentBuilder contentBuilder;
+
   /// Factory constructor that will cache and reuse instances for [identifier] and should always be used from the
   /// outside! Checks [cachedInstance] first and then [storeToCache] with [OverlayElement.newInstance] otherwise.
   factory OverlayElement({
     required TranslationString identifier,
     bool editable = true,
     bool clickable = false,
+    OverlayContentBuilder contentBuilder,
     bool visible = true,
     required ScaledBounds<int> bounds,
   }) =>
@@ -144,6 +158,7 @@ base class OverlayElement with ChangeNotifier implements Model {
           identifier: identifier,
           editable: editable,
           clickable: clickable,
+          contentBuilder: contentBuilder,
           visible: visible,
           bounds: bounds,
         ),
@@ -158,11 +173,13 @@ base class OverlayElement with ChangeNotifier implements Model {
     required int height,
     bool editable = true,
     bool clickable = false,
+    OverlayContentBuilder contentBuilder,
     bool visible = true,
   }) => OverlayElement(
     identifier: identifier,
     editable: editable,
     clickable: clickable,
+    contentBuilder: contentBuilder,
     visible: visible,
     bounds: ScaledBounds<int>(
       Bounds<int>(x: x, y: y, width: width, height: height),
@@ -178,16 +195,28 @@ base class OverlayElement with ChangeNotifier implements Model {
     required this.identifier,
     required this.editable,
     required this.clickable,
+    required this.contentBuilder,
     required bool visible,
     required ScaledBounds<int> bounds,
   }) : _visible = visible,
        _bounds = bounds;
 
-  static final SpamIdentifier _storeLog = SpamIdentifier();
-
   /// Does nothing, but can be used in a constructor of any class if you have static variables in the file that you want
   /// to make sure are initialized right after the game tools lib and not only when they are used.
   void ensureInitialized() {}
+
+  /// If [editable] is true and [visible] is true, this is called when the mouse enters the [displayDimension] (or
+  /// rather the already scaled [displayDimension]) and should return true (which it does per default) if it should
+  /// capture the user clicks instead of the underlying window! Can be overridden to return false and just display
+  /// some hover mechanic instead. When overriding and checking the [mousePos], then use [displayDimension] for
+  /// comparison!
+  bool onMouseEnter(Point<double> mousePos) => true;
+
+  /// If [editable] and [onMouseEnter] returned true, this is called when the mouse leaves the [bounds] (or rather
+  /// [displayDimension]) again.
+  void onMouseLeave() {}
+
+  static final SpamIdentifier _storeLog = SpamIdentifier();
 
   /// Used to either load, or store the current member data for this identifier from/to storage in the
   /// unnamed default factory constructor inside of [storeToCache]!
@@ -269,10 +298,14 @@ base class OverlayElement with ChangeNotifier implements Model {
     saveToStorage();
   }
 
-  /// Called from [buildOverlay] to build the inner content within the [scaledBounds].
+  /// Called from [buildOverlay] to build the inner content within the [scaledBounds] for available width/height.
   ///
-  /// Per default this just builds a yellow border around and puts a to do message inside!
+  /// Per default this either builds the [contentBuilder] if not null, or otherwise just builds a yellow border around
+  /// and puts a to do message inside. But you can also override this in your sub classes!
   Widget buildContent(BuildContext context, Bounds<double> scaledBounds) {
+    if (contentBuilder != null) {
+      return contentBuilder!.call(context, scaledBounds, this);
+    }
     return Container(
       width: scaledBounds.width,
       height: scaledBounds.height,
@@ -303,9 +336,13 @@ base class OverlayElement with ChangeNotifier implements Model {
 
   /// This will be called automatically to build the edit border of this overlay ui element if [editable] is true
   /// (otherwise nothing is displayed). Per default this just returns an [EditableBuilder] with [Colors.pink] and of
-  /// course sub classes may override this to choose a different border color!
+  /// course sub classes may override this to choose a different border color or maybe also a custom
+  /// [EditableBuilder.child] to show in the middle of the element to edit!
+  ///
+  /// Of course you can also override this to build some sort of dummy content for your overlay element that has the
+  /// same layout as the final ui element to interact with!
   Widget buildEdit(BuildContext context) {
-    return EditableBuilder(borderColor: Colors.pink, overlayElement: this);
+    return EditableBuilder(borderColor: Colors.pink, overlayElement: this, alsoColorizeMiddle: true, child: null);
   }
 
   /// This will be called from the [OverlayManager] automatically to build a [ChangeNotifierProvider] around a

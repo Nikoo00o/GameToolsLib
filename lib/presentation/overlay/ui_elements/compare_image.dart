@@ -15,6 +15,7 @@ base class CompareImage extends OverlayElement {
   factory CompareImage({
     required TranslationString identifier,
     bool editable = true,
+    OverlayContentBuilder contentBuilder,
     bool visible = true,
     required ScaledBounds<int> bounds,
   }) {
@@ -24,6 +25,7 @@ base class CompareImage extends OverlayElement {
           CompareImage.newInstance(
             identifier: identifier,
             editable: editable,
+            contentBuilder: contentBuilder,
             visible: visible,
             bounds: bounds,
           ),
@@ -39,10 +41,12 @@ base class CompareImage extends OverlayElement {
     required int width,
     required int height,
     bool editable = true,
+    OverlayContentBuilder contentBuilder,
     bool visible = true,
   }) => CompareImage(
     identifier: identifier,
     editable: editable,
+    contentBuilder: contentBuilder,
     visible: visible,
     bounds: ScaledBounds<int>(
       Bounds<int>(x: x, y: y, width: width, height: height),
@@ -57,6 +61,7 @@ base class CompareImage extends OverlayElement {
   CompareImage.newInstance({
     required super.identifier,
     required super.editable,
+    required super.contentBuilder,
     required super.visible,
     required super.bounds,
   }) : super.newInstance(clickable: false);
@@ -69,6 +74,11 @@ base class CompareImage extends OverlayElement {
 
   @override
   Widget buildEdit(BuildContext context) {
-    return EditableBuilder(borderColor: Colors.pinkAccent, overlayElement: this);
+    return EditableBuilder(
+      borderColor: Colors.pinkAccent,
+      overlayElement: this,
+      alsoColorizeMiddle: true,
+      child: null,
+    );
   }
 }

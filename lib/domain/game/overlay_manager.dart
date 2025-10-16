@@ -117,14 +117,19 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
     }
   }
 
+  /// Used to call [OverlayElement.onMouseLeave] in [_checkMouseForClickableOverlayElements]
+  OverlayElement? _mouseFocused;
+
   /// This is called periodically from [onUpdate] with [clickableMouseCheckDelay] for the [OverlayElement]'s with
   /// [OverlayElement.clickable] being true (and them being [OverlayElement.visible]) to call
   /// [NativeOverlayWindow.setMouseEvents] depending on the mouse  position!
   /// Only checks when [windowToTrack.isOpen] and [overlayMode] is [OverlayMode.VISIBLE]!
   ///
-  /// This also checks the [GtSettingsButton] separately!
+  /// This also checks the [GtSettingsButton] separately! And this checks [OverlayElement.onMouseEnter] first before
+  /// accepting mouse focus and then if it was true, then [OverlayElement.onMouseLeave] after the mouse left the area!
   ///
-  /// And this will also call [_checkWindowPosition] first at the start!
+  /// And this will also call [_checkWindowPosition] first at the start if [OverlayMode.VISIBLE], but also for
+  /// [OverlayMode.EDIT_UI] and [OverlayMode.EDIT_COMP_IMAGES]!
   Future<void> _checkMouseForClickableOverlayElements() async {
     if (windowToTrack.isOpen && overlayMode.value == OverlayMode.VISIBLE) {
       final bool change = await _checkWindowPosition();
@@ -136,10 +141,20 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
         for (final OverlayElement element in overlayElements.clickableElements) {
           if (element.visible) {
             if (element.displayDimension?.contains(mousePos) ?? false) {
-              await NativeOverlayWindow.setMouseEvents(ignore: false);
-              return; // found a clickable region, so skip until next try
+              if (element.onMouseEnter(mousePos)) {
+                if (_mouseFocused != element) {
+                  _mouseFocused?.onMouseLeave(); // check old element
+                  _mouseFocused = element;
+                }
+                await NativeOverlayWindow.setMouseEvents(ignore: false);
+                return; // found a clickable region, so skip until next try
+              }
             }
           }
+        }
+        if (_mouseFocused != null) {
+          _mouseFocused!.onMouseLeave(); // check old element
+          _mouseFocused = null;
         }
         // now also check the settings button
         if (mousePos.y <= GtSettingsButton.sizeForClicks &&
@@ -152,6 +167,8 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
         // mouse out of window, or top bar
         await NativeOverlayWindow.setMouseEvents(ignore: true); // no click region found, so ignore
       }
+    } else if (overlayMode.value == OverlayMode.EDIT_UI || overlayMode.value == OverlayMode.EDIT_COMP_IMAGES) {
+      await _checkWindowPosition();
     }
   }
 
@@ -269,7 +286,10 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
     TranslationString message, {
     Duration duration = const Duration(seconds: 4),
     Duration delay = Duration.zero,
-  }) => scheduleUIWork((BuildContext? context) => overlayReference.currentState?.showToast(message, duration), delay);
+  }) => scheduleUIWork(
+    (BuildContext? context) => overlayReference.currentState?.showToastOverlay(message, duration),
+    delay,
+  );
 
   /// This can be used to build a (for example [AlertDialog]) inside of the [buildDialog] callback which will then be
   /// displayed after the next build method by using [scheduleUIWork].
