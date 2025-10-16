@@ -4,11 +4,9 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// class to return new objects which store config variables that may change either at compile time, or run time.
 ///
 /// Constant config values that are only unique per application and won't change can be stored inside of this (like
-/// [appTitle]). For example this also contains many paths where different files are stored like the [logFolder] or
-/// the [dynamicDataFolder] which are both created during runtime. But also asset folders like [localeFolders] are
-/// included in a slightly different way (see cached [FileUtils.getAssetFoldersFor] below), because this contains the
-/// asset files that are stored in the source code from each package and are shipped with the application (mostly
-/// static)!
+/// [appTitle]). For example this also contains many paths where different files are stored like the [logFolder].
+/// Here the [dynamicDataFolder] is used for user modifiable data generated during runtime and the [staticAssetFolders]
+/// is used for static assets shipped with the application during compile time (from source code)!
 ///
 /// Sub classes should also use extend with the custom types for [FixedConfigType] and [MutableConfigType], but
 /// sub classes of this should not have any dynamic member variables and the getters should always return const objects!
@@ -28,7 +26,7 @@ base class GameToolsConfig<FixedConfigType extends FixedConfig, MutableConfigTyp
   /// When running from debugger in android studio, or from tests, this will point to "project_dir/data" (of course
   /// without the assets being in there) and  otherwise for a running app this points to "exe_dir/data".
   /// This folder path should only be used for dynamic files you save yourself during runtime and not the static
-  /// asset files!
+  /// asset files! For example used in [logFolder]. Static asset files should use [staticAssetFolders] instead!
   static final String resourceFolderPath = FileUtils.getLocalFilePath("data");
 
   /// You should override this to display the name of your tool in your app!
@@ -46,18 +44,28 @@ base class GameToolsConfig<FixedConfigType extends FixedConfig, MutableConfigTyp
   /// The subfolders and files will only be created at runtime!
   String get dynamicDataFolder => FileUtils.combinePath(<String>[resourceFolderPath, "dynamic_data"]);
 
-  /// The name of the folder containing all locales in the assets directory which is the following:
-  /// "data/flutter_assets/assets" for your application assets and "data/flutter_assets/packages/game_tools_lib/assets"
-  /// for the library assets!
+  /// Caches and returns all possible static asset folders for the current app and all packages, so the local paths
+  /// relative to execution: "data/flutter_assets/assets" and multiple "data/flutter_assets/packages/PACKAGE_NAME/assets"
+  /// if this was compiled into a program!
   ///
-  /// Only the translation file "en.json" and "de.json" are bundled with this library and will be loaded before your
-  /// "en.json" and "de.json" files, but your values may replace the old ones! (also locale files from other packages
-  /// plugins will be loaded before your final application). Also see [FixedConfig.supportedLocales].
+  /// The first entry of the list will always be the asset folder of the game_tools_lib package and the last entry
+  /// will always be the asset folder of your application!
   ///
-  /// Uses an internal cached [_localeFolders]!
-  List<String> get localeFolders => _localeFolders;
+  /// If this is run for debugging from the IDE, or is run from tests, the last part of the application will point to
+  /// the project asset folder instead and the other package paths may be in the build directory!
+  ///
+  /// Of course all returned paths will always be absolute file paths (and only if the "assets" folder exists!)! This
+  /// is mostly used in [GTAsset]'s!
+  ///
+  /// Important: your packages pubspec.yaml must include under its "assets:" section: first "assets/" in general and
+  /// then the sub folders "assets/locales/" used for [LocaleAsset] and "assets/images/" used for [ImageAsset], but
+  /// also any custom folders used for [JsonAsset]. Look at the doc comments of those classes for usage of this!
+  ///
+  /// This uses [FileUtils.getAssetFolders] and will not return any plugin packages with are inside of the
+  /// [FileUtils.assetFoldersBlacklist] like for example the useless "cupertino_icons" package!
+  List<String> get staticAssetFolders => _assetFolders;
 
-  static final List<String> _localeFolders = FileUtils.getAssetFoldersFor("locales");
+  static final List<String> _assetFolders = FileUtils.getAssetFolders();
 
   static GameToolsConfigBaseType? _instance;
 

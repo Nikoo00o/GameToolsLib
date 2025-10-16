@@ -38,15 +38,24 @@ abstract final class FileUtils {
     return output.toString();
   }
 
-  /// Looks into "data/flutter_assets/assets" and multiple "data/flutter_assets/packages/PACKAGE_NAME/assets" local
-  /// folders relative to the execution of this (if this is compiled into a program) and returns a list of absolute
-  /// file paths to the [subFolderPath] for the packages that include it (important: first entry will always be the
-  /// "game_tools_lib" package and the last entry will always be your application!).
-  /// Of course the [subFolderPath] can also be empty to always return all asset folders!
+  /// This contains some plugin packages asset folders that should not be returned from [getAssetFolders]!
+  /// For example the "cupertino_icons" package is useless here.
+  static List<String> assetFoldersBlacklist = <String>["cupertino_icons"];
+
+  /// Returns all possible asset folders for the current app and all packages, so the local paths relative
+  /// to execution: "data/flutter_assets/assets" and multiple "data/flutter_assets/packages/PACKAGE_NAME/assets" if
+  /// this was compiled into a program!
   ///
-  /// If this is run from tests, it will point to the project asset folder instead! But still contain the package
-  /// assets directories if they are available!
-  static List<String> getAssetFoldersFor(String subFolderPath) {
+  /// The first entry of the list will always be the asset folder of the game_tools_lib package and the last entry
+  /// will always be the asset folder of your application!
+  ///
+  /// If this is run for debugging from the IDE, or is run from tests, the last part of the application will point to
+  /// the project asset folder instead and the other package paths may be in the build directory!
+  ///
+  /// Of course all returned paths will always be absolute file paths (and only if the "assets" folder exists!)!
+  ///
+  /// This will not return any plugin packages with are inside of the [assetFoldersBlacklist]!
+  static List<String> getAssetFolders() {
     String assets = combinePath(<String>[GameToolsConfig.resourceFolderPath, "flutter_assets"]);
     if (wasRunFromTests) {
       assets = assets.substring(absolutePath(workingDirectory).length + 1); // point to real exe asset dir for package
@@ -55,13 +64,17 @@ abstract final class FileUtils {
     }
 
     final String packages = combinePath(<String>[assets, "packages"]);
-    final String lastSearchPart = combinePath(<String>["assets", subFolderPath]);
+    const String lastSearchPart = "assets";
     final List<Directory> libs = FileUtils.searchSubFoldersInDir(packages, lastSearchPart);
     final Directory app = Directory(combinePath(<String>[assets, lastSearchPart]));
     final List<String> paths = <String>[];
     final String gameToolsEnding = combinePath(<String>["game_tools_lib", lastSearchPart]);
     for (final Directory dir in libs) {
-      if (dir.path.endsWith(gameToolsEnding) == false) {
+      final String path = dir.path;
+      final bool blacklisted = assetFoldersBlacklist.any(
+        (String black) => path.endsWith(combinePath(<String>[black, lastSearchPart])),
+      );
+      if (!blacklisted && !path.endsWith(gameToolsEnding)) {
         paths.add(absolutePathF(dir));
       }
     }
@@ -331,12 +344,30 @@ abstract final class FileUtils {
   ///
   /// The list will be empty if the directory does not exist and the list will only contain the direct files and sub
   /// directories and not recurse into them!
-  static Future<List<String>> getFilesInDirectory(String path) async {
+  ///
+  /// If [skipDirectories] is true, then only real files will be returned!
+  static Future<List<String>> getFilesInDirectory(String path, {bool skipDirectories = false}) async {
     final Directory directory = getDirectoryForPath(path);
     if (directory.existsSync() == false) {
       return <String>[];
     }
-    final List<FileSystemEntity> files = await directory.list().toList();
+    List<FileSystemEntity> files = await directory.list().toList();
+    if (skipDirectories) {
+      files = files.whereType<File>().toList();
+    }
+    return files.map((FileSystemEntity file) => file.path).toList();
+  }
+
+  /// Sync version of [getFilesInDirectory]
+  static List<String> getFilesInDirectorySync(String path, {bool skipDirectories = false}) {
+    final Directory directory = getDirectoryForPath(path);
+    if (directory.existsSync() == false) {
+      return <String>[];
+    }
+    List<FileSystemEntity> files = directory.listSync().toList();
+    if (skipDirectories) {
+      files = files.whereType<File>().toList();
+    }
     return files.map((FileSystemEntity file) => file.path).toList();
   }
 

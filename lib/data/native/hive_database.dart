@@ -1,15 +1,17 @@
 part of 'package:game_tools_lib/game_tools_lib.dart';
 
-/// Used to interact with a local database with [writeToHive] and [readFromHive].
+/// Used to interact with a local database with [writeToHive] and [readFromHive] which is stored in the
+/// [GameToolsConfig.databaseFolder] that can also be deleted with [deleteDatabaseFolder].
 ///
 /// You can also manipulate files in the [GameToolsConfig.databaseFolder] with [readFile], [writeFile], [renameFile],
 /// [deleteFile] directly!
 ///
-/// For simple user modifiable json files, use [loadSimpleJson] and [storeSimpleJson] instead!
-/// And if you have static asset json files that the user may also modify, use [readJson] and [writeJson] (or better
-/// yet, directly create and use an instance of [JsonAsset] anywhere. look at doc comments there!).
+/// For simple dynamic user modifiable json files, use [loadSimpleJson] and [storeSimpleJson] with [simpleJsonExists]
+/// instead within the [GameToolsConfig.dynamicDataFolder]!
 ///
-/// Everything here is stored in the [GameToolsConfig.databaseFolder] and can be deleted with [deleteDatabaseFolder].
+/// For static asset files shipped with the application, look at [GTAsset] instead!
+///
+/// And there are also the sync helper methods [readJson] and [writeJson] for any json file anywhere!
 final class HiveDatabase {
   /// The database identifier of the hive box that contains the bigger lazy loaded config values.
   /// Those are loaded on demand and not kept in memory
@@ -173,9 +175,6 @@ final class HiveDatabase {
 
   /// Similar to [writeFile], but with a [json] map instead of bytes and takes in an absolute file path!
   /// If this is called from testing, it will modify no file!
-  ///
-  /// The [absoluteFilePath] should be constructed with [FileUtils.combinePath] and should start with any asset path
-  /// [FileUtils.getAssetFoldersFor] like for example [GameToolsConfig.localeFolders] (and add ".json" ending)!
   void writeJson({required String absoluteFilePath, required Map<String, dynamic> json}) {
     final String data = _encoder.convert(json);
     File(absoluteFilePath).writeAsStringSync(data, flush: true);
@@ -184,9 +183,6 @@ final class HiveDatabase {
   /// Same as [readFile], but returns a json map instead and takes in an absolute file path!
   /// If the file does not exist, it will return null!
   /// If this is called from testing, it will modify no file!
-  ///
-  /// The [absoluteFilePath] should be constructed with [FileUtils.combinePath] and should start with any asset path
-  /// [FileUtils.getAssetFoldersFor] like for example [GameToolsConfig.localeFolders] (and add ".json" ending)!
   Map<String, dynamic>? readJson({required String absoluteFilePath}) {
     if (FileUtils.fileExists(absoluteFilePath) == false) {
       return null;
@@ -201,8 +197,8 @@ final class HiveDatabase {
     return FileUtils.fileExists("$path.json");
   }
 
-  /// Used to store simple json modifiable files within subfolders of [GameToolsConfig.dynamicData] with the ending
-  /// ".json".
+  /// Used to store simple json modifiable files within subfolders of [GameToolsConfig.dynamicDataFolder] with the
+  /// ending ".json".
   ///
   /// Of course [convertToJson] must contain the [Model.toJson] method from the interface!
   ///
@@ -217,8 +213,8 @@ final class HiveDatabase {
     file.writeAsStringSync(data, flush: true);
   }
 
-  /// Used to load simple json modifiable files within subfolders of [GameToolsConfig.dynamicData] with the ending
-  /// ".json".
+  /// Used to load simple json modifiable files within subfolders of [GameToolsConfig.dynamicDataFolder] with the
+  /// ending ".json".
   ///
   /// If the file does not exist yet, this will return null!
   ///

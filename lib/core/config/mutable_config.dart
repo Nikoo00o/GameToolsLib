@@ -65,7 +65,8 @@ base class MutableConfig {
   /// The current language which is null per default and will return the system language if its null.
   /// But if the current system language is not supported, then internally this will fallback to the first entry of
   /// [FixedConfig.supportedLocales]!
-  /// Important: use [LocaleConfigOption.activeLocale] to access the locale that is used in the app!
+  /// Important: use [LocaleConfigOption.activeLocale] to access the locale that is used in the app which can also be
+  /// accessed with [GameToolsLib.appLanguage]! Also look at [LocaleAsset] for more info.
   final LocaleConfigOption currentLocale = LocaleConfigOption(title: const TS("config.currentLocale"));
 
   /// You should override this to customize the colors of your app in regards to the material 3 theme!

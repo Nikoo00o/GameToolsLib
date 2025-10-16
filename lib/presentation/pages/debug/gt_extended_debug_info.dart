@@ -2,12 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/utils/file_utils.dart';
-import 'package:game_tools_lib/core/utils/locale_extension.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/domain/game/helper/example/example_event.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
-import 'package:game_tools_lib/presentation/base/gt_app.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/pages/debug/gt_debug_page.dart';
 import 'package:url_launcher/url_launcher_string.dart';
@@ -32,17 +30,15 @@ class _GtExtendedDebugInfoState extends State<GtExtendedDebugInfo> with GTBaseWi
   GameToolsConfigBaseType get config => GameToolsLib.baseConfig;
 
   Widget buildAssetInfo(BuildContext context) {
-    final List<String> assetDirs = FileUtils.getAssetFoldersFor(""); // empty, so directly!
+    final List<String> assetDirs = GameToolsConfig.baseConfig.staticAssetFolders;
     assetDirs.insert(0, GameToolsConfig.resourceFolderPath); // root path to project "data" first
     final String baseAssetPath = FileUtils.parentPath(assetDirs.last); // last one is always direct asset dir of app
-    final List<String> locales = config.localeFolders.map((String path) {
+    final List<String> simplePaths = assetDirs.map((String path) {
       return path.substring(baseAssetPath.length);
     }).toList();
+    simplePaths.removeAt(0); // not the resource
     void openAssetsFoldersInExplorer() {
       for (final String assets in assetDirs) {
-        if (assets.endsWith("cupertino_icons")) {
-          continue; // skip some flutter packages
-        }
         Logger.verbose("Opening $assets");
         launchUrlString("file://$assets");
       }
@@ -50,10 +46,8 @@ class _GtExtendedDebugInfoState extends State<GtExtendedDebugInfo> with GTBaseWi
 
     return Row(
       children: <Widget>[
-        Text(
-          "All asset directories for locales to search \"${GTApp.currentLocale?.fileName}\" from $baseAssetPath are:"
-          "\n${locales.join(",    ")}",
-        ),
+        Text("Base resource data directory: ${GameToolsConfig.resourceFolderPath}"),
+        Text("And all asset directories from $baseAssetPath are: ${simplePaths.join(",    ")}"),
         const Spacer(),
         FilledButton(onPressed: openAssetsFoldersInExplorer, child: const Text("Open all Assets")),
       ],

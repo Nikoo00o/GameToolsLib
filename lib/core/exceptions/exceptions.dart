@@ -1,3 +1,4 @@
+import 'package:game_tools_lib/data/assets/gt_asset.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/domain/game/web_manager.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
@@ -44,6 +45,11 @@ final class KeyNotFoundException extends BaseException {
 /// Different use cases for [NativeImage]
 final class ImageException extends BaseException {
   const ImageException({required super.message, super.messageParams});
+}
+
+/// An exception related to [GTAsset] loading
+final class AssetException extends BaseException {
+  const AssetException({required super.message, super.messageParams});
 }
 
 /// An exception only important for testing

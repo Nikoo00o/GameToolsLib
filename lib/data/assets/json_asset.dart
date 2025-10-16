@@ -1,60 +1,54 @@
-import 'package:game_tools_lib/core/utils/file_utils.dart';
-import 'package:game_tools_lib/game_tools_lib.dart';
+part of 'gt_asset.dart';
 
-/// Instances of this class can directly be created and used anywhere to load static json asset files containing some
-/// strings, or other data that you collected before starting the program like for example a list of names (which may
-/// be replaced in the final app, or by user modification, but are stored statically in the source code).
+/// Important: for general usage first look at the doc comments of [GTAsset]!
 ///
-/// These are similar to [GameToolsConfig.localeFolders] and also use [FileUtils.getAssetFoldersFor] to merge the files
-/// of the asset paths of all packages and your final app (so  "data/flutter_assets/packages/game_tools_lib/assets",
-/// ..., "data/flutter_assets/assets") together by replacing the keys in the outer json map with the values
-/// (latest will be your apps file).
+/// This is used to load static json config files with for example crawled data like some area names, etc directly
+/// anywhere.
 ///
-/// You just have to give the [subFolderPath] and the [fileName] and then you get to access the [content] afterwards!
-/// (the content is late initialized and loaded from file the first time it is used at which point the
-/// [HiveDatabase.database] must be initialized!)
-final class JsonAsset {
-  /// The path after "data/flutter_assets/assets" or "data/flutter_assets/packages/game_tools_lib/assets" which
-  /// relates to the "assets" folder in your project directory that should be created with [FileUtils.combinePath]!
-  final String subFolderPath;
-
-  /// The last path to read the file after your [subFolderPath] and before the ".json" ending which is added
-  /// automatically!
-  final String fileName;
-
-  /// The loaded content from the file which is directly available after the constructor call!
-  /// If this is null, then the files were invalid, or could not be read!
-  late final Map<String, dynamic>? content = _loadContent();
-
+/// If you need different translations of those for different locales of [GameToolsLib.gameLanguage], then set
+/// [isMultiLanguage] to true (and remember to contain the 2 letter language code like "_en" in the file name).
+/// Otherwise per default it is false and you just have to supply the [subFolderPath] below your assets directory
+/// and then the [fileName] of your json file without file ending (because that's always ".json").
+///
+/// And you can simply access the [content] or [validContent] instantly after creating an object of this!
+///
+/// You can also create subclasses of this with getters to return different keys of [validContent] if you override
+/// the valid content getter to also check if the key exists by using for example the [mustContain] helper method!
+base class JsonAsset extends GTAsset<Map<String, dynamic>> {
   JsonAsset({
-    required this.subFolderPath,
-    required this.fileName,
-  });
+    required super.subFolderPath,
+    required super.fileName,
+    super.isMultiLanguage = false,
+  }) : super._(fileEnding: "json");
 
-  // database needs to be initialized here
-  Map<String, dynamic>? _loadContent() {
-    final List<String> filePaths = FileUtils.getAssetFoldersFor(
-      subFolderPath,
-    ).map((String parentPath) => FileUtils.combinePath(<String>[parentPath, fileName, ".json"])).toList();
+  /// This can be used to additionally check the [validContent] if it contains the [key] and the value is of type [T].
+  ///
+  /// Remember that you should only check against primitive types that can be stored inside of the json map like
+  /// [List<dynamic], [Map<String, dynamic] and [String], etc and not class types!
+  void mustContain<T extends Object>(String key) {
+    if (!validContent.containsKey(key)) {
+      throw AssetException(message: "$runtimeType did not contain key $key");
+    }
+    if (validContent[key] is! T) {
+      throw AssetException(message: "$runtimeType value for key $key was not of type $T");
+    }
+  }
 
-    Map<String, dynamic>? content;
-    for (final String path in filePaths) {
-      final Map<String, dynamic>? data = HiveDatabase.database.readJson(absoluteFilePath: path);
-      if (data != null) {
-        if (content == null) {
-          content = data;
-        } else {
-          for (final MapEntry<String, dynamic> pair in data.entries) {
-            content[pair.key] = pair.value.toString();
-          }
+  /// Overridden to just load json file and replace keys with new values if already contained and only set map once
+  /// at first!
+  @override
+  void loadFromFile(String absolutePath) {
+    final Map<String, dynamic>? data = HiveDatabase.database.readJson(absoluteFilePath: absolutePath);
+    if (data != null) {
+      if (_loadedContent == null) {
+        _loadedContent = data;
+      } else {
+        for (final MapEntry<String, dynamic> pair in data.entries) {
+          _loadedContent![pair.key] = pair.value;
         }
       }
+    } else {
+      Logger.warn("$runtimeType could not parse json from: ", absolutePath);
     }
-
-    if (content == null) {
-      Logger.warn("Could not load JsonAsset $fileName from asset path $subFolderPath");
-    }
-    Logger.spam("Loaded JsonAsset $fileName content from asset path $subFolderPath: $content");
-    return content;
   }
 }

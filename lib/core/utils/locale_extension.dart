@@ -9,9 +9,6 @@ extension LocaleExtension on Locale {
   /// Used to translate the language name itself
   String get translationKey => "locale.$languageCode";
 
-  /// Used to find the translation file for this language
-  String get fileName => "$languageCode.json";
-
   /// Converts for example "en_US" to Locale("en", "US")
   static Locale? getLocaleByName(String? localeName) {
     if (localeName != null && localeName.isNotEmpty) {

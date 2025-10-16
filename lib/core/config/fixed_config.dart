@@ -16,8 +16,8 @@ base class FixedConfig {
   /// You should override this in your subclass if you want to support different locales!
   /// Remember to also provide translation files for each language (for example here "en.json")
   /// And also add a translation string for the locale name like for example here "locale.en" : "English"
-  /// In both cases you always have to use only the first part of the language code of your language!
-  /// [LocaleExtension] will be used internally!
+  /// In both cases you always have to use only the first part of the language code of your language (two letter)!
+  /// [LocaleExtension.translationKey] will be used internally!
   ///
   /// Keep one [null] entry in this list so that the user may also select the system locale in
   /// [MutableConfig.currentLocale]! If that one is not supported, then the first entry of the list is used as
@@ -25,7 +25,7 @@ base class FixedConfig {
   ///
   /// Only the translation file "en.json" and "de.json" are bundled with this library and will be loaded before your
   /// "en.json" and "de.json" files, but your values may replace the old ones! (also locale files from other packages
-  /// plugins will be loaded before your final application). Also see [GameToolsConfig.localeFolders].
+  /// plugins will be loaded before your final application). Also look at [LocaleAsset] for more info.
   List<Locale?> get supportedLocales => const <Locale?>[Locale("en"), Locale("de"), null];
 
   /// if the logger should save log files

@@ -2,6 +2,7 @@
   "locale.en": "English",
   "locale.de": "German",
   "locale.system": "System",
+  "debug.test" :  "Base en",
   "input.number": "Enter Number",
   "input.text": "Enter Text",
   "input.search": "Search",

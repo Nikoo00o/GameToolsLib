@@ -103,7 +103,7 @@ final class ExamplePage extends GTNavigationPage {
               Text("oem6: ${InputManager.isKeyDown(BoardKey.oem6)}"),
               Text("oem7: ${InputManager.isKeyDown(BoardKey.oem7)}"),
               SizedBox(height: 5),
-              Text("Translate: ${TS("empty.3").tl(context)}"),
+              Text("Translate: ${const TS("debug.test").tl(context)} and ${const TS("empty.3").tl(context)}"),
               SizedBox(height: 5),
               TextButton(
                 onPressed: () {

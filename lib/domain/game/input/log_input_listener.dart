@@ -48,6 +48,9 @@ final class SimpleLogInputListener extends LogInputListener {
   /// Here your first part would be: `r".*] : "` and your last part would be `r" - END\."` (constructor params)
   /// And the resulting regex would be: `r"^.*] : (.*) - END\.$"`
   /// And like this the [createEvent] would receive "TARGET_MESSAGE"
+  ///
+  /// It would be good to store the regex strings in multi language [JsonAsset]'s if the game log messages are
+  /// translated!
   late final RegExp regex;
 
   /// This callback should create a new subclass object of [GameEvent] which will then be added internally to the

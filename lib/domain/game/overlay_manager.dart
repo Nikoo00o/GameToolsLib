@@ -66,7 +66,7 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
   @mustCallSuper
   Future<bool> init() async {
     _win ??= GameToolsLib.mainGameWindow;
-    Logger.spam("init $runtimeType for ${windowToTrack.name}");
+    Logger.spam("init ", runtimeType, " for ", windowToTrack.name);
     // todo: MULTI-WINDOW IN THE FUTURE: create second overlay window (could also init here instead of in onCreate)
     return true;
   }
@@ -80,7 +80,7 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
   /// If you need stuff to be available earlier, or init async code, use [init] instead!
   @mustCallSuper
   void onCreate(BuildContext context) {
-    Logger.spam("onCreate $runtimeType for ${windowToTrack.name}");
+    Logger.spam("onCreate ", runtimeType, " for ", windowToTrack.name);
     _active = true;
     overlayMode.addListener(_overlayModeListener);
     // todo: MULTI-WINDOW IN THE FUTURE: maximise and hide transparent overlay window (or is it started that way?)
@@ -93,7 +93,7 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> {
   /// [BuildContext.inheritFromWidgetOfExactType] here!
   @mustCallSuper
   void onDispose(BuildContext context) {
-    Logger.spam("onDispose $runtimeType for ${windowToTrack.name}");
+    Logger.spam("onDispose ", runtimeType, " for ", windowToTrack.name);
     _active = false;
     overlayMode.removeListener(_overlayModeListener);
   }

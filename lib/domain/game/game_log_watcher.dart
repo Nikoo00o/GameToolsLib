@@ -20,6 +20,9 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// optionally also use [Module.getAdditionalInputListener] instead to provide additional log input listeners.
 ///
 /// This is updated automatically at the end of the event loop of [GameToolsLib]!
+///
+/// Important: you might want to use multi language [JsonAsset]'s to store any strings that you search for because
+/// the game log messages might be translated depending on the [GameToolsLib.gameLanguage]!
 base class GameLogWatcher {
   final List<String>? _gameLogFilePaths;
   final List<LogInputListener> _listeners;

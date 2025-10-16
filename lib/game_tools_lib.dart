@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:game_tools_lib/core/config/fixed_config.dart';
+import 'package:game_tools_lib/core/config/locale_config_option.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/enums/event/game_event_group.dart';
 import 'package:game_tools_lib/core/enums/event/game_event_priority.dart';
@@ -19,9 +20,10 @@ import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/logger/custom_logger.dart';
 import 'package:game_tools_lib/core/logger/log_color.dart';
 import 'package:game_tools_lib/core/logger/log_message.dart';
+import 'package:game_tools_lib/core/utils/locale_extension.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
-import 'package:game_tools_lib/data/assets/json_asset.dart';
+import 'package:game_tools_lib/data/assets/gt_asset.dart';
 import 'package:game_tools_lib/data/native/ffi_loader.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/data/native/native_overlay_window.dart';
@@ -95,7 +97,7 @@ part 'package:game_tools_lib/domain/game/overlay_manager.dart';
 /// For Logging use static methods [Logger.error], [Logger.warn], [Logger.info], [Logger.debug], [Logger.verbose].
 /// For other file, or data storage, use [HiveDatabase] with [database]. For simple user modifiable json files, use
 /// [HiveDatabase.loadSimpleJson] and [HiveDatabase.storeSimpleJson] instead! And for static asset json files directly
-/// create and use an instance of [JsonAsset] anywhere. look at doc comments there for info!).
+/// create and use an instance of [JsonAsset] anywhere. look at doc comments there for info and also [GTAsset]!).
 ///
 /// Config Values should be saved in a subclass of [GameToolsConfig] and can be used with the correct type in [config].
 /// But you can also access this and every other instances from below in [gameManager].
@@ -112,7 +114,8 @@ part 'package:game_tools_lib/domain/game/overlay_manager.dart';
 ///
 /// The [WebManager] for http requests can be retrieved with [webManager].
 ///
-/// [Module]'s are only available in [GameManager]!
+/// [Module]'s are only available in [GameManager]! You can also access the [appLanguage] of the app or the
+/// [gameLanguage] here!
 final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop {
   /// This will then block until the game tools lib is initialized and return true as soon as it is running (and
   /// otherwise false if an exception happened). And it will also initialize instances of native window, database,
@@ -243,8 +246,9 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       overlayInit = true;
     }
     Logger.spam(
-      "Initialized OverlayManager $overlayInit. Now calling GameManager.onStart and then "
-      "GameLogWatcher._handleOldLastLines before starting the loop",
+      "Initialized OverlayManager ",
+      overlayInit,
+      ". Now calling GameManager.onStart and then GameLogWatcher._handleOldLastLines before starting the loop",
     );
     await GameManager._instance!.onStart();
     for (final ModuleBaseType module in GameManager._instance!.modules) {
@@ -417,6 +421,15 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       (GameEvent event) async => event.onStateChange(oldState, newState),
     );
   }
+
+  /// Returns the [LocaleConfigOption.activeLocale] of [MutableConfig.currentLocale], so the currently active locale
+  /// / language of the app! This may be different than the [gameLanguage]!
+  static Locale get appLanguage => MutableConfig.mutableConfig.currentLocale.activeLocale;
+
+  /// Per default this also returns the [activeLocale], but if a [gameConfigLoader] with an overridden
+  /// [GameConfigLoader.gameLanguage] getter is used, then it will return that instead! This is used for multi language
+  /// [GTAsset]'s. This may be different than the [appLanguage]!
+  static Locale get gameLanguage => gameConfigLoader<GameConfigLoader?>()?.gameLanguage ?? appLanguage;
 
   /// Returns the current active state
   static GameState get currentState => _GameToolsLibEventLoop._currentState!;

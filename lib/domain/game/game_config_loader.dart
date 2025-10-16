@@ -5,6 +5,9 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// and then afterwards you can access the config values with [value] or [hotkey].
 ///
 /// Of course sub classes can also define getter methods for config values with static identifier key strings!
+///
+/// Important: sub classes should also override [gameLanguage] if its contained in the config and if you need
+/// multi language assets!
 base class GameConfigLoader {
   final String filePath;
 
@@ -13,6 +16,13 @@ base class GameConfigLoader {
   GameConfigLoader({
     required this.filePath,
   });
+
+  /// Per default returns null, but should parse the game language from the config and convert it to a locale with
+  /// [LocaleExtension.getLocaleByName] which then overrides the default of [GameToolsLib.gameLanguage] to be used for
+  /// multi language [GTAsset].
+  ///
+  /// Of course you could also always return a static locale for the game here and always expect that!
+  Locale? get gameLanguage => null;
 
   /// Returns true if the config was read successfully.
   /// If [filePath] ends with .ini then it will split config entries at "=" if the lines do not start with ";", or "["

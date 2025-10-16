@@ -104,7 +104,7 @@ abstract base class Module<GameManagerType extends GameManagerBaseType> {
       await configurableOptions.onInit();
       Logger.verbose("Loaded $runtimeType configurable option $configurableOptions");
     } else {
-      Logger.spam("$runtimeType did not contain any configurable options");
+      Logger.spam(runtimeType, " did not contain any configurable options");
     }
   }
 

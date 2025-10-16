@@ -47,7 +47,7 @@ final class NativeOverlayWindow {
       if (ignore != _ignoreMouse) {
         await _init();
         await windowManager.setIgnoreMouseEvents(ignore);
-        Logger.spam("Mouse Passthrough: $ignore");
+        Logger.spam("Mouse Passthrough: ", ignore);
         _ignoreMouse = ignore;
       }
     } catch (e) {

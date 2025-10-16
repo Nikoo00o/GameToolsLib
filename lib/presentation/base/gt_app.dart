@@ -9,6 +9,7 @@ import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/utils/file_utils.dart';
 import 'package:game_tools_lib/core/utils/locale_extension.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
+import 'package:game_tools_lib/data/assets/gt_asset.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_app_theme.dart';
@@ -34,7 +35,7 @@ import 'package:provider/provider.dart';
 ///
 /// Subclasses of this should mostly be used to return something different in [buildNavigator].
 ///
-/// This may also be used to statically access [translate] and [currentLocale].
+/// This may also be used to statically access [translate] and for the current locale use [GameToolsLib.appLanguage].
 base class GTApp extends StatelessWidget {
   /// This may be used to provide additional pages to display as options in the navigation rail of [GTNavigator].
   /// But you can also override [buildNavigator] instead for more options.
@@ -106,7 +107,7 @@ base class GTApp extends StatelessWidget {
           return Selector<LocaleConfigOption, Locale>(
             selector: (_, LocaleConfigOption option) => option.activeLocale,
             builder: (BuildContext context, Locale locale, Widget? child) {
-              _loadLocale(locale);
+              localeAsset.loadContent(); // load translation strings for current locale
               return buildThemeWithLocale(locale, home);
             },
           );
@@ -161,35 +162,10 @@ base class GTApp extends StatelessWidget {
 
   static GameToolsConfigBaseType get _baseConfig => GameToolsConfig.baseConfig;
 
-  /// translation values
-  static final Map<String, String> _keys = <String, String>{};
-
-  static Locale? _cachedLocale;
-
-  /// This is set during build, so it might be null!
-  static Locale? get currentLocale => _cachedLocale;
-
-  /// Is called with the new [locale] when it changes (and of course once at init) to load all translation values
-  /// which is from the [LocaleConfigOption.activeLocale] in [MutableConfig.currentLocale]
-  static void _loadLocale(Locale locale) {
-    _cachedLocale = locale;
-    final List<String> folders = _baseConfig.localeFolders; // sorted correctly: lib first, game last
-    _keys.clear();
-    for (final String folder in folders) {
-      final File file = File(FileUtils.combinePath(<String>[folder, locale.fileName]));
-      if (file.existsSync()) {
-        final String jsonString = file.readAsStringSync();
-        final Map<String, dynamic> jsonMap = json.decode(jsonString) as Map<String, dynamic>;
-        for (final MapEntry<String, dynamic> pair in jsonMap.entries) {
-          _keys[pair.key] = pair.value.toString();
-        }
-        Logger.spam("Loaded translation file: ", file.path);
-      } else {
-        Logger.debug("Translation file does not exist: ${file.path}");
-      }
-    }
-    Logger.spam("Loaded ", _keys.length, " translation key-value-pairs for the locale ", locale);
-  }
+  /// Used to load the translation keys for the current locale (may be rarely overwritten) which is always loaded
+  /// again when the [LocaleConfigOption.activeLocale] in [MutableConfig.currentLocale] changes to provide the
+  /// [LocaleAsset.translations] for [translate]!
+  static LocaleAsset localeAsset = LocaleAsset(localesPath: "locales");
 
   /// Translates a translation [TranslationString.key] for the current locale and placeholders are replaced with
   /// [TranslationString.params].
@@ -209,8 +185,8 @@ base class GTApp extends StatelessWidget {
     if (key == null) {
       return translationString.params!.first; // special case, raw translation string
     }
-    if (_keys.containsKey(key)) {
-      String translatedKey = _keys[key]!;
+    if (localeAsset.translations.containsKey(key)) {
+      String translatedKey = localeAsset.translations[key]!;
       final List<String>? params = translationString.params;
       if (params != null && params.isNotEmpty) {
         for (int i = 0; i < params.length; i++) {
@@ -225,7 +201,7 @@ base class GTApp extends StatelessWidget {
       }
       return translatedKey;
     }
-    Logger.spam("Translation key not found for locale $_cachedLocale: $translationString");
+    Logger.spam("Translation key not found for locale ", GameToolsLib.appLanguage, " : ", translationString);
     return key;
   }
 }

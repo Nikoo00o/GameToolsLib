@@ -3,8 +3,10 @@ import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/utils/locale_extension.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
+import 'package:game_tools_lib/game_tools_lib.dart';
 
-/// Special case: [Locale] as a config option which provides another getter [activeLocale].
+/// Special case: [Locale] as a config option which provides another getter [activeLocale] that is used in
+/// [GameToolsLib.appLanguage].
 ///
 /// This is a nullable [EnumConfigOption] and has [stringToData] and [dataToString] overridden!
 /// Because null should be stored to represent the system locale!

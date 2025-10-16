@@ -233,7 +233,7 @@ base class OverlayElement with ChangeNotifier implements Model {
       if (json != null) {
         try {
           fromJson(json);
-          Logger.spam("Loaded $this from storage");
+          Logger.spam("Loaded ", this, " from storage");
         } catch (e, s) {
           Logger.error("Could not load Overlay Element $identifier from its json file, OVERRIDING IT", e, s);
         }
