@@ -16,9 +16,11 @@ final class CanvasPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    for (final CanvasOverlayElement element in copiedElements) {
-      if (element.visible) {
-        element.paintOnCanvas(canvas);
+    if (size.width > 0 && size.height > 0) {
+      for (final CanvasOverlayElement element in copiedElements) {
+        if (element.visible) {
+          element.paintOnCanvas(canvas);
+        }
       }
     }
   }

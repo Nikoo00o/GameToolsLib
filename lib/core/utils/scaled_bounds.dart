@@ -1,5 +1,6 @@
 import 'dart:math' show Point;
 import 'dart:ui' show Rect;
+import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/utils/bounds.dart';
 import 'package:game_tools_lib/domain/entities/base/model.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
@@ -30,12 +31,15 @@ final class ScaledBounds<T extends num> implements Model {
   /// [unscaledBounds]
   late final int creationHeight;
 
-  /// Reference to the window this is related to (most of the times just the default [GameToolsLib.mainGameWindow])
+  /// Reference to the window this is related to (most of the times just the default [GameToolsLib.mainGameWindow]).
+  /// This is not stored in the json content of the [toJson] and [ScaledBounds.fromJson]!
   final GameWindow gameWindow;
 
   /// [gameWindow] defaults to [GameToolsLib.mainGameWindow] if null.
   ///
   /// [creationWidth] and [creationHeight] may be null and then the size will be taken from the [gameWindow].
+  ///
+  /// This throws a [ConfigException] if [creationWidth] or [creationHeight] are explicit 0!
   ScaledBounds(
     this.unscaledBounds, {
     required int? creationWidth,
@@ -44,6 +48,9 @@ final class ScaledBounds<T extends num> implements Model {
   }) : gameWindow = gameWindow ?? GameToolsLib.mainGameWindow {
     this.creationWidth = creationWidth ?? this.gameWindow.width;
     this.creationHeight = creationHeight ?? this.gameWindow.height;
+    if (this.creationWidth == 0 || this.creationHeight == 0) {
+      throw ConfigException(message: "$runtimeType creation size was explicit 0 in constructor!");
+    }
   }
 
   /// The (x, y) scale factor for the current [gameWindow]'s [GameWindow.size] in relation to the initial

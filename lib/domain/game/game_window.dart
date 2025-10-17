@@ -256,6 +256,9 @@ final class GameWindow with ChangeNotifier {
   /// Default for [type] is [NativeImageType.RGBA] to make no copy (see docs of the type for more).
   ///
   /// [width] and [height] are nullable and will expand to the end of the window if null!
+  ///
+  /// Remember that this image might be obscured by your overlay, as an alternative you can use flickering and delayed
+  /// [OverlayManager.getWindowImageWithoutOverlay] (should not be used often!)!
   Future<NativeImage> getImage(
     int x,
     int y,
@@ -291,6 +294,9 @@ final class GameWindow with ChangeNotifier {
   /// top bar and border shadow spaces, etc.
   /// May throw a [WindowClosedException] if the window was not open.
   /// Default for [type] is [NativeImageType.RGBA] to make no copy (see docs of the type for more).
+  ///
+  /// Remember that this image might be obscured by your overlay, as an alternative you can use flickering and delayed
+  /// [OverlayManager.getWindowImageWithoutOverlay] (should not be used often!)!
   Future<NativeImage> getFullImage({NativeImageType type = NativeImageType.RGBA, bool includeBorders = false}) async {
     final NativeImage? image = includeBorders
         ? await _nativeWindow.getFullOuterWindow(_windowID, type)

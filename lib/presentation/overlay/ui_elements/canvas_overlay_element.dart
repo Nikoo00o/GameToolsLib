@@ -28,6 +28,8 @@ base class CanvasOverlayElement extends OverlayElement {
   /// outside! Checks [cachedInstance] first and then [storeToCache] with [OverlayElement.newInstance] otherwise.
   ///
   /// Here per default [editable] is false instead of true!
+  ///
+  /// Remember that you have to use [bounds] to override the [attachedWindow]!
   factory CanvasOverlayElement({
     required TranslationString identifier,
     bool editable = false,

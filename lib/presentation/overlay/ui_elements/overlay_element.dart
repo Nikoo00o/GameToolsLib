@@ -117,6 +117,8 @@ base class OverlayElement with ChangeNotifier implements Model {
   /// Best change this by setting it to [ScaledBounds.move] which automatically references the current window size!
   ///
   /// You don't have to worry about the window resizing here!
+  ///
+  /// Remember that you have to use this in the constructor to override the [attachedWindow]!
   ScaledBounds<int> get bounds => _bounds;
 
   /// The position and size of this ui element in relation to the size of the window it was created with.
@@ -129,11 +131,18 @@ base class OverlayElement with ChangeNotifier implements Model {
     notifyListeners();
   }
 
+  /// Returns [ScaledBounds.gameWindow] from [bounds] as the window this is attached to in the overlay (almost always
+  /// the [GameToolsLib.mainGameWindow]!
+  GameWindow get attachedWindow => bounds.gameWindow;
+
   // see below
   Bounds<double>? _displayDimension;
 
   /// Set periodically during the build in [buildOverlay] to contain the final already scaled position of the widgets
-  /// [bounds] by using [ScaledBounds.scaledBoundsD]!
+  /// [bounds] by using [ScaledBounds.scaledBoundsD]! This is updated here when the size of the window changes!
+  ///
+  /// It is relative to the inner top left corner of the window (no top bar), but should mostly be used for
+  /// displaying this overlay element!
   ///
   /// Used in [OverlayManager.checkMouseForClickableOverlayElements] and [onMouseEnter].
   Bounds<double>? get displayDimension => _displayDimension;
@@ -144,6 +153,8 @@ base class OverlayElement with ChangeNotifier implements Model {
 
   /// Factory constructor that will cache and reuse instances for [identifier] and should always be used from the
   /// outside! Checks [cachedInstance] first and then [storeToCache] with [OverlayElement.newInstance] otherwise.
+  ///
+  /// Remember that you have to use [bounds] to override the [attachedWindow]!
   factory OverlayElement({
     required TranslationString identifier,
     bool editable = true,
@@ -282,7 +293,7 @@ base class OverlayElement with ChangeNotifier implements Model {
   /// Just returns the [newInstance] after caching it after calling [loadOrSaveToStorage] on it!
   static OverlayElement storeToCache(OverlayElement newInstance) {
     final OverlayManagerBaseType overlayManager = OverlayManager.overlayManager();
-    final GameWindow otherWindow = newInstance.bounds.gameWindow;
+    final GameWindow otherWindow = newInstance.attachedWindow;
     overlayManager.overlayElements.add(newInstance);
     if (overlayManager.windowToTrack != otherWindow) {
       Logger.warn("OverlayElement ${newInstance.identifier} window ${otherWindow.name} did not match OverlayManager");

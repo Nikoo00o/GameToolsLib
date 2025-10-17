@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
+import 'package:game_tools_lib/core/utils/bounds.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/overlay/gt_overlay.dart';
@@ -10,7 +11,7 @@ import 'package:game_tools_lib/presentation/overlay/ui_elements/dynamic_overlay_
 import 'package:game_tools_lib/presentation/overlay/ui_elements/overlay_element.dart';
 
 /// Used in [OverlayManager.overlayElements] to [add], [remove], or [get] the [OverlayElement]'s which are build in
-/// [GTOverlay] by providing this in a provider and listening to changes!
+/// [GTOverlay] by providing this in a provider and listening to changes! Also a helper method [isObscured]
 final class OverlayElementsList with ChangeNotifier {
   final Map<String, OverlayElement> _staticElements;
 
@@ -123,6 +124,22 @@ final class OverlayElementsList with ChangeNotifier {
     _dynamicElements.values.forEach(callback);
     _compareImages.values.forEach(callback);
     _canvasElements.values.forEach(callback);
+  }
+
+  /// Returns if there is a visible ui overlay element inside of the [bounds] (without checking the overlay mode)!
+  ///
+  /// Bounds are relational to inner top left window border without top bar!
+  bool isObscured(Bounds<int> bounds) =>
+      _containsBounds(_staticElements, bounds) ||
+      _containsBounds(_dynamicElements, bounds) ||
+      _containsBounds(_canvasElements, bounds);
+
+  bool _containsBounds(Map<String, OverlayElement> elements, Bounds<int> bounds2) {
+    for (final OverlayElement element in elements.values) {
+      final Bounds<int> bounds1 = element.bounds.scaledBounds;
+      return bounds1.collides(bounds2);
+    }
+    return false;
   }
 
   /// Combined elements count

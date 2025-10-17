@@ -49,8 +49,9 @@ Future<void> _testOverlay() async {
     contentBuilder: (context, bounds, element) {
       return ElevatedButton(
         onPressed: () async {
-          final NativeImage img = await OverlayManager.overlayManager().cachedWindowImage;
+          final NativeImage img = await OverlayManager.overlayManager().getWindowImageWithoutOverlay();
           await img.saveAsync("${GameToolsConfig.resourceFolderPath}\\test${_saveCounter++}.png");
+          Logger.present("just a test");
         },
         child: const Text("take screenshot"),
       );

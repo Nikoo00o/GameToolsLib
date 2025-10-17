@@ -16,7 +16,7 @@ import 'package:intl/intl.dart' show DateFormat;
 ///
 /// Very important: look at [sensitiveDataToRemove] so that sensitive data will not be stored to a file!!
 ///
-/// [showErrorLogsInOverlay] can be overridden to disable this feature in sub classes.
+/// [showLogsInOverlay] can be overridden to disable this feature in sub classes, or modify it.
 ///
 /// You can also override [onlyLogToStorageAbove].
 base class CustomLogger extends Logger with SimpleChangeStream<List<LogMessage>> {
@@ -40,6 +40,9 @@ base class CustomLogger extends Logger with SimpleChangeStream<List<LogMessage>>
   /// For example "Password: MY_PASSWORD " in a log message with the sensitive data string "Password: " would result in
   /// "Password: *********** " in the log file.
   List<String> sensitiveDataToRemove;
+
+  /// Used for [showErrorLogsInOverlay] to prevent recursion
+  String? _lastLog;
 
   CustomLogger({required this.sensitiveDataToRemove}) {
     initSimpleChangeStream(<LogMessage>[]); // important: init
@@ -70,28 +73,29 @@ base class CustomLogger extends Logger with SimpleChangeStream<List<LogMessage>>
       changeValue.removeRange(0, maxLogsToKeepForUI ~/ 10 + 1);
     }
     addEvent(); // uses SimpleChangeStream
-    showErrorLogsInOverlay(logMessage);
+    showLogsInOverlay(logMessage);
   }
 
-  /// This is used in [sendToUi] to log only [LogLevel.ERROR] logs to the overlay.
+  /// This is used in [sendToUi] to log only [LogLevel.ERROR] and [LogLevel.PRESENT] logs to the overlay.
   ///
   /// Can be overridden in the subclass to disable this feature.
-  void showErrorLogsInOverlay(LogMessage logMessage) {
-    if (logMessage.level == LogLevel.ERROR && logMessage.message != null) {
-      if (_lastLog == logMessage.message) {
-        return;
+  void showLogsInOverlay(LogMessage logMessage) {
+    final LogLevel level = logMessage.level;
+    final String? message = logMessage.message;
+    if (message != null && (level == LogLevel.ERROR || level == LogLevel.PRESENT)) {
+      if (level == LogLevel.ERROR) {
+        if (_lastLog == message) {
+          return;
+        }
+        _lastLog = message;
       }
-      _lastLog = logMessage.message;
       try {
-        OverlayManager.overlayManager().showToast(TS.raw(logMessage.message!));
+        OverlayManager.overlayManager().showToast(TS.raw(message));
       } catch (_) {
         // might throw not initialized error for overlaymanager for earlier logs
       }
     }
   }
-
-  /// Used for [showErrorLogsInOverlay] to prevent recursion
-  String? _lastLog;
 
   /// Can be overridden in the subclass to store the final log message in a file.
   ///

@@ -3,22 +3,26 @@ import 'package:game_tools_lib/game_tools_lib.dart';
 
 /// The type of the log entry (a lower level is more important)
 enum LogLevel {
-  /// 0
+  /// 0: very important critical errors that happened (and also presents in overlay in a bottom toast message)
   ERROR,
 
-  /// 1
+  /// 1: maybe something wrong or unusual happened
   WARN,
 
-  /// 2
+  /// 2: very important and not often used to present stuff to the user that they otherwise would not notice (and
+  /// also presents in overlay in a bottom toast message)
+  PRESENT,
+
+  /// 3: rarely used for important information for the user
   INFO,
 
-  /// 3
+  /// 4: useful information at a slower pace and more important for debugging
   DEBUG,
 
-  /// 4
+  /// 5: medium pace information and not that needed like extended debug information
   VERBOSE,
 
-  /// 5
+  /// 6: very high frequency useless information (mostly not shown in ui, or not saved in storage)
   SPAM;
 
   @override

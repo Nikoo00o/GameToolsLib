@@ -5,7 +5,6 @@ import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/enums/log_level.dart';
 import 'package:game_tools_lib/core/utils/locale_extension.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
-import 'package:game_tools_lib/presentation/overlay/ui_elements/compare_image.dart';
 import 'package:game_tools_lib/presentation/overlay/ui_elements/overlay_element.dart';
 
 /// Base class storing all fixed config values stored in dart classes which can be overridden in getters of sub classes
@@ -70,15 +69,6 @@ base class FixedConfig {
   /// clicks ([OverlayElement.clickable]). Also look at [OverlayManager.checkWindowPosition],
   /// [OverlayManager.checkMouseForClickableOverlayElements].
   int get overlayRefreshTicks => 4;
-
-  /// How many normal update ticks it would take until the overlay is hidden for a frame and a screenshot is made and
-  /// then the overlay is enabled again. Per default every 75 ms.
-  ///
-  /// There is a tradeoff in lower means worse performance and more flickering, but shorter wait times for
-  /// [OverlayManager.cachedWindowImage] (also used in [CompareImage]) vs higher means more delay and maybe false
-  /// positives when comparing images, because getting an image would return the old image if waiting less than half
-  /// of the downtime and otherwise would wait for the new image if waiting longer than half of the down time.
-  int get overlayWindowImageCaptureTicks => 3;
 
   /// Like [MutableConfig.logLevel], but this here should instead constraint which logs are able to be logged into the
   /// UI (other logs can be accessed dynamically as well in the ui tho)

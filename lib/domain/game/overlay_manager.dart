@@ -21,7 +21,8 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// Subclasses may override first [init], then [onCreate] after which [active] is true until [onDispose], but also
 /// [onUpdate], [onOpenChange], [onFocusChange], [onWindowResize] and [onOverlayModeChanged] callbacks!
 ///
-/// todo: reference what to override of this
+/// This also provides a way to get a screenshot of the window without the overlay obscuring it with
+/// [getWindowImageWithoutOverlay], but that causes flickering by turning the overlay on and off!
 base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedOverlayChecks<OverlayStateType> {
   /// Sub folder of [GameToolsConfig.dynamicDataFolder] where the [OverlayElement]'s are stored into simple json files!
   ///
@@ -140,8 +141,6 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
     if (window.isOpen == false && overlayMode != OverlayMode.APP_OPEN) {
       changeMode(OverlayMode.APP_OPEN);
     }
-
-    Logger.info("test open"); // todo: remove after min and maximize test
   }
 
   /// Is called when the focus changes for [window]. This will also be called when it receives focus for the first time!
@@ -153,8 +152,11 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
     if (window != windowToTrack) {
       return; // skip other windows
     }
-    Logger.info("test focus $window"); // todo: remove after min and maximize test
   }
+
+  Point<int>? _lastSize;
+
+  static const Point<int> _zero = Point<int>(0, 0);
 
   /// This is called when the size of the [window] changes (for example when switching to full screen). This will
   /// also be called when the window opens for the first time with the initial size of it. And also when the window
@@ -162,19 +164,24 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
   /// rebuild automatically on size change, because they consume the window)
   ///
   /// Remember that this will be called for every window (so overrides should also check if [window] is [windowToTrack])
+  ///
+  /// Important: this will also automatically toggle the [overlayMode] to [OverlayMode.HIDDEN] when the size of the
+  /// window changes to zero (and then enables it when it changes back)
   @mustCallSuper
   Future<void> onWindowResize(GameWindow window) async {
     if (window != windowToTrack) {
       return; // skip other windows
     }
 
+    if (window.size == _zero && overlayMode != OverlayMode.APP_OPEN) {
+      await changeModeAsync(OverlayMode.HIDDEN);
+    } else if (_lastSize == _zero && overlayMode == OverlayMode.HIDDEN) {
+      await changeModeAsync(OverlayMode.VISIBLE);
+    }
+    _lastSize = window.size;
+
     if (overlayMode != OverlayMode.APP_OPEN) {
       await NativeOverlayWindow.snapOverlay(window);
-    }
-
-    // todo: remove after min and maximize test
-    if (window.size != null) {
-      Logger.info("test resize ${window.size} related to bounds ${window.getWindowBounds()}");
     }
   }
 

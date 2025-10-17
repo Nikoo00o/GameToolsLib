@@ -25,6 +25,8 @@ base class DynamicOverlayElement extends OverlayElement {
 
   /// Factory constructor should always be used from the outside to add the unique objects automatically!
   /// Checks [cachedInstance] first and then [storeToCache] with [OverlayElement.newInstance] otherwise.
+  ///
+  /// Remember that you have to use [bounds] to override the [attachedWindow]!
   factory DynamicOverlayElement({
     bool clickable = false,
     OverlayContentBuilder contentBuilder,

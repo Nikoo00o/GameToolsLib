@@ -187,9 +187,11 @@ final class NativeImage extends BaseNativeImage {
     final int minHeight = height < other.height ? height : other.height;
     // now compare row by row with both images being shifted once!
     for (int y1 = 0; y1 <= imagePixelShift; ++y1) {
+      final int shiftHeight = minHeight - y1;
       for (int x1 = 0; x1 <= imagePixelShift; ++x1) {
-        final NativeImage firstMine = getSubImage(x1, y1, minWidth, minHeight, onlyReference: true);
-        final NativeImage firstOther = getSubImage(0, 0, minWidth - x1, minHeight - y1, onlyReference: true);
+        final int shiftWidth = minWidth - x1;
+        final NativeImage firstMine = getSubImage(x1, y1, shiftWidth, shiftHeight, onlyReference: true);
+        final NativeImage firstOther = other.getSubImage(0, 0, shiftWidth, shiftHeight, onlyReference: true);
         if (firstMine.equals(
           firstOther,
           pixelValueThreshold: pixelValueThreshold,
@@ -199,8 +201,8 @@ final class NativeImage extends BaseNativeImage {
           return true;
         }
         if (x1 != 0) {
-          final NativeImage secondMine = getSubImage(0, 0, minWidth - x1, minHeight - y1, onlyReference: true);
-          final NativeImage secondOther = getSubImage(x1, y1, minWidth, minHeight, onlyReference: true);
+          final NativeImage secondMine = getSubImage(0, 0, shiftWidth, shiftHeight, onlyReference: true);
+          final NativeImage secondOther = other.getSubImage(x1, y1, shiftWidth, shiftHeight, onlyReference: true);
           if (secondMine.equals(
             secondOther,
             pixelValueThreshold: pixelValueThreshold,
@@ -277,7 +279,7 @@ final class NativeImage extends BaseNativeImage {
       final cv.Mat mat = cv.Mat.fromMat(_data!, copy: onlyReference == false, roi: cv.Rect(x, y, width, height));
       return NativeImage._mat(mat);
     } else {
-      throw ImageException(message: "cant get SubImage from $this at $x, $y, $width, $height");
+      throw ImageException(message: "$this getSubImage at $x, $y, $width, $height for ${this.width}, ${this.height}");
     }
   }
 

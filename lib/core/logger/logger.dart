@@ -8,10 +8,13 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 ///
 /// Subclasses can also override [logToStorage] if the logs should be stored, or [addColorForConsole] to add different
 /// color strings to the log messages in the console.
+///
+/// Use static methods [error], [warn], [present], [info], [verbose], [debug] and [spam]
 abstract base class Logger {
   static const LogColor VERBOSE_COLOR = LogColor(128, 191, 255); // light blue
   static const LogColor DEBUG_COLOR = LogColor(166, 77, 255); // magenta
   static const LogColor INFO_COLOR = LogColor(128, 255, 128); // light green
+  static const LogColor PRESENT_COLOR = LogColor(0, 255, 191); // cyan
   static const LogColor WARN_COLOR = LogColor(255, 255, 0); // yellow
   static const LogColor ERROR_COLOR = LogColor(255, 0, 0); // red
   static const LogColor _RESET_COLOR = LogColor(255, 255, 255); // white
@@ -55,36 +58,50 @@ abstract base class Logger {
   /// Returns null, or [instance] as [T]
   static T? instanceOfSubType<T>() => _instance is T ? _instance as T : null;
 
+  /// Very important critical errors that happened (and also presents in overlay in a bottom toast message)
   /// Does not await the [log] call with its synchronized write to storage if enabled
   static void error(String? message, [Object? error, StackTrace? stackTrace]) {
     assert(_instance != null, "logger not initialised");
     _instance?.log(message, LogLevel.ERROR, error, stackTrace);
   }
 
+  /// Maybe something wrong or unusual happened.
   /// Does not await the [log] call with its synchronized write to storage if enabled
   static void warn(String? message, [Object? error, StackTrace? stackTrace]) {
     assert(_instance != null, "logger not initialised");
     _instance?.log(message, LogLevel.WARN, error, stackTrace);
   }
 
+  /// Very important and not often used to present stuff to the user that they otherwise would not notice (and
+  /// also presents in overlay in a bottom toast message).
+  /// Does not await the [log] call with its synchronized write to storage if enabled
+  static void present(String? message, [Object? error, StackTrace? stackTrace]) {
+    assert(_instance != null, "logger not initialised");
+    _instance?.log(message, LogLevel.PRESENT, error, stackTrace);
+  }
+
+  /// Rarely used for important information for the user.
   /// Does not await the [log] call with its synchronized write to storage if enabled
   static void info(String? message, [Object? error, StackTrace? stackTrace]) {
     assert(_instance != null, "logger not initialised");
     _instance?.log(message, LogLevel.INFO, error, stackTrace);
   }
 
+  /// Useful information at a slower pace and more important for debugging
   /// Does not await the [log] call with its synchronized write to storage if enabled
   static void debug(String? message, [Object? error, StackTrace? stackTrace]) {
     assert(_instance != null, "logger not initialised");
     _instance?.log(message, LogLevel.DEBUG, error, stackTrace);
   }
 
+  /// Medium pace information and not that needed like extended debug information
   /// Does not await the [log] call with its synchronized write to storage if enabled
   static void verbose(String? message, [Object? error, StackTrace? stackTrace]) {
     assert(_instance != null, "logger not initialised");
     _instance?.log(message, LogLevel.VERBOSE, error, stackTrace);
   }
 
+  /// Very high frequency useless information (mostly not shown in ui, or not saved in storage).
   /// Special log function: takes dynamic parts that will be put together to a string internally only if spam is
   /// enabled for performance reasons. Also does not await the [log] call with its synchronized write to storage.
   /// If you only want to log once every few milliseconds, then use [spamPeriodic]!
@@ -234,6 +251,9 @@ abstract base class Logger {
         break;
       case LogLevel.WARN:
         color = WARN_COLOR;
+        break;
+      case LogLevel.PRESENT:
+        color = PRESENT_COLOR;
         break;
       case LogLevel.INFO:
         color = INFO_COLOR;

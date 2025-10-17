@@ -227,7 +227,7 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
     bool buildEditButtons = true,
     required List<LT> elements,
     VoidCallback? onChange,
-    Widget Function(LT element, int elementNumber)? buildElement,
+    Widget Function(BuildContext context, LT element, int elementNumber)? buildElement,
     Widget Function(
       BuildContext context,
       LT? oldElement,

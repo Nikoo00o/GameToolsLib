@@ -10,7 +10,7 @@ part of 'gt_asset.dart';
 /// new constructor parameter! And the constructor has an additional param [type].
 ///
 /// An example image path would be "assets/images/example/test.png", but of course also "assets/image/test_en.png"
-/// would be a valid image path!
+/// would be a valid image path! Important: to get the final path used for loading the image, use [path]!
 ///
 /// And the resulting asset folders for the compiled app would of course be first
 /// "data/flutter_assets/packages/game_tools_lib/assets" and then lastly "data/flutter_assets/assets" and if the
@@ -32,7 +32,7 @@ base class ImageAsset extends GTAsset<NativeImage> {
     required super.fileName,
     String baseImageFolder = "images",
     String subFolder = "",
-    super.fileEnding = ".png",
+    super.fileEnding = "png",
     super.isMultiLanguage = false,
     this.type = NativeImageType.RGB,
   }) : super._(subFolderPath: _combineSubFolderPath(baseImageFolder, subFolder));
@@ -43,6 +43,8 @@ base class ImageAsset extends GTAsset<NativeImage> {
   static String _combineSubFolderPath(String baseImageFolder, String subFolder) =>
       subFolder.isEmpty ? baseImageFolder : FileUtils.combinePath(<String>[baseImageFolder, subFolder]);
 
+  /// Returns the path to the latest loaded image (so the final override), or a fallback path if no image was found
+  /// as the last possible store location in your final app project!
   /// Cached in [loadFromFile] and then used in [initContentIfNeeded] and reset in next [loadContent]!
   ///
   /// Used for [saveToFile]! Returns a fallback path (as the last possible location) of [possibleFolders.last] and
@@ -69,7 +71,7 @@ base class ImageAsset extends GTAsset<NativeImage> {
   /// and afterwards saves it to the path! If both [content] and [replaceWith] are null, then an [AssetException]
   /// will be thrown!
   void saveToFile({NativeImage? replaceWith}) {
-    if (content == null) {
+    if (replaceWith != null) {
       _loadedContent = replaceWith;
     }
     if (content != null) {

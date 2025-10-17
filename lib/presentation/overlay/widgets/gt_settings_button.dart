@@ -3,9 +3,11 @@ import 'package:game_tools_lib/core/enums/overlay_mode.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/overlay/gt_overlay.dart';
+import 'package:game_tools_lib/presentation/pages/debug/gt_debug_page.dart';
 
 /// Used in top right corner of [GTOverlay] build with [GTOverlayState.buildTopRightSettings] and this can also receive
 /// clicks so it is checked in [OverlayManager.checkMouseForClickableOverlayElements]!
+// todo: MULTI-WINDOW IN THE FUTURE: probably remove this completly
 class GtSettingsButton extends StatelessWidget with GTBaseWidget {
   const GtSettingsButton({super.key});
 
@@ -32,7 +34,11 @@ class GtSettingsButton extends StatelessWidget with GTBaseWidget {
     return InkWell(
       customBorder: const CircleBorder(),
       onTap: () {
-        OverlayManager.overlayManager().changeMode(OverlayMode.APP_OPEN);
+        final OverlayManagerBaseType overlayManager = OverlayManager.overlayManager();
+        if(overlayManager.overlayMode == OverlayMode.EDIT_COMP_IMAGES){
+          Navigator.push<dynamic>(context, MaterialPageRoute<dynamic>(builder: (BuildContext context) => const GTDebugPage()));
+        }
+        overlayManager.changeMode(OverlayMode.APP_OPEN);
       },
       child: buildIcon(context),
     );

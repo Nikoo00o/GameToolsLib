@@ -31,7 +31,7 @@ base class GTListEditor<T> extends StatefulWidget {
   /// This can be used to build custom widgets for the left part of the row that is build for each card of the
   /// [elements]. If this is null, then a default "Element $elementNumber: [T.toString]" [Text] will be build for
   /// each child! The [elementNumber] is the not zero based index of the elements (from 1 to size)
-  final Widget Function(T element, int elementNumber)? buildElement;
+  final Widget Function(BuildContext context, T element, int elementNumber)? buildElement;
 
   /// This builds the body of the dialog to create a new element, or edit an element. The dialog always has the title
   /// "Edit element $elementNumber", or "Create element $elementNumber" with the button options "Ok" and "Cancel" at
@@ -53,6 +53,12 @@ base class GTListEditor<T> extends StatefulWidget {
   )
   buildCreateOrEditDialog;
 
+  /// Optional builder method to build the top bar (per default this is null and builds nothing when not expanded and
+  /// otherwise only the add button to add a new item!). Important: there will always be a sizedbox with 16 px and
+  /// then the dropdown icon on the right of your returned list!
+  // ignore: avoid_positional_boolean_parameters
+  final List<Widget> Function(BuildContext context, bool isExpanded)? buildTopActions;
+
   const GTListEditor({
     super.key,
     required this.elements,
@@ -62,6 +68,7 @@ base class GTListEditor<T> extends StatefulWidget {
     this.buildEditButtons = true,
     this.buildElement,
     required this.buildCreateOrEditDialog,
+    this.buildTopActions,
   });
 
   @override
@@ -137,9 +144,9 @@ base class _GTListEditorState<T> extends State<GTListEditor<T>> with GTBaseWidge
     });
   }
 
-  Widget buildElement(T element, int index) {
+  Widget buildElement(BuildContext context, T element, int index) {
     final int number = index + 1;
-    return widget.buildElement?.call(element, number) ??
+    return widget.buildElement?.call(context, element, number) ??
         Text(TS("input.show.element", <String>[number.toString(), element.toString()]).tl(context));
   }
 
@@ -154,24 +161,25 @@ base class _GTListEditorState<T> extends State<GTListEditor<T>> with GTBaseWidge
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                buildElement(element, i),
-                Row(
-                  children: <Widget>[
-                    IconButton(
-                      onPressed: () => onEdit(element, i),
-                      icon: const Icon(Icons.edit),
-                      tooltip: "input.edit",
-                      color: colorSecondary(context),
-                    ),
-                    const SizedBox(width: 6),
-                    IconButton(
-                      onPressed: () => onDelete(element, i),
-                      icon: const Icon(Icons.delete),
-                      tooltip: "input.delete",
-                      color: colorError(context),
-                    ),
-                  ],
-                ),
+                Expanded(child: buildElement(context, element, i)),
+                if (widget.buildEditButtons)
+                  Row(
+                    children: <Widget>[
+                      IconButton(
+                        onPressed: () => onEdit(element, i),
+                        icon: const Icon(Icons.edit),
+                        tooltip: const TS("input.edit").tl(context),
+                        color: colorSecondary(context),
+                      ),
+                      const SizedBox(width: 6),
+                      IconButton(
+                        onPressed: () => onDelete(element, i),
+                        icon: const Icon(Icons.delete),
+                        tooltip: const TS("input.delete").tl(context),
+                        color: colorError(context),
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -190,6 +198,25 @@ base class _GTListEditorState<T> extends State<GTListEditor<T>> with GTBaseWidge
     ];
   }
 
+  Widget buildTopBar(BuildContext context) {
+    final List<Widget>? children = widget.buildTopActions?.call(context, _expanded);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        if (children != null) ...children,
+        if (children == null && _expanded)
+          IconButton(
+            onPressed: () => onCreate(widget.elements.length),
+            icon: const Icon(Icons.add_circle_sharp),
+            tooltip: const TS("input.add").tl(context),
+            color: colorSuccess(context),
+          ),
+        const SizedBox(width: 16),
+        Icon(_expanded ? Icons.arrow_drop_down_circle : Icons.arrow_drop_down),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -205,20 +232,7 @@ base class _GTListEditorState<T> extends State<GTListEditor<T>> with GTBaseWidge
                 style: textBodySmall(context).copyWith(color: colorOnSurfaceVariant(context)),
               )
             : null,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            if (_expanded)
-              IconButton(
-                onPressed: () => onCreate(widget.elements.length),
-                icon: const Icon(Icons.add_circle_sharp),
-                tooltip: "input.add",
-                color: colorSuccess(context),
-              ),
-            const SizedBox(width: 16),
-            Icon(_expanded ? Icons.arrow_drop_down_circle : Icons.arrow_drop_down),
-          ],
-        ),
+        trailing: buildTopBar(context),
         children: buildChildren(context),
         onExpansionChanged: (bool expanded) {
           setState(() {

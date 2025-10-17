@@ -10,7 +10,7 @@ export 'package:game_tools_lib/core/utils/num_utils.dart';
 /// [left]/[top] contain positions inside of this and [right]/[bottom] would be the outside borders!
 /// Also provides [scale] with doubles and the +/- operators with other bounds to change all members.
 /// To only return new bounds with changed [pos], use [move] instead.
-/// Also contains other utility functions like [contains]
+/// Also contains other utility functions like [contains] or [collides]
 /// The Comparison Operator may also return true for different types for [T] if the values are equal!
 /// And this class is immutable (like an entity, but for better performance not extending it), so members cannot be
 /// changed! Also Supports JSON Conversion if needed!
@@ -86,6 +86,19 @@ final class Bounds<T extends num> implements Model {
       return true;
     }
     return p.x >= left && p.x < right && p.y >= top && p.y < bottom;
+  }
+
+  /// Returns if [other] overlaps with this!
+  bool collides(Bounds<T> other) {
+    if (T == double) {
+      final Bounds<double> b1 = this as Bounds<double>;
+      final Bounds<double> b2 = other as Bounds<double>;
+      return b2.right.isMoreOrEqualThan(b1.left) &&
+          b2.bottom.isMoreOrEqualThan(b1.top) &&
+          b2.left.isLessThan(b1.right) &&
+          b2.top.isLessThan(b1.bottom);
+    }
+    return other.right >= left && other.bottom >= top && other.left < right && other.top < bottom;
   }
 
   @override

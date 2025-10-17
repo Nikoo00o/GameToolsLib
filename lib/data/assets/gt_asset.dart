@@ -148,15 +148,18 @@ abstract base class GTAsset<T> {
   @protected
   /// ONLY USED INTERNALLY!!!! Don't use this directly!!!! per default this only logs the load success as spam logs.
   /// This can be overridden to perform additional init stuff for the content and call this super method at the end
-  /// for the logs
+  /// for the logs. Important: the [loadedContent] could also be null here and will log a warning in that case!
   void initContentIfNeeded(T? loadedContent) {
-    final T content = _loadedContent as T;
-    if (content is Map) {
-      Logger.spam(runtimeType, " loaded total content with ", content.length, " elements in map");
-    } else if (content is String) {
-      Logger.spam(runtimeType, " loaded total content with ", content.length, " characters in string");
+    if (loadedContent == null) {
+      Logger.warn("$runtimeType could not load any content");
+      return;
+    }
+    if (loadedContent is Map) {
+      Logger.spam(loadedContent, " loaded total content with ", loadedContent.length, " elements in map");
+    } else if (loadedContent is String) {
+      Logger.spam(loadedContent, " loaded total content with ", loadedContent.length, " characters in string");
     } else {
-      Logger.spam(runtimeType, " loaded total content: ", content);
+      Logger.spam(loadedContent, " loaded total content: ", loadedContent);
     }
   }
 
@@ -216,11 +219,7 @@ abstract base class GTAsset<T> {
     if (_alsoLoadSecondPath(second)) {
       _loadFilesFromFolders(folders, second); // also load second fallback if method returns true
     }
-    if (_loadedContent == null) {
-      Logger.warn("$runtimeType could not load any content");
-    } else {
-      initContentIfNeeded(_loadedContent); // also prints success logs
-    }
+    initContentIfNeeded(_loadedContent); // also prints success logs or warning logs
     return _loadedContent;
   }
 }

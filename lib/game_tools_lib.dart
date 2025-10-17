@@ -42,7 +42,6 @@ import 'package:game_tools_lib/domain/game/web_manager.dart';
 import 'package:game_tools_lib/presentation/overlay/gt_overlay.dart';
 import 'package:game_tools_lib/presentation/overlay/ui_elements/compare_image.dart';
 import 'package:game_tools_lib/presentation/overlay/ui_elements/overlay_element.dart';
-import 'package:game_tools_lib/presentation/overlay/widgets/gt_settings_button.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_notifier.dart';
 import 'package:hive/hive.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -129,7 +128,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   ///
   /// [overlayManager] may optionally be your custom subclass for [OverlayManager.overlayManager] which is your
   /// interaction point with the overlay UI. Per default this will be an instance of [OverlayManagerBaseType] if null!
-  /// The [OverlayElement]'s like for example also [CompareImage] can be created and used anywhere!
+  /// The [OverlayElement]'s like for example also [CompareImage] to search for images can be created and used anywhere!
   ///
   /// [isCalledFromTesting] should only be set to true in tests to use mock classes instead of the default ones (so
   /// nothing is saved to local storage and is instead kept in memory. and other lib paths are used).

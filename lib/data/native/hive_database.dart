@@ -229,7 +229,9 @@ final class HiveDatabase {
     }
     final String data = file.readAsStringSync();
     final Map<String, dynamic>? json = jsonDecode(data) as Map<String, dynamic>?;
-    Logger.warn("Simple JSON file existed at $subPath but had invalid format");
+    if (json == null) {
+      Logger.warn("Simple JSON file existed at $path but had invalid format");
+    }
     return json;
   }
 

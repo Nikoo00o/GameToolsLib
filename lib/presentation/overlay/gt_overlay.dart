@@ -16,7 +16,6 @@ import 'package:game_tools_lib/presentation/overlay/widgets/gt_settings_button.d
 import 'package:game_tools_lib/presentation/pages/navigation/gt_navigator.dart';
 import 'package:provider/provider.dart';
 
-// todo: doc comments
 /// This is shown in a separate second flutter window as a transparent overlay on top of your game (per default
 /// [GameToolsLib.mainGameWindow]) and can be used to show or move some overlay ui elements (todo: reference).
 ///
@@ -25,7 +24,8 @@ import 'package:provider/provider.dart';
 /// window was open, then this will never build with false and same goes for the focus!
 ///
 /// Of course also look at the state [GTOverlayState] for this! You need sub classes for both if you want some custom
-/// functionality.
+/// functionality. Most of the stuff happens in the [OverlayManager] instead and this here is only used for rendering
+/// the ui down in [GTOverlayState.buildWithState]
 base class GTOverlay extends StatefulWidget {
   // todo: MULTI-WINDOW IN THE FUTURE: no longer used, because instead a separate window is used
   /// The [GTNavigator] which contains the different pages of the main ui of the app

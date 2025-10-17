@@ -59,6 +59,7 @@ flutter:
     - assets/
     - assets/locales/
     - assets/images/
+    - assets/images/compare/
 
 # opencv module config
 hooks:
