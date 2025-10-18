@@ -5,7 +5,8 @@ import 'dart:typed_data';
 import 'package:game_tools_lib/core/encoding/utf16.dart';
 import 'package:game_tools_lib/core/utils/string_utils.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
-import "package:path/path.dart" as p;
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart' as pp;
 
 abstract final class FileUtils {
   /// Returns the absolute full file path for a local relative file path inside of the parent directory of the script
@@ -20,6 +21,13 @@ abstract final class FileUtils {
       return absolutePath(combinePath(<String>[workingDirectory, localPath]));
     }
     return absolutePath(combinePath(<String>[p.dirname(Platform.resolvedExecutable), localPath]));
+  }
+
+  /// Returns the path to [parts] after the documents directory (os specific). For example on windows after
+  /// "C:\\Users\\USER_NAME\\Documents"
+  static Future<String> getDocumentsPath(List<String> parts) async {
+    final Directory documents = await pp.getApplicationDocumentsDirectory();
+    return combinePath(<String>[documents.path, ...parts]);
   }
 
   /// Combines the [parts] with [Platform.pathSeparator] in between them (if no seperator), but not at the start and

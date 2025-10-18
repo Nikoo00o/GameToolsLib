@@ -64,8 +64,8 @@ abstract base class Module<GameManagerType extends GameManagerBaseType> {
   /// [GameToolsLib.initGameToolsLib] with [GameLogWatcher._init]
   List<LogInputListener> getAdditionalLogInputListener() => <LogInputListener>[];
 
-  /// Should be overridden to provide additional [MouseInputListener] or [KeyInputListener] in addition to the
-  /// constructor of [GameManager] which will automatically be added in [_addInputListeners].
+  /// Should be overridden to provide additional [MouseInputListener] or [KeyInputListener] as hotkeys in addition to
+  /// the constructor of [GameManager] which will automatically be added in [_addInputListeners].
   ///
   /// Important: all of those listeners will have their [BaseInputListener.configGroupLabel] set to the [moduleName]!
   List<BaseInputListener<dynamic>> getAdditionalInputListener() => <BaseInputListener<dynamic>>[];

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -20,8 +21,6 @@ import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/logger/custom_logger.dart';
 import 'package:game_tools_lib/core/logger/log_color.dart';
 import 'package:game_tools_lib/core/logger/log_message.dart';
-import 'package:game_tools_lib/core/utils/locale_extension.dart';
-import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/data/assets/gt_asset.dart';
 import 'package:game_tools_lib/data/native/ffi_loader.dart';
@@ -41,47 +40,30 @@ import 'package:game_tools_lib/domain/game/states/game_closed_state.dart';
 import 'package:game_tools_lib/domain/game/web_manager.dart';
 import 'package:game_tools_lib/presentation/overlay/gt_overlay.dart';
 import 'package:game_tools_lib/presentation/overlay/ui_elements/compare_image.dart';
+import 'package:game_tools_lib/presentation/overlay/ui_elements/helper/overlay_elements_list.dart';
 import 'package:game_tools_lib/presentation/overlay/ui_elements/overlay_element.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_notifier.dart';
 import 'package:hive/hive.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:synchronized/synchronized.dart';
 
-import 'presentation/overlay/ui_elements/helper/overlay_elements_list.dart';
-
 part 'package:game_tools_lib/core/config/game_tools_config.dart';
-
 part 'package:game_tools_lib/core/logger/logger.dart';
-
-part 'package:game_tools_lib/data/helper/game_tools_lib_platform.dart';
-
-part 'package:game_tools_lib/data/native/hive_database.dart';
-
-part 'package:game_tools_lib/data/native/hive_database_mock.dart';
-
-part 'package:game_tools_lib/domain/game/game_manager.dart';
-
 part 'package:game_tools_lib/data/helper/game_tools_lib_event_loop.dart';
-
+part 'package:game_tools_lib/data/helper/game_tools_lib_platform.dart';
+part 'package:game_tools_lib/data/native/hive_database.dart';
+part 'package:game_tools_lib/data/native/hive_database_mock.dart';
 part 'package:game_tools_lib/domain/game/events/game_event.dart';
-
-part 'package:game_tools_lib/domain/game/states/game_state.dart';
-
-part 'package:game_tools_lib/domain/game/game_log_watcher.dart';
-
 part 'package:game_tools_lib/domain/game/game_config_loader.dart';
-
+part 'package:game_tools_lib/domain/game/game_log_watcher.dart';
+part 'package:game_tools_lib/domain/game/game_manager.dart';
 part 'package:game_tools_lib/domain/game/helper/example/example_log_watcher.dart';
-
 part 'package:game_tools_lib/domain/game/input/base_input_listener.dart';
-
 part 'package:game_tools_lib/domain/game/input/key_input_listener.dart';
-
 part 'package:game_tools_lib/domain/game/input/mouse_input_listener.dart';
-
 part 'package:game_tools_lib/domain/game/modules/module.dart';
-
 part 'package:game_tools_lib/domain/game/overlay_manager.dart';
+part 'package:game_tools_lib/domain/game/states/game_state.dart';
 
 /// This is the main class of the game tools lib and you should call [initGameToolsLib] at the beginning of your
 /// program, then [runLoop] to start the internal update event loop and [close] at the end of it!

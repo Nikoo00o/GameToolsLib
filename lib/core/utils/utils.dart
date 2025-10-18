@@ -11,9 +11,12 @@ export 'bounds.dart';
 export 'file_utils.dart';
 export 'immutable_equatable.dart';
 export 'list_utils.dart';
+export 'locale_extension.dart';
 export 'nullable.dart';
 export 'num_utils.dart';
+export 'scaled_bounds.dart';
 export 'string_utils.dart';
+export 'translation_string.dart';
 
 /// Contains general Utils functions like [executePeriodic].
 /// For specific Utils look into [NumUtils], [StringUtils], [ListUtils], [FileUtils].

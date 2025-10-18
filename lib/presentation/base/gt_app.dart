@@ -48,14 +48,22 @@ base class GTApp extends StatelessWidget {
     ];
   }
 
+  /// Can be overridden to return different sub classes of [GTHomePage], [GTSettingsPage], [GTHotkeysPage] (or not
+  /// include them in [buildNavigator])
+  List<GTNavigationPage> buildBasePages() => <GTNavigationPage>[
+    const GTHomePage(),
+    GTSettingsPage(),
+    GTHotkeysPage(),
+  ];
+
   /// Builds the [GTNavigator] with the [GTNavigationPage]s: [GTHomePage], [GTSettingsPage], [GTHotkeysPage],
   /// [additionalNavigatorPages] and can be overridden in sub classes to return more, or fewer!
+  ///
+  /// Consider overriding [buildBasePages] instead of this to return different home, settings, or hotkey pages!
   Widget buildNavigator(BuildContext context) {
     return GTNavigator(
       pages: <GTNavigationPage>[
-        const GTHomePage(),
-        GTSettingsPage(),
-        GTHotkeysPage(),
+        ...buildBasePages(),
         ...additionalNavigatorPages,
       ],
     );

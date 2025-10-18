@@ -21,6 +21,9 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// Subclasses may override first [init], then [onCreate] after which [active] is true until [onDispose], but also
 /// [onUpdate], [onOpenChange], [onFocusChange], [onWindowResize] and [onOverlayModeChanged] callbacks!
 ///
+/// You may also override the [createOverlayToggleHotkey] to provide a different default hotkey for toggling the
+/// overlay!
+///
 /// This also provides a way to get a screenshot of the window without the overlay obscuring it with
 /// [getWindowImageWithoutOverlay], but that causes flickering by turning the overlay on and off!
 base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedOverlayChecks<OverlayStateType> {
@@ -88,6 +91,35 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
     return true;
   }
 
+  /// This is used in [onCreate] to create a hotkey that can be used to switch the overlay on and off by calling
+  /// [hotkeyCallbackToSwitch] as its createEventCallback! Per default this will create a shortcut with the default
+  /// key "f2", but of course this can also be overridden to return null so that no hotkey may be used for toggling
+  /// the overlay, etc.
+  ///
+  /// If you change the default key for this, you should also change the translation string in the asset files:
+  /// "page.home.overlay.toggle.description"
+  @protected
+  KeyInputListener? createOverlayToggleHotkey() => KeyInputListener(
+    configLabel: const TS("page.overlay.toggle"),
+    configLabelDescription: const TS("page.home.overlay.toggle.description"),
+    createEventCallback: hotkeyCallbackToSwitch,
+    alwaysCreateNewEvents: true,
+    defaultKey: BoardKey.f2,
+  );
+
+  /// Used as the callback for [createOverlayToggleHotkey] to switch the mode and return null!
+  @protected
+  static GameEvent? hotkeyCallbackToSwitch() {
+    final OverlayManagerBaseType overlayManager = OverlayManager.overlayManager();
+    // todo: MULTI-WINDOW IN THE FUTURE: change to hidden instead of app open!
+    if (overlayManager.overlayMode == OverlayMode.VISIBLE) {
+      overlayManager.changeMode(OverlayMode.APP_OPEN);
+    } else if (overlayManager.overlayMode == OverlayMode.APP_OPEN) {
+      overlayManager.changeMode(OverlayMode.VISIBLE);
+    }
+    return null;
+  }
+
   /// This is called once when the ui gets build for the first time when the [GTOverlayState] for the [GTOverlay].
   /// widget is created in [GTOverlayState.initState]!
   ///
@@ -100,6 +132,11 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
     Logger.spam("onCreate ", runtimeType, " for ", windowToTrack.name);
     _active = true;
     overlayModeNotifier.addListener(_overlayModeListener);
+    final KeyInputListener? hotkey = createOverlayToggleHotkey();
+    if (hotkey != null) {
+      GameToolsLib.gameManager().addInputListener(hotkey);
+    }
+
     // todo: MULTI-WINDOW IN THE FUTURE: maximise and hide transparent overlay window (or is it started that way?)
   }
 

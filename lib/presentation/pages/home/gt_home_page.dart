@@ -60,6 +60,8 @@ base class GTHomePage extends GTNavigationPage {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         Text(const TranslationString("page.home.overlay.warning").tl(context)),
+        const SizedBox(height: 10),
+        Text(const TranslationString("page.home.overlay.toggle.description").tl(context)),
         const SizedBox(height: 20),
         FilledButton(
           onPressed: () => OverlayManager.overlayManager().changeMode(OverlayMode.VISIBLE),
@@ -85,13 +87,13 @@ base class GTHomePage extends GTNavigationPage {
           child: Text("$open ${const TS("page.logs.title").tl(context)}"),
         ),
         const SizedBox(height: 10),
-        buildMiddleEnd(),
+        buildMiddleEnd(context),
       ],
     );
   }
 
   /// Can be overridden in sub classes to display some custom elements at the bottom of [buildMiddle]
-  Widget buildMiddleEnd() => const SizedBox();
+  Widget buildMiddleEnd(BuildContext context) => const SizedBox();
 
   @override
   String get pageName => "GTHomePage";
