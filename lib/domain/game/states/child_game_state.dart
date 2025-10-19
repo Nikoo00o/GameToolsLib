@@ -10,6 +10,8 @@ import 'package:game_tools_lib/game_tools_lib.dart';
 /// Important: if you override [onStart] in sub classes of this, you must always call [super.onStart] first!
 ///
 /// You can use [navigateBack] to navigate back to the previous [parentState]!
+///
+/// This overrides [isType] to also check [parentState]!
 abstract base class ChildGameState<ParentStateType extends GameState> extends GameState {
   /// This contains the previous state which will be set in [onStart]
   late final ParentStateType parentState;
@@ -27,5 +29,19 @@ abstract base class ChildGameState<ParentStateType extends GameState> extends Ga
   /// Changes back to the previous [parentState]!
   void navigateBack() {
     GameToolsLib.changeState(parentState);
+  }
+
+  @override
+  /// Also checks additional [parentState]!
+  bool isType<StateType>() => super.isType<StateType>() || parentState.isType<StateType>();
+
+  @override
+  /// This checks the [parentState] first and returns it if it matches and otherwise checks the child (this)!
+  StateType asType<StateType>() {
+    if (parentState is StateType) {
+      return parentState as StateType;
+    } else {
+      return this as StateType;
+    }
   }
 }

@@ -213,12 +213,10 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
         return "Mouse(${listener.configLabel}: default=${listener.currentKey})";
       }
     }).toList();
-    final List<String> options = MutableConfig.mutableConfig.configurableOptions
-        .map((MutableConfigOption<dynamic> option) => _convertOption(option))
-        .toList();
+    final List<MutableConfigOption<dynamic>> options = GameToolsLib.combinedMutableConfigOptions;
     final String pretty = StringUtils.toStringPretty(GameToolsConfig._instance!.appTitle, <String, Object?>{
       "hotkeys": listener,
-      "options": options,
+      "options": options.map((MutableConfigOption<dynamic> option) => _convertOption(option)).toList(),
     });
     Logger.debug("GameToolsLib is running with $pretty");
   }

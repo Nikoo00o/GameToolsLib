@@ -48,21 +48,37 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:synchronized/synchronized.dart';
 
 part 'package:game_tools_lib/core/config/game_tools_config.dart';
+
 part 'package:game_tools_lib/core/logger/logger.dart';
+
 part 'package:game_tools_lib/data/helper/game_tools_lib_event_loop.dart';
+
 part 'package:game_tools_lib/data/helper/game_tools_lib_platform.dart';
+
 part 'package:game_tools_lib/data/native/hive_database.dart';
+
 part 'package:game_tools_lib/data/native/hive_database_mock.dart';
+
 part 'package:game_tools_lib/domain/game/events/game_event.dart';
+
 part 'package:game_tools_lib/domain/game/game_config_loader.dart';
+
 part 'package:game_tools_lib/domain/game/game_log_watcher.dart';
+
 part 'package:game_tools_lib/domain/game/game_manager.dart';
+
 part 'package:game_tools_lib/domain/game/helper/example/example_log_watcher.dart';
+
 part 'package:game_tools_lib/domain/game/input/base_input_listener.dart';
+
 part 'package:game_tools_lib/domain/game/input/key_input_listener.dart';
+
 part 'package:game_tools_lib/domain/game/input/mouse_input_listener.dart';
+
 part 'package:game_tools_lib/domain/game/modules/module.dart';
+
 part 'package:game_tools_lib/domain/game/overlay_manager.dart';
+
 part 'package:game_tools_lib/domain/game/states/game_state.dart';
 
 /// This is the main class of the game tools lib and you should call [initGameToolsLib] at the beginning of your
@@ -97,7 +113,7 @@ part 'package:game_tools_lib/domain/game/states/game_state.dart';
 /// The [WebManager] for http requests can be retrieved with [webManager].
 ///
 /// [Module]'s are only available in [GameManager]! You can also access the [appLanguage] of the app or the
-/// [gameLanguage] here!
+/// [gameLanguage] here! Also look at shortcuts like [combinedMutableConfigOptions].
 final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop {
   /// This will then block until the game tools lib is initialized and return true as soon as it is running (and
   /// otherwise false if an exception happened). And it will also initialize instances of native window, database,
@@ -413,6 +429,20 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     await _GameToolsLibEventLoop._runForAllEventsAsync(
       (GameEvent event) async => event.onStateChange(oldState, newState),
     );
+  }
+
+  /// Shortcut to provide the [MutableConfigOption] of all [Module]'s and the [MutableConfig] together!
+  /// Only returns the config options from modules if they contain any children!
+  static List<MutableConfigOption<dynamic>> get combinedMutableConfigOptions {
+    final List<MutableConfigOption<dynamic>> options = <MutableConfigOption<dynamic>>[];
+    options.addAll(MutableConfig.mutableConfig.configurableOptions);
+    for (final ModuleBaseType module in gameManager().modules) {
+      final MutableConfigOptionGroup additional = module.configurableOptions;
+      if (additional.children.isNotEmpty) {
+        options.add(additional);
+      }
+    }
+    return options;
   }
 
   /// Returns the [LocaleConfigOption.activeLocale] of [MutableConfig.currentLocale], so the currently active locale

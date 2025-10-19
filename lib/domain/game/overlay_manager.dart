@@ -104,7 +104,7 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
     configLabelDescription: const TS("page.home.overlay.toggle.description"),
     createEventCallback: hotkeyCallbackToSwitch,
     alwaysCreateNewEvents: true,
-    defaultKey: BoardKey.f2,
+    defaultKey: BoardKey.f2.restrictive,
   );
 
   /// Used as the callback for [createOverlayToggleHotkey] to switch the mode and return null!
@@ -345,6 +345,7 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
           rethrow; // some ui error
         }
       });
+      WidgetsBinding.instance!.ensureVisualUpdate(); // otherwise no frame would be rebuild
     } catch (_) {
       done = true;
       // ui is not available yet, ignore errors which only happen on startup!
@@ -420,6 +421,9 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
 
   /// Concrete instance of this controlled by [GameToolsLib]
   static OverlayManagerBaseType? _instance;
+
+  /// If the overlay is capturing mouse events. This is automatically used in [MouseInputListener].
+  bool get isOverlayFocused => NativeOverlayWindow.isOverlayFocused;
 }
 
 /// Typedef for base type

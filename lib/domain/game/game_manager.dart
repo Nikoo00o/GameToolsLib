@@ -204,8 +204,13 @@ abstract base class GameManager<ConfigType extends GameToolsConfigBaseType> {
   ///   List<Module<GameManagerBaseType>> moduleConfiguration() => <Module<GameManagerBaseType>>[someModule];
   /// ```
   ///
+  /// Or you can also use [getModuleT] to get a module based on its type!
   T? getModule<T extends ModuleBaseType>(TranslationString moduleName) =>
       modules.firstWhereOrNull((ModuleBaseType module) => module.moduleName == moduleName) as T?;
+
+  /// Not nullable quicker way to get a module of a specific type (can be used for static instances in the modules
+  /// themselves for example)
+  T getModuleT<T extends ModuleBaseType>() => modules.whereType<T>().first;
 
   /// Returns the the [GameManager._instance] if already set, otherwise throws a [ConfigException]
   static T gameManager<T extends GameManagerBaseType>() {

@@ -201,7 +201,10 @@ Future<void> main() async {
     KeyInputListener(
       configLabel: TS.raw("Some nice action"),
       configGroupLabel: TS.raw("test"),
-      createEventCallback: () => ExampleEvent(isInstant: false),
+      createEventCallback: () {
+        Logger.present("just a test");
+        return ExampleEvent(isInstant: false);
+      },
       alwaysCreateNewEvents: true,
       defaultKey: BoardKey.c,
     ),

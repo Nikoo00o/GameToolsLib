@@ -80,6 +80,21 @@ abstract final class Utils {
     callback.call();
   }
 
+  /// This will run the [callback] after the [delay] without awaiting it!
+  static void executeDelayedNoAwait({required Duration delay, required Future<void> Function() callback}) {
+    Future<void>.delayed(delay).then((_) => callback.call());
+  }
+
+  /// This will run the [callback] after the random shifted [milliseconds] without awaiting it!
+  static void executeDelayedNoAwaitMS({
+    required int milliseconds,
+    required Future<void> Function() callback,
+    double multiplier = 0.2,
+  }) {
+    final Duration delay = NumUtils.getRandomDurationShifted(milliseconds, multiplier);
+    Future<void>.delayed(delay).then((_) => callback.call());
+  }
+
   /// Just shorter syntax than [Future<void>].delayed
   static Future<void> delay(Duration delay) async => Future<void>.delayed(delay);
 

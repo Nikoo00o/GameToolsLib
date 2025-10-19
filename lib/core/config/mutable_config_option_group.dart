@@ -3,7 +3,7 @@ part of 'package:game_tools_lib/core/config/mutable_config.dart';
 /// This is a special case used to build the group menu entries for the [MutableConfigOption]'s grouped with this.
 ///
 /// This is not a normal config option that can be used!!! And [onInit] and [getValue] do custom work for the
-/// initialisation at the end of [GameToolsLib.initGameToolsLib] to load all children
+/// initialisation at the end of [GameToolsLib.initGameToolsLib] to load all [children]
 final class MutableConfigOptionGroup extends MutableConfigOption<List<MutableConfigOption<dynamic>>> {
   MutableConfigOptionGroup({
     required super.title,
@@ -57,4 +57,7 @@ final class MutableConfigOptionGroup extends MutableConfigOption<List<MutableCon
   Future<void> _write(String? str) async {
     Logger.error("Write called on $this");
   }
+
+  /// Quick getter to get children
+  List<MutableConfigOption<dynamic>> get children => _value!;
 }

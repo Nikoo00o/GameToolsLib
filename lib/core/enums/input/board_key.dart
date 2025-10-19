@@ -10,6 +10,9 @@ part of 'package:game_tools_lib/domain/game/game_window.dart';
 /// Also contains the all used keys as static members like [enter], [n1] for the number 1 key, [a] characters,
 /// etc which should be preferred to be used directly like an enum (or with the [copyWith] constructor, because not all
 /// [LogicalKeyboardKey]'s are supported!
+///
+/// You can also always use the [restrictive] getter if you don't want your hotkey to trigger while holding down other
+/// modifier keys!
 final class BoardKey implements Model {
   /// If actual key is down
   final LogicalKeyboardKey logicalKey;
@@ -141,6 +144,14 @@ final class BoardKey implements Model {
     }
     return buff.toString();
   }
+
+  /// Quick shortcut to be restrictive and explicitly disallow other modifiers that are null here! (of course not
+  /// those that are true!)
+  BoardKey get restrictive =>
+      copyWith(withControl: withControl ?? false,
+          withMeta: withMeta ?? false,
+          withAlt: withAlt ?? false,
+          withShift: withShift ?? false);
 
   /// Special Key combinations
   /// Important: this is non restrictive (it would also trigger if shift, or alt would be down as well)

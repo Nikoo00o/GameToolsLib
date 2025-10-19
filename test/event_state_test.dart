@@ -235,7 +235,9 @@ void _testGameLogWatcher() {
     l6 = false;
     await Utils.delayMS(1100);
     await FileUtils.addToFile(logFile, "\r\nl5");
-    await lw.manualUpdate();
+    for (int i = 0; i < 20; i++) {
+      await lw.manualUpdate(); // test the change delay
+    }
     expect(l5, true, reason: "parse first");
     expect(l6, false, reason: "but not second");
     await FileUtils.deleteFile(logFile);

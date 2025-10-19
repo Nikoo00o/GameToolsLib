@@ -24,7 +24,7 @@ import 'package:path/path.dart' show dirname;
 /// Important: if your requests contain sensitive data, remember to add them in [GameToolsLib.initGameToolsLib] to your
 /// [CustomLogger.sensitiveDataToRemove]!
 ///
-///
+/// Subclasses may override [init] and [dispose]
 base class WebManager {
   /// The http client that is only used internally for the communication (don't use this directly!)
   @protected

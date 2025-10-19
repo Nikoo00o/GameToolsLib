@@ -151,15 +151,19 @@ abstract base class GTAsset<T> {
   /// for the logs. Important: the [loadedContent] could also be null here and will log a warning in that case!
   void initContentIfNeeded(T? loadedContent) {
     if (loadedContent == null) {
-      Logger.warn("$runtimeType could not load any content");
+      Logger.warn("$runtimeType $fileName could not load any content");
       return;
     }
     if (loadedContent is Map) {
-      Logger.spam(loadedContent, " loaded total content with ", loadedContent.length, " elements in map");
+      Logger.verbose("$runtimeType $fileName loaded total content with ${loadedContent.length} elements in map");
     } else if (loadedContent is String) {
-      Logger.spam(loadedContent, " loaded total content with ", loadedContent.length, " characters in string");
+      Logger.verbose("$runtimeType $fileName loaded total content with ${loadedContent.length} characters in string");
+    } else if (loadedContent is List) {
+      Logger.verbose("$runtimeType $fileName loaded total content with ${loadedContent.length} elements in list");
+    } else if (loadedContent is Set) {
+      Logger.verbose("$runtimeType $fileName loaded total content with ${loadedContent.length} elements in set");
     } else {
-      Logger.spam(loadedContent, " loaded total content: ", loadedContent);
+      Logger.verbose("$runtimeType $fileName loaded total content $loadedContent");
     }
   }
 

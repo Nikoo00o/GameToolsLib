@@ -245,14 +245,13 @@ base class OverlayElement with ChangeNotifier implements Model {
       );
       if (json != null) {
         try {
+          Logger.spam("Loading ", this, " from storage ", json);
           fromJson(json);
-          Logger.spam("Loaded ", this, " from storage");
         } catch (e, s) {
           Logger.error("Could not load Overlay Element $identifier from its json file, OVERRIDING IT", e, s);
         }
       } else {
         saveToStorage();
-        Logger.spamPeriodic(_storeLog, "Saved ", this, " to storage");
       }
     }
   }
@@ -299,7 +298,7 @@ base class OverlayElement with ChangeNotifier implements Model {
       Logger.warn("OverlayElement ${newInstance.identifier} window ${otherWindow.name} did not match OverlayManager");
     }
     newInstance.loadOrSaveToStorage();
-    Logger.spamPeriodic(_cacheLog, "Created new: ", newInstance);
+    Logger.verbose("Created new $newInstance");
     return newInstance;
   }
 

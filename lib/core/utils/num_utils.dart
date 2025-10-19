@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:game_tools_lib/core/config/fixed_config.dart';
+import 'package:game_tools_lib/game_tools_lib.dart';
 
 /// contains useful number functions and also provides extensions on [int] and [double] with internal helper methods!
 /// Like for example [absPoint], [getRandomNumber], or [gcd]
@@ -20,6 +21,10 @@ abstract final class NumUtils {
     if (incFrom == incTo) {
       return incFrom;
     }
+    if (incFrom > incTo) {
+      Logger.warn("Utils.getRandomNumber from $incFrom is higher than to $incTo");
+      return incTo + _random.nextInt(incFrom + 1 - incTo);
+    }
     return incFrom + _random.nextInt(incTo + 1 - incFrom);
   }
 
@@ -38,6 +43,16 @@ abstract final class NumUtils {
   static Duration getRandomDuration(Point<int>? delayInMS, {Point<int>? defaultIfNull}) {
     defaultIfNull ??= FixedConfig.fixedConfig.shortDelayMS;
     return Duration(milliseconds: NumUtils.getRandomNumberP(delayInMS ?? defaultIfNull));
+  }
+
+  /// Returns a Duration in ms between delayInMs*(1+percentFactor) and delayInMs*(1-percentFactor)
+  static Duration getRandomDurationShifted(int delayInMs, [double multiplier = 0.2]) {
+    if (multiplier > 0.999) {
+      Logger.warn("Utils.getRandomDurationShifted called with invalid data $delayInMs and $multiplier");
+      return Duration.zero;
+    }
+    final Point<int> point = Point<int>((delayInMs * (1 - multiplier)).round(), (delayInMs * (1 + multiplier)).round());
+    return Duration(milliseconds: NumUtils.getRandomNumberP(point));
   }
 
   /// Returns Absolute non negative values. If [higherThanZero] is true, then this will also not allow values of 0.
@@ -128,6 +143,7 @@ extension DoubleExtension on double {
 extension IntExtension on int {
   /// Returns this scaled by [scaleFactor]
   int scale(double scaleFactor) => (this * scaleFactor).round();
+
   /// Absolute non negative difference / distance between [other] and this
   int diff(int other) => (other - this).abs();
 }

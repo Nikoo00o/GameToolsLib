@@ -99,7 +99,7 @@ abstract base class Module<GameManagerType extends GameManagerBaseType> {
   /// [getConfigurableOptions] by loading their values without updating listeners and calling [MutableConfigOption.onInit]
   /// on them similar to [MutableConfig.loadAllConfigurableOptions]
   Future<void> loadAllConfigurableOptions() async {
-    if (configurableOptions.cachedValueNotNull().isNotEmpty) {
+    if (configurableOptions.children.isNotEmpty) {
       await configurableOptions.getValue(updateListeners: false);
       await configurableOptions.onInit();
       Logger.verbose("Loaded $runtimeType configurable option $configurableOptions");
@@ -110,6 +110,9 @@ abstract base class Module<GameManagerType extends GameManagerBaseType> {
 
   /// Returns the correct subclass type of the [GameManager] for [GameManagerType]
   GameManagerType gameManager() => GameToolsLib.gameManager<GameManagerType>();
+
+  /// Quick getter to get the current state!
+  GameState get currentState => gameManager().currentState;
 }
 
 /// Typedef for base type

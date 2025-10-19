@@ -4,6 +4,9 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 ///
 /// Important: look at the docs of [BaseInputListener]! This only overrides the methods [_keyToString], [_stringToKey],
 /// [_getNewKeyState].
+///
+/// Also important: this is also affected by [OverlayManager.isOverlayFocused] and will never return true that the
+/// key is down in that case if the overlay is focused!!
 base class MouseInputListener extends BaseInputListener<MouseKey> {
   /// Optionally you can also use the [MouseInputListener.instant] constructor instead!
   MouseInputListener({
@@ -28,13 +31,13 @@ base class MouseInputListener extends BaseInputListener<MouseKey> {
     super.configGroupLabel,
     super.isActive = true,
   }) : super(
-    createEventCallback: () {
-      Logger.spamPeriodic(_instantLog, "MouseInputListener quick action called for ", configLabel);
-      quickAction.call();
-      return null;
-    },
-    alwaysCreateNewEvents: true,
-  );
+         createEventCallback: () {
+           Logger.spamPeriodic(_instantLog, "MouseInputListener quick action called for ", configLabel);
+           quickAction.call();
+           return null;
+         },
+         alwaysCreateNewEvents: true,
+       );
 
   static final SpamIdentifier _instantLog = SpamIdentifier();
 
@@ -45,5 +48,10 @@ base class MouseInputListener extends BaseInputListener<MouseKey> {
   MouseKey? _stringToKey(String? str) => MouseKey.fromString(str);
 
   @override
-  bool _getNewKeyState() => InputManager.isMouseDown(currentKey!);
+  bool _getNewKeyState() {
+    try {
+      if (OverlayManager.overlayManager().isOverlayFocused) return false;
+    } catch (_) {}
+    return InputManager.isMouseDown(currentKey!);
+  }
 }

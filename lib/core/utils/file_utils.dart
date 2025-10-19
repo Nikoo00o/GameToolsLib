@@ -218,15 +218,18 @@ abstract final class FileUtils {
   }
 
   /// Same as [readFileAtPos], but instead of having a max size, this will instead return a list of strings split at
-  /// new line characters! Only works for [utf8] files!
-  static Future<List<String>> readFileAtPosInLines({required File file, required int pos}) async {
+  /// new line characters! Only works for [utf8] files! Returns a record that also includes the number of bytes added!
+  static Future<(List<String>, int)> readFileAtPosInLines({required File file, required int pos}) async {
     final StringBuffer buf = StringBuffer();
     final Stream<List<int>> stream = file.openRead(pos);
+    int bytesAdded = 0;
     await for (final List<int> data in stream) {
       buf.write(utf8.decode(data));
+      bytesAdded += data.length;
     }
+
     final String result = buf.toString();
-    return StringUtils.splitIntoLines(result);
+    return (StringUtils.splitIntoLines(result), bytesAdded);
   }
 
   /// Same as [readFileAtPos], but here instead an [endPos] is needed from which on it will search backwards

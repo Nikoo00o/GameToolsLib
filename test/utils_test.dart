@@ -210,7 +210,7 @@ void _testFiles() {
     final String p2 = await FileUtils.readFileAtPos(file: file, pos: 16, size: 6);
     final String p3 = await FileUtils.readFileAtPos(file: file, pos: 24);
     final String n = await FileUtils.readFileAtPos(file: file, pos: 35);
-    final List<String> lines = await FileUtils.readFileAtPosInLines(file: file, pos: 6);
+    final (List<String> lines, int bytes) = await FileUtils.readFileAtPosInLines(file: file, pos: 6);
     expect(p1, "2test", reason: "first part of file");
     expect(p2, "시험", reason: "special char part");
     expect(p3, "1\r\n2\r\n3\r\n4\r\n", reason: "last part of file");
@@ -220,6 +220,7 @@ void _testFiles() {
     expect(lines[1], "öäü", reason: "second line correct");
     expect(lines[2], "시험", reason: "third line correct");
     expect(lines[3], "1", reason: "fourth line correct");
+    expect(bytes, 30, reason: "match byte count");
   });
 }
 

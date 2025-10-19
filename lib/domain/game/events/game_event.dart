@@ -123,7 +123,8 @@ abstract base class GameEvent {
   ///
   /// This is an alternative for comparing outside of [onOpenChange], [onFocusChange] and [onStateChange]!
   ///
-  /// If you don't care about the current state, then just use [GameState] as [StateType].
+  /// If you don't care about the current state, then just use [GameState] as [StateType]. It uses [GameState.isType]
+  /// for comparison which also checks the parent state of [ChildGameState]!
   bool checkCorrectState<StateType extends GameState>({bool requiresOpen = true, bool requiresFocus = true}) {
     final GameWindow window = GameToolsLib.mainGameWindow;
     if (requiresOpen && window.isOpen == false) {
@@ -132,7 +133,7 @@ abstract base class GameEvent {
     if (requiresFocus && window.hasFocus == false) {
       return false;
     }
-    if (GameToolsLib.currentState is! StateType) {
+    if (GameToolsLib.currentState.isType<StateType>() == false) {
       return false;
     }
     return true;

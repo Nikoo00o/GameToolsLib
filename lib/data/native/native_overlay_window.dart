@@ -156,4 +156,7 @@ final class NativeOverlayWindow {
       Logger.warn("NativeOverlayWindow.deactivateOverlay called with no active overlay");
     }
   }
+
+  /// If ignore mouse is false
+  static bool get isOverlayFocused => _ignoreMouse == false;
 }

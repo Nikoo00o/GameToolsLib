@@ -13,7 +13,8 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// In subclasses you can do your custom initialization in the constructor and you can access everything there!
 ///
 /// If you want to compare objects of this, you have to implement custom equality yourself in your sub classes! Per
-/// default it compares if references point to the same object.
+/// default it compares if references point to the same object. Important to check if a state is of a specific type,
+/// prefer to use [isType] instead of the "is" operator and the [asType] instead of the "as" operator!
 ///
 /// For an example look at [ExampleState]. Also look at [ChildGameState] for another option to extend when you have
 /// parent + child states.
@@ -71,6 +72,14 @@ abstract base class GameState {
   ///
   /// Per default it only returns "Switched to [runtimeType]" but it can be any other meaningful info like joined area!
   String get welcomeMessage => "Switched to $runtimeType";
+
+  /// Returns if this state object is a subtype of [StateType], but subclasses may also override this! (for example
+  /// [ChildGameState] also checks its parent state!). And then you can use [asType] for the cast
+  bool isType<StateType>() => this is StateType;
+
+  /// Similar to [isType] it will return this as [StateType], but is overridden in child state to return the parent
+  /// state or itself depending on the type!
+  StateType asType<StateType>() => this as StateType;
 
   @override
   String toString() => "$runtimeType($_id)";

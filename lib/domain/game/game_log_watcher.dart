@@ -30,6 +30,18 @@ base class GameLogWatcher {
   DateTime? _lastModified;
   int _currentPos = 0;
 
+  /// used in [_didFileChange]
+  int _lastSize = 0;
+
+  /// used in [_didFileChange]
+  int _skipTicks = 0;
+
+  /// used in [_didFileChange]
+  static const int _skipTicksOnDuplicate = 5;
+
+  /// used in [_didFileChange]
+  bool _lastChanged = false;
+
   /// Quick getter to get resulting path used for debugging
   String get readingFromPath => _file?.absolute.path ?? "";
 
@@ -80,8 +92,17 @@ base class GameLogWatcher {
   /// one and this will no longer be called!
   ///
   /// You can override this to have different behaviour depending on the type of the [lastListener].
-  /// Per default this just calls [LogInputListener.processLine] and returns true to only process the last listener!
+  /// Per default this just checks if [SimpleLogInputListener.shouldStopOldLineHandling] would be true and then stop
+  /// so no older listeners will be processed (to avoid false positives)!
   /// You can also override the [delayForOldLines] for a different timeframe.
+  ///
+  /// Don't call [LogInputListener.processLine] in here, this will be done automatically in another iteration after
+  /// this, but in reversed order (to preserve the correct order: oldest to newest log line!). But
+  /// [LogInputListener.matchesLine] will be checked automatically before this method is called!
+  ///
+  /// Important: this might still call listeners that match the same line as [lastListener] even if this returns true
+  /// here! (because that is controlled depending on the order the listeners are created and what their processLine
+  /// returns)
   ///
   /// Important: this will not be called if a previous line matched the [onlyHandleLastLinesUntil] if its not null
   /// (to avoid false positives for too old events)!
@@ -90,8 +111,10 @@ base class GameLogWatcher {
   /// will be [GameClosedState] at the current point only if it didn't change in the start of a custom game manager
   /// subclass!
   bool handleLastLine(LogInputListener lastListener, String line) {
-    lastListener.processLine(line);
-    return true;
+    if (lastListener is SimpleLogInputListener && lastListener.shouldStopOldLineHandling) {
+      return true;
+    }
+    return false;
   }
 
   /// Adds a new [listener] to the internal list of [_listeners].
@@ -165,10 +188,11 @@ base class GameLogWatcher {
         return false;
       }
       bool processedOnce = false;
-      for (final LogInputListener listener in _listeners) {
+      for (int i = 0; i < _listeners.length; ++i) {
+        final LogInputListener listener = _listeners.elementAt(i);
         if (listener.matchesLine(line)) {
           if (listener.processLine(line)) {
-            Logger.spam("Processed log line ", line, " in listener ", listener);
+            Logger.spam("Removed log line: ", line, " in listener ", listener);
             return true;
           }
           processedOnce = true;
@@ -187,11 +211,27 @@ base class GameLogWatcher {
   }
 
   /// Returns if the [_file] was modified since the last call to this (returns false if file or last modified are null).
+  ///
+  /// If the file changed last time, but not anymore, then an additional [_maxChecksAfterNoChange] checks are done
+  /// with the size of the file to see if something was missed (fetch lines will continue checking empty lines after) !
   Future<bool> _didFileChange() async {
     if (_file != null && _lastModified != null) {
-      final DateTime newLastModified = await _file!.lastModified();
+      DateTime newLastModified = await _file!.lastModified();
       final bool changed = _lastModified!.isBefore(newLastModified);
+      if (changed && _lastChanged) {
+        _skipTicks = _skipTicksOnDuplicate;
+        _lastChanged = false;
+        return false;
+      }
+
+      final int newSize = await _file!.length();
+      if (changed == false && newSize != _lastSize) {
+        _skipTicks = _skipTicksOnDuplicate;
+        newLastModified = DateTime(1000);
+      }
+      _lastSize = newSize;
       _lastModified = newLastModified;
+      _lastChanged = changed;
       return changed;
     }
     return false;
@@ -199,7 +239,9 @@ base class GameLogWatcher {
 
   /// called after [GameManager.onStart] to process old lines if the game was already running longer.
   /// calls [handleLastLine] until it returns true. It will stop when a line matches [onlyHandleLastLinesUntil] if
-  /// its not null!
+  /// its not null! Also first skips lines with [shouldLineBeSkipped]!
+  /// Important: the real execution will be done in the correct oder from oldest to newest, but first the check with
+  /// [handleLastLine] will be in order form newest to oldest!
   Future<void> _handleOldLastLines() async {
     if (_file != null) {
       _lastModified = await _file!.lastModified(); // update to current last modified time and pos!
@@ -212,44 +254,68 @@ base class GameLogWatcher {
       }
       int endPos = _currentPos;
       bool done = false;
-      bool wasHandled = false;
-      int skippedLines = 0;
+
+      final List<String> linesToHandle = <String>[];
       while (endPos > 0 && !done) {
         // first read previous line
         final (String line, int newPos) = await FileUtils.readFileLineAtPosBackwards(file: _file!, endPos: endPos);
         if (onlyHandleLastLinesUntil?.matchesLine(line) ?? false) {
+          Logger.spam("Handling old log lines stopped at onlyHandleLastLinesUntil: ", line);
           done = true; // if explicit stop is set, then stop when it succeeds
           break;
         }
-        if (line.isNotEmpty) {
+        if (line.isNotEmpty && !shouldLineBeSkipped(line)) {
+          linesToHandle.insert(0, line); // now add line to handling BUT REVERSE ORDER!
           for (final LogInputListener listener in _listeners) {
-            if (listener.matchesLine(line)) {
-              Logger.spam("Handling old log line \"", line, "\" in listener ", listener);
-              wasHandled = true;
-              if (handleLastLine(listener, line)) {
-                done = true; // completely done if the [handleLastLine] returns true
-                break;
-              }
+            if (listener.matchesLine(line) && handleLastLine(listener, line)) {
+              Logger.spam("Handling old log lines was stopped by listener ", listener, " at line ", line);
+              done = true; // completely done if the [handleLastLine] returns true
+              break;
             }
-          }
-          if (wasHandled == false) {
-            skippedLines++; // wasHandled check for debug log which lines were executed
           }
         }
         endPos = newPos;
+      }
+
+      int skippedLines = 0;
+      bool wasHandled = false;
+      for (final String line in linesToHandle) {
+        for (int i = 0; i < _listeners.length; ++i) {
+          final LogInputListener listener = _listeners.elementAt(i);
+          if (listener.matchesLine(line)) {
+            Logger.spam("Handling old log line \"", line, "\" in listener ", listener);
+            wasHandled = true;
+            if (listener.processLine(line)) {
+              break;
+            }
+          }
+        }
+        if (wasHandled == false) {
+          skippedLines++; // wasHandled check for debug log which lines were executed
+        }
         wasHandled = false;
       }
+
       Logger.verbose("Skipped $skippedLines old log lines (handled rest). Modified $_lastModified was after $oldest");
     }
   }
 
   /// called and awaited periodically at the end of the event loop to process new lines and calls [_processLine]
   Future<void> _fetchNewLines() async {
+    if (_skipTicks > 0) {
+      _skipTicks--;
+      return;
+    }
     if (await _didFileChange()) {
-      final List<String> newLines = await FileUtils.readFileAtPosInLines(file: _file!, pos: _currentPos);
+      final (List<String> newLines, int bytes) = await FileUtils.readFileAtPosInLines(file: _file!, pos: _currentPos);
       newLines.removeWhere((String line) => line.isEmpty);
-      Logger.spam("GameLogWatcher got ", newLines.length, " new log lines at pos ", _currentPos);
-      _currentPos = await _file!.length();
+      if (newLines.isEmpty) {
+        Logger.spam("GameLogWatcher got empty log lines from last change, adding delay for next change");
+        _skipTicks = _skipTicksOnDuplicate;
+      } else {
+        Logger.spam("GameLogWatcher got ", newLines.length, " new log lines at pos ", _currentPos);
+        _currentPos += bytes;
+      }
       for (final String line in newLines) {
         _processLine(line);
       }

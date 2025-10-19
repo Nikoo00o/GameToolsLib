@@ -31,7 +31,7 @@ base class GTSettingsPage extends GTNavigationPage
     super.pagePadding,
   }) {
     builders = <MultiConfigOptionBuilder<dynamic>>[];
-    final List<MutableConfigOption<dynamic>> options = MutableConfig.mutableConfig.configurableOptions;
+    final List<MutableConfigOption<dynamic>> options = GameToolsLib.combinedMutableConfigOptions;
     Logger.spam("Building GTSettingsPage options: ", options);
     final List<MutableConfigOption<dynamic>> otherRemaining = <MutableConfigOption<dynamic>>[];
     for (final MutableConfigOption<dynamic> option in options) {

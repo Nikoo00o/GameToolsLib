@@ -34,9 +34,10 @@ abstract base class LogInputListener {
 /// You will build a regex to match your line and then just return a matching event for it which will automatically
 /// be added to the internal event queue!
 ///
-/// [processLine] will always return true here to not call any other listeners and will use the [regex] to match with
-/// what data [createEvent] will be called (the data can also be null if no data from the log is needed). And then it
-/// just adds the event created to the event queue.
+/// [processLine] will always return true here to not call any other listeners per default and will use the [regex] to
+/// match with what data [createEvent] will be called (the data can also be null if no data from the log is needed).
+/// And then it just adds the event created to the event queue. [deleteLineAfterwards] can be used to modify the
+/// behaviour!
 ///
 /// For very quick non-async actions that need no event, use [SimpleLogInputListener.instant] instead of a [GameEvent]
 /// with [GameEventPriority.INSTANT]!
@@ -49,9 +50,21 @@ final class SimpleLogInputListener extends LogInputListener {
   /// And the resulting regex would be: `r"^.*] : (.*) - END\.$"`
   /// And like this the [createEvent] would receive "TARGET_MESSAGE"
   ///
+  /// Remember to use raw strings for your regex and escape special characters like r"\[te.*st\]".
+  /// When building with the constructor, leave matchBefore empty and matchAfter null to match every line!
+  ///
   /// It would be good to store the regex strings in multi language [JsonAsset]'s if the game log messages are
   /// translated!
   late final RegExp regex;
+
+  /// This is returned in [processLine] after [matchesLine] was true to determine if other listeners may also look at
+  /// the line, or not. per default this is true so that other listeners may not read a processed line as well!
+  final bool deleteLineAfterwards;
+
+  /// Per default false, but can be set to true and can be used in an overridden [GameLogWatcher.handleLastLine] to
+  /// stop if this is true (so if this listener should stop the handling, because they are handled backwards and old
+  /// ones could override the actual newest result!)
+  final bool shouldStopOldLineHandling;
 
   /// This callback should create a new subclass object of [GameEvent] which will then be added internally to the
   /// event queue! Important the searched data string parameter will be the characters of the line that is between
@@ -75,6 +88,8 @@ final class SimpleLogInputListener extends LogInputListener {
     required String matchBeforeRegex,
     required String? matchAfterRegex,
     required this.createEvent,
+    this.deleteLineAfterwards = true,
+    this.shouldStopOldLineHandling = false,
   }) {
     final StringBuffer buf = StringBuffer(r"^");
     buf.write(matchBeforeRegex);
@@ -105,6 +120,8 @@ final class SimpleLogInputListener extends LogInputListener {
     required String matchBeforeRegex,
     required String? matchAfterRegex,
     required void Function(String searchedData) quickAction,
+    bool deleteLineAfterwards = true,
+    bool shouldStopOldLineHandling = false,
   }) {
     GameEvent? createEvent(String searchedData) {
       Logger.spamPeriodic(
@@ -124,6 +141,8 @@ final class SimpleLogInputListener extends LogInputListener {
       matchBeforeRegex: matchBeforeRegex,
       matchAfterRegex: matchAfterRegex,
       createEvent: createEvent,
+      deleteLineAfterwards: deleteLineAfterwards,
+      shouldStopOldLineHandling: shouldStopOldLineHandling,
     );
   }
 
@@ -144,7 +163,7 @@ final class SimpleLogInputListener extends LogInputListener {
     if (event != null) {
       addEvent(event);
     }
-    return true;
+    return deleteLineAfterwards;
   }
 
   @override

@@ -40,5 +40,5 @@ base class SimpleChangeNotifier<T> with ChangeNotifier {
   int get hashCode => _value.hashCode;
 
   @override
-  String toString() => "$runtimeType($_value)";
+  String toString() => _value.toString();
 }

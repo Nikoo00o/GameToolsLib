@@ -362,10 +362,10 @@ abstract final class InputManager {
       await keyPress(BoardKey.ctrlA, delayBeforeAndBetweenInMS: delayBeforeAndAfter);
       await Utils.delay(NumUtils.getRandomDuration(delayBeforeAndAfter));
     }
-    final String oldData = await getClipboard();
+    final String oldData = await getClipboard(delayBeforeAndAfter: delayBeforeAndAfter);
     await fillClipboard(delayBeforeAndAfter: delayBeforeAndAfter);
-    final String newData = await getClipboard();
-    await setClipboard(oldData);
+    final String newData = await getClipboard(delayBeforeAndAfter: delayBeforeAndAfter);
+    await setClipboard(oldData, delayBeforeAndAfter: delayBeforeAndAfter);
     Logger.spam("Return selected data: ", newData, "\nAnd preserved old data: ", oldData);
     return newData;
   }
@@ -380,10 +380,10 @@ abstract final class InputManager {
     if (data.isEmpty) {
       Logger.warn("Pasting empty data into something selected");
     }
-    final String oldData = await getClipboard();
-    await setClipboard(data);
+    final String oldData = await getClipboard(delayBeforeAndAfter: delayBeforeAndAfter);
+    await setClipboard(data, delayBeforeAndAfter: delayBeforeAndAfter);
     await pasteClipboard(delayBeforeAndAfter: delayBeforeAndAfter);
-    await setClipboard(oldData);
+    await setClipboard(oldData, delayBeforeAndAfter: delayBeforeAndAfter);
     Logger.spam("Pasted data into selection: ", data, "\nand preserved old data: ", oldData);
   }
 
@@ -392,9 +392,19 @@ abstract final class InputManager {
   /// There will be in total 11 await calls for the [delay] which is [FixedConfig.mediumDelayMS] if null.
   ///
   /// Currently this can only restore your old clipboard text (and no image, or binary data!)
-  static Future<void> sendChatMessage(String text, {Point<int>? delay}) async {
+  ///
+  /// If [clearFirst] is overridden to true, then it will first select with CTRL+A and paste over the currently
+  /// stored text (it will await 3 additional smaller delays then and 2 additional which may be overridden with the
+  /// delay)!
+  static Future<void> sendChatMessage(String text, {Point<int>? delay, bool clearFirst = false}) async {
     Logger.verbose("Sending chat message...: $text");
     await keyPress(BoardKey.enter); // additional 2 smaller delays
+    if(clearFirst){
+      final Duration duration = NumUtils.getRandomDuration(delay);
+      await Utils.delay(duration);
+      await keyPress(BoardKey.ctrlA);
+      await Utils.delay(duration);
+    }
     await pasteDataIntoSelected(text, delayBeforeAndAfter: delay); // 9 medium delays
     await keyPress(BoardKey.enter); // additional 2 smaller delays
   }
