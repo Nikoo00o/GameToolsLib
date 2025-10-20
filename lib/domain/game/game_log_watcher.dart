@@ -37,7 +37,7 @@ base class GameLogWatcher {
   int _skipTicks = 0;
 
   /// used in [_didFileChange]
-  static const int _skipTicksOnDuplicate = 5;
+  static const int _skipTicksOnDuplicate = 4;
 
   /// used in [_didFileChange]
   bool _lastChanged = false;

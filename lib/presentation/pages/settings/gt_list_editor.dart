@@ -26,7 +26,11 @@ base class GTListEditor<T> extends StatefulWidget {
 
   /// If this is false, then the edit button will not be build for each element of [elements].
   /// This should be the case if your [buildElement] function also has some part that can edit the element!
-  final bool buildEditButtons;
+  final bool buildEditButton;
+
+  /// If this is false, then the edit button will not be build for each element of [elements].
+  /// This should be the case if you dont want your elements to be deleted!
+  final bool buildDeleteButton;
 
   /// This can be used to build custom widgets for the left part of the row that is build for each card of the
   /// [elements]. If this is null, then a default "Element $elementNumber: [T.toString]" [Text] will be build for
@@ -55,9 +59,21 @@ base class GTListEditor<T> extends StatefulWidget {
 
   /// Optional builder method to build the top bar (per default this is null and builds nothing when not expanded and
   /// otherwise only the add button to add a new item!). Important: there will always be a sizedbox with 16 px and
-  /// then the dropdown icon on the right of your returned list!
+  /// then the dropdown icon on the right of your returned list! This can be used to prevent new elements from being
+  /// added!
   // ignore: avoid_positional_boolean_parameters
   final List<Widget> Function(BuildContext context, bool isExpanded)? buildTopActions;
+
+  /// Optional callback which if not null will be called instead of opening the dialog when a new element should be
+  /// created after pressing the add button. This is useful to use with [buildEditButton] being false, but
+  /// [buildDeleteButton] being true and the [buildElement] building all edit functionality with widgets and the add
+  /// button should only add a new empty element. The elementNumber is the not zero based index for the new element
+  /// (so current length + 2)
+  final Future<T> Function(int elementNumber)? customCreateNewElement;
+
+  /// Can optionally be set to set a fixed max height instead of expanding to the max available height like the
+  /// default null would. For example 500
+  final double? maxHeight;
 
   const GTListEditor({
     super.key,
@@ -65,10 +81,13 @@ base class GTListEditor<T> extends StatefulWidget {
     this.onChange,
     required this.title,
     this.description,
-    this.buildEditButtons = true,
+    this.buildEditButton = true,
+    this.buildDeleteButton = true,
     this.buildElement,
     required this.buildCreateOrEditDialog,
     this.buildTopActions,
+    this.customCreateNewElement,
+    this.maxHeight,
   });
 
   @override
@@ -118,7 +137,12 @@ base class _GTListEditorState<T> extends State<GTListEditor<T>> with GTBaseWidge
   }
 
   Future<void> onCreate(int index) async {
-    final T? newElement = await dialog(context, null, index + 1);
+    late final T? newElement;
+    if (widget.customCreateNewElement != null) {
+      newElement = await widget.customCreateNewElement!.call(index + 1);
+    } else {
+      newElement = await dialog(context, null, index + 1);
+    }
     setState(() {
       if (newElement != null) {
         widget.elements.add(newElement);
@@ -150,6 +174,38 @@ base class _GTListEditorState<T> extends State<GTListEditor<T>> with GTBaseWidge
         Text(TS("input.show.element", <String>[number.toString(), element.toString()]).tl(context));
   }
 
+  Widget _editB(BuildContext context, T element, int i) => IconButton(
+    onPressed: () => onEdit(element, i),
+    icon: const Icon(Icons.edit),
+    tooltip: const TS("input.edit").tl(context),
+    color: colorSecondary(context),
+  );
+
+  Widget _delB(BuildContext context, T element, int i) => IconButton(
+    onPressed: () => onDelete(element, i),
+    icon: const Icon(Icons.delete),
+    tooltip: const TS("input.delete").tl(context),
+    color: colorError(context),
+  );
+
+  Widget buildEditButtons(BuildContext context, T element, int i) {
+    if (widget.buildEditButton && widget.buildEditButton) {
+      return Row(
+        children: <Widget>[
+          _editB(context, element, i),
+          const SizedBox(width: 6),
+          _delB(context, element, i),
+        ],
+      );
+    } else if (widget.buildEditButton) {
+      return _editB(context, element, i);
+    } else if (widget.buildDeleteButton) {
+      return _delB(context, element, i);
+    } else {
+      return const SizedBox();
+    }
+  }
+
   List<Widget> buildChildren(BuildContext context) {
     final List<Widget> children = <Widget>[];
     for (int i = 0; i < widget.elements.length; i++) {
@@ -162,40 +218,39 @@ base class _GTListEditorState<T> extends State<GTListEditor<T>> with GTBaseWidge
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 Expanded(child: buildElement(context, element, i)),
-                if (widget.buildEditButtons)
-                  Row(
-                    children: <Widget>[
-                      IconButton(
-                        onPressed: () => onEdit(element, i),
-                        icon: const Icon(Icons.edit),
-                        tooltip: const TS("input.edit").tl(context),
-                        color: colorSecondary(context),
-                      ),
-                      const SizedBox(width: 6),
-                      IconButton(
-                        onPressed: () => onDelete(element, i),
-                        icon: const Icon(Icons.delete),
-                        tooltip: const TS("input.delete").tl(context),
-                        color: colorError(context),
-                      ),
-                    ],
-                  ),
+                buildEditButtons(context, element, i),
               ],
             ),
           ),
         ),
       );
     }
-    return <Widget>[
-      ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 500),
+
+    late final Widget child;
+    if (widget.maxHeight != null) {
+      child = ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: widget.maxHeight!),
         child: SingleChildScrollView(
           child: Column(
             children: children,
           ),
         ),
-      ),
-    ];
+      );
+    } else {
+      child = LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          return ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: constraints.maxHeight),
+            child: SingleChildScrollView(
+              child: Column(
+                children: children,
+              ),
+            ),
+          );
+        },
+      );
+    }
+    return <Widget>[child];
   }
 
   Widget buildTopBar(BuildContext context) {
@@ -255,7 +310,8 @@ final class GTListEditorInt extends GTListEditor<int> {
     super.onChange,
     required super.title,
     super.description,
-    super.buildEditButtons,
+    super.buildEditButton,
+    super.buildDeleteButton,
   }) : super(
          buildCreateOrEditDialog:
              (BuildContext context, int? oldElement, int elementNumber, GTListOnElementUpdate<int> update) {
@@ -277,7 +333,8 @@ final class GTListEditorString extends GTListEditor<String> {
     super.onChange,
     required super.title,
     super.description,
-    super.buildEditButtons,
+    super.buildEditButton,
+    super.buildDeleteButton,
   }) : super(
          buildCreateOrEditDialog:
              (BuildContext context, String? oldElement, int elementNumber, GTListOnElementUpdate<String> update) {

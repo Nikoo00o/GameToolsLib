@@ -5,7 +5,10 @@ part of 'package:game_tools_lib/core/config/mutable_config.dart';
 /// Important: if [T] is not nullable ("[T]?"), then [setValue] can not be used with [null] and [defaultValue] may
 /// not be [null]!
 ///
-/// Use [getValue], [valueNotNull], [setValue], [deleteValue] to interact with the value.
+/// Use [getValue], [valueNotNull], [setValue], [deleteValue] to interact with the value. Its best to store an
+/// immutable value and always use the [setValue] with a copyWith constructor to modify it (if you modify a mutable
+/// value in [getValue], etc its best to call [setValue] manually with the same instance afterwards to ensure
+/// updating the listeners!)!
 /// You can also use the [_updateCallback] to get updates after [setValue] before the other listeners from the
 /// [ChangeNotifier] will get notified. Remember that you can also manage those listeners manually with [addListener]
 /// and [removeListener]!

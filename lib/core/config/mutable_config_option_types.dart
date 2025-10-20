@@ -79,7 +79,10 @@ base class EnumConfigOption<EnumType> extends MutableConfigOption<EnumType> {
 /// Important: you need to supply a [_createNewModelInstance] function that creates a new instance of your specific
 /// model subclass [T] with the given json map by calling its [fromJson] factory constructor
 ///
-/// As An example look at [createNewExampleModelInstance].
+/// As An example look at [createNewExampleModelInstance]. Remember that Its best to store an
+/// immutable value and always use the [setValue] with a copyWith constructor to modify it (if you modify a mutable
+/// value in [getValue], etc its best to call [setValue] manually with the same instance afterwards to ensure
+/// updating the listeners!)!
 ///
 /// Important: you also have to use [createModelBuilder] if this is included in [MutableConfig.getConfigurableOptions]
 /// or otherwise leave it at null. For an example of that look at [createExampleModelBuilder].

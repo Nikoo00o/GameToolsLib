@@ -22,6 +22,8 @@ final class NativeOverlayWindow {
   static bool? _onTop;
   static int? _barSize;
   static bool? _shadow;
+  static bool? _fullScreen;
+  static bool? _maximized;
 
   static int? _width;
   static int? _height;
@@ -113,7 +115,15 @@ final class NativeOverlayWindow {
       _onTop = await windowManager.isAlwaysOnTop();
       _barSize = await windowManager.getTitleBarHeight();
       _shadow = await windowManager.hasShadow();
+      _fullScreen = await windowManager.isFullScreen();
+      _maximized = await windowManager.isMaximized();
 
+      if (_fullScreen == true) {
+        await windowManager.setFullScreen(false);
+      }
+      if (_maximized == true) {
+        await windowManager.unmaximize();
+      }
       await windowManager.setBackgroundColor(Colors.transparent);
       await windowManager.setAlwaysOnTop(true);
       await windowManager.setAsFrameless();
@@ -145,6 +155,12 @@ final class NativeOverlayWindow {
         await windowManager.setTitleBarStyle(TitleBarStyle.normal);
       }
       await windowManager.setHasShadow(_shadow!);
+      if (_fullScreen == true) {
+        await windowManager.setFullScreen(true);
+      }
+      if (_maximized == true) {
+        await windowManager.maximize(vertically: true);
+      }
 
       await setMouseEvents(ignore: false);
 

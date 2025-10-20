@@ -43,7 +43,8 @@ final class _GTDebugCompImagesState extends State<GTDebugCompImages> {
     return GTListEditor<CompareImage>(
       title: TS.raw("Compare Images"),
       description: TS.raw("Edit UI directly with the button, or replace images below"),
-      buildEditButtons: false,
+      buildEditButton: false,
+      buildDeleteButton: false,
       elements: OverlayManager.overlayManager().overlayElements.compareImages,
       onChange: () {},
       buildElement: (BuildContext context, CompareImage element, int elementNumber) {

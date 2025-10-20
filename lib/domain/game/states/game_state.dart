@@ -16,6 +16,10 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// default it compares if references point to the same object. Important to check if a state is of a specific type,
 /// prefer to use [isType] instead of the "is" operator and the [asType] instead of the "as" operator!
 ///
+/// IMPORTANT: but your comparison [operator==] SHOULD NEVER USE [isType] and [asType] because otherwise you could
+/// not switch to sub states, because it would be ignored!!! But of course you can add some [equals] method that you
+/// use which the isType and asType methods to allow sub states in specific cases!
+///
 /// For an example look at [ExampleState]. Also look at [ChildGameState] for another option to extend when you have
 /// parent + child states.
 abstract base class GameState {

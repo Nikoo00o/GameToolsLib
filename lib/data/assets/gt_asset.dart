@@ -10,11 +10,13 @@ import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:game_tools_lib/presentation/base/gt_app.dart';
 import 'package:game_tools_lib/presentation/overlay/ui_elements/compare_image.dart';
 
+part 'folder_asset.dart';
+
+part 'image_asset.dart';
+
 part 'json_asset.dart';
 
 part 'locale_asset.dart';
-
-part 'image_asset.dart';
 
 /// Instances of this class can directly be created and used anywhere to load static asset files containing some
 /// strings, images, or other data that you collected before starting the program like for example a list of names
@@ -31,6 +33,10 @@ part 'image_asset.dart';
 /// For configuration this offers [subFolderPath], [fileName], [isMultiLanguage] and [fileEnding] and for access it
 /// offers [content]. Also look at the doc comments of those! And you do not have to call [loadContent]. If you want
 /// to access the content not nullable but maybe with an exception, use the [validContent] getter instead!
+///
+/// Important: make sure that each level of deeper sub folders is included in the asset section of the pubspec.yaml!
+/// AND ALSO DON'T USE SPACES IN THE NAMES of sub folders that are included in the asset sections (use underscores
+/// instead)! Also files should prefer underscores instead of spaces!
 ///
 /// TLDR: affects paths "data/flutter_assets/assets/...", "data/flutter_assets/packages/game_tools_lib/assets/...", ...
 ///
@@ -181,7 +187,7 @@ abstract base class GTAsset<T> {
 
   /// used in [_loadFilesFromFolders] to call [loadFromFile]
   void _loadFile(String fullPath) {
-    if (FileUtils.fileExists(fullPath)) {
+    if (FileUtils.fileExists(fullPath) || FileUtils.dirExists(fullPath)) {
       loadFromFile(fullPath);
       Logger.spam(runtimeType, " loaded from: ", fullPath);
     } else {
@@ -193,7 +199,9 @@ abstract base class GTAsset<T> {
   /// true and otherwise only the [filePath]
   void _loadFilesFromFolders(List<String> folders, String filePath) {
     for (final String parentPath in folders) {
-      if (_checkAllFilesInDirectory()) {
+      if (filePath.isEmpty) {
+        _loadFile(parentPath);
+      } else if (_checkAllFilesInDirectory()) {
         final List<String> files = FileUtils.getFilesInDirectorySync(parentPath, skipDirectories: true);
         for (final String fullPath in files) {
           if (fullPath.endsWith(filePath)) {

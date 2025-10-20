@@ -150,6 +150,10 @@ base mixin GTGroupedBuildersExtension<BT extends GTGroupBuilderInterface, IndexT
     return Consumer<IndexType>(
       builder: (BuildContext _, IndexType index, Widget? child) {
         final int pos = index.value;
+        if (pos >= builders.length) {
+          return Text("Error $pos is bigger than ${builders.length} for $this and type $IndexType. "
+              "Maybe this happened because no hotkeys are initialized yet");
+        }
         final BT builder = builders.elementAt(pos);
         if (pos != _debugCurIndex) {
           Logger.verbose("Inner Nav Tab selected: ${builder.groupName}");

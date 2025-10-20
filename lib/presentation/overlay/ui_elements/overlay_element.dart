@@ -104,6 +104,9 @@ base class OverlayElement with ChangeNotifier implements Model {
   /// [OverlayMode.VISIBLE]
   ///
   /// This is mutable and may be changed during runtime to toggle the visibility of this element (and rebuild after)!
+  ///
+  /// Per default this is not stored in the json file on storage to be able to just toggle it dynamically during
+  /// runtime, but of course subclasses may save it!
   set visible(bool value) {
     _visible = value;
     notifyListeners();
@@ -370,18 +373,17 @@ base class OverlayElement with ChangeNotifier implements Model {
     );
   }
 
-  static const String JSON_VISIBLE = "Visible";
   static const String JSON_BOUNDS = "Bounds";
 
   /// This is called from [loadOrSaveToStorage] to convert this into a json map for storage. When overriding call
   /// super method as well to apply the values!
   ///
-  /// Only affects [visible] and [bounds], because [editable] is final and the identifier is used as file name!
+  /// Only affects [bounds], because [editable] is final and the identifier is used as file name! And visible should
+  /// only be used for dynamic toggling!
   @override
   @mustCallSuper
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      JSON_VISIBLE: _visible,
       JSON_BOUNDS: _bounds.toJson(),
     };
   }
@@ -389,10 +391,10 @@ base class OverlayElement with ChangeNotifier implements Model {
   /// This is called from [loadOrSaveToStorage] to load dynamic members out of the json file. When overriding call
   /// super method as well to apply the values!
   ///
-  /// Only affects [visible] and [bounds], because [editable] is final and the identifier is used as file name!
+  /// Only affects [bounds], because [editable] is final and the identifier is used as file name! And visible should
+  /// only be used for dynamic toggling!
   @mustCallSuper
   void fromJson(Map<String, dynamic> json) {
-    _visible = json[JSON_VISIBLE] as bool;
     _bounds = ScaledBounds<int>.fromJson(json[JSON_BOUNDS] as Map<String, dynamic>);
     notifyListeners();
   }

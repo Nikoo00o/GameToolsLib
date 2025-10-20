@@ -86,12 +86,16 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
   @mustCallSuper
   Future<bool> init() async {
     _win ??= GameToolsLib.mainGameWindow;
+    final KeyInputListener? hotkey = createOverlayToggleHotkey(); // init hotkey here already so that it always shows
+    if (hotkey != null) {
+      GameToolsLib.gameManager().addInputListener(hotkey);
+    }
     Logger.spam("init ", runtimeType, " for ", windowToTrack.name);
     // todo: MULTI-WINDOW IN THE FUTURE: create second overlay window (could also init here instead of in onCreate)
     return true;
   }
 
-  /// This is used in [onCreate] to create a hotkey that can be used to switch the overlay on and off by calling
+  /// This is used in [init] to create a hotkey that can be used to switch the overlay on and off by calling
   /// [hotkeyCallbackToSwitch] as its createEventCallback! Per default this will create a shortcut with the default
   /// key "f2", but of course this can also be overridden to return null so that no hotkey may be used for toggling
   /// the overlay, etc.
@@ -132,10 +136,6 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
     Logger.spam("onCreate ", runtimeType, " for ", windowToTrack.name);
     _active = true;
     overlayModeNotifier.addListener(_overlayModeListener);
-    final KeyInputListener? hotkey = createOverlayToggleHotkey();
-    if (hotkey != null) {
-      GameToolsLib.gameManager().addInputListener(hotkey);
-    }
 
     // todo: MULTI-WINDOW IN THE FUTURE: maximise and hide transparent overlay window (or is it started that way?)
   }

@@ -53,6 +53,22 @@ final class ScaledBounds<T extends num> implements Model {
     }
   }
 
+  /// Shortcut constructor
+  factory ScaledBounds.defaultBounds({
+    required T x,
+    required T y,
+    required T width,
+    required T height,
+    GameWindow? gameWindow,
+  }) {
+    return ScaledBounds<T>(
+      Bounds<T>(x: x, y: y, width: width, height: height),
+      creationWidth: 2560,
+      creationHeight: 1440,
+      gameWindow: gameWindow,
+    );
+  }
+
   /// The (x, y) scale factor for the current [gameWindow]'s [GameWindow.size] in relation to the initial
   /// [creationWidth] and [creationHeight].
   ///

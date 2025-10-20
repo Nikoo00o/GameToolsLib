@@ -107,6 +107,20 @@ final class BoardKey implements Model {
     logicalKey,
   ];
 
+  /// Which modifier keys might have been pressed and should be checked and then reset if down! Right and left side
+  /// and also the normal key!
+  List<LogicalKeyboardKey> get allKeysToReset => <LogicalKeyboardKey>[
+    if (withShift == true) LogicalKeyboardKey.shiftLeft,
+    if (withShift == true) LogicalKeyboardKey.shiftRight,
+    if (withControl == true) LogicalKeyboardKey.controlLeft,
+    if (withControl == true) LogicalKeyboardKey.controlRight,
+    if (withAlt == true) LogicalKeyboardKey.altLeft,
+    if (withAlt == true) LogicalKeyboardKey.altRight,
+    if (withMeta == true) LogicalKeyboardKey.metaLeft,
+    if (withMeta == true) LogicalKeyboardKey.metaRight,
+    logicalKey,
+  ];
+
   /// Used together with [logicalKeysToPress] to check the general modifier keys if they are down (does not contain
   /// the [logicalKey] itself here!
   List<LogicalKeyboardKey> get logicalKeysToCheck => <LogicalKeyboardKey>[
@@ -147,11 +161,12 @@ final class BoardKey implements Model {
 
   /// Quick shortcut to be restrictive and explicitly disallow other modifiers that are null here! (of course not
   /// those that are true!)
-  BoardKey get restrictive =>
-      copyWith(withControl: withControl ?? false,
-          withMeta: withMeta ?? false,
-          withAlt: withAlt ?? false,
-          withShift: withShift ?? false);
+  BoardKey get restrictive => copyWith(
+    withControl: withControl ?? false,
+    withMeta: withMeta ?? false,
+    withAlt: withAlt ?? false,
+    withShift: withShift ?? false,
+  );
 
   /// Special Key combinations
   /// Important: this is non restrictive (it would also trigger if shift, or alt would be down as well)

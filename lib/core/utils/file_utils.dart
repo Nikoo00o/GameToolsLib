@@ -415,9 +415,11 @@ abstract final class FileUtils {
   }
 
   /// Returns the file name (test.txt) from a file path
-  static String getFileName(String path) {
+  static String getFileName(String path, {bool withoutExtension = false}) {
     if (path.isEmpty) {
       return "";
+    } else if (withoutExtension) {
+      return p.basenameWithoutExtension(path);
     }
     return p.basename(path);
   }

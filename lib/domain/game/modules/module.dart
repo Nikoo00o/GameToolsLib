@@ -29,6 +29,11 @@ abstract base class Module<GameManagerType extends GameManagerBaseType> {
   /// Cache for [getConfigurableOptions]
   MutableConfigOptionGroup? _configurableOptions;
 
+  /// Just for logging / debugging
+  Module() {
+    debugPrint("Created module $runtimeType");
+  }
+
   /// Is called at the start of [GameToolsLib.runLoop] (so after [GameToolsLib.initGameToolsLib] of the program start).
   /// Use it for game specific custom init! (at this point the ui is already visible, because [runApp] has been called.
   Future<void> onStart() async {}

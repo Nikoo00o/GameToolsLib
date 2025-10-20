@@ -4,7 +4,14 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 ///
 /// Important: look at the docs of [BaseInputListener]! This only overrides the methods [_keyToString], [_stringToKey],
 /// [_getNewKeyState].
+///
+/// This also overrides [_addEvent] to check for [resetKeysAfter]!
 base class KeyInputListener extends BaseInputListener<BoardKey> {
+  /// If this is true [per default] it will call [InputManager.resetKeys] before creating the event, or
+  /// performing the action to reset any modifier keys that would have been pressed for this hotkey to prevent side
+  /// effects.
+  final bool resetKeysAfter;
+
   /// Optionally you can also use the [KeyInputListener.instant] constructor instead!
   KeyInputListener({
     required super.configLabel,
@@ -15,6 +22,7 @@ base class KeyInputListener extends BaseInputListener<BoardKey> {
     required super.defaultKey,
     super.configGroupLabel,
     super.isActive = true,
+    this.resetKeysAfter = true,
   });
 
   /// Here there is no [GameEvent] to be created and instead [quickAction] will be called which should only be used for
@@ -27,6 +35,7 @@ base class KeyInputListener extends BaseInputListener<BoardKey> {
     required super.defaultKey,
     super.configGroupLabel,
     super.isActive = true,
+    this.resetKeysAfter = true,
   }) : super(
          createEventCallback: () {
            Logger.spamPeriodic(_instantLog, "KeyInputListener quick action called for ", configLabel);
@@ -56,6 +65,14 @@ base class KeyInputListener extends BaseInputListener<BoardKey> {
       return null;
     }
     return BoardKey.fromJson(json);
+  }
+
+  @override
+  void _addEvent() {
+    if (resetKeysAfter) {
+      InputManager.resetKeys(currentKey!);
+    }
+    super._addEvent();
   }
 
   @override

@@ -40,8 +40,9 @@ abstract final class NumUtils {
 
   /// Returns a [Duration] object with a random delay in milliseconds between the values of [delayInMS] (x=min, y=max).
   /// If that's null, it defaults to [defaultIfNull] and if that is null as well, then it uses [FixedConfig.shortDelayMS]
-  static Duration getRandomDuration(Point<int>? delayInMS, {Point<int>? defaultIfNull}) {
-    defaultIfNull ??= FixedConfig.fixedConfig.shortDelayMS;
+  /// If [defaultToTiny] is true, then it will use [FixedConfig.tinyDelayMS] instead of the short delay.
+  static Duration getRandomDuration(Point<int>? delayInMS, {Point<int>? defaultIfNull, bool defaultToTiny = false}) {
+    defaultIfNull ??= (defaultToTiny ? FixedConfig.fixedConfig.tinyDelayMS : FixedConfig.fixedConfig.shortDelayMS);
     return Duration(milliseconds: NumUtils.getRandomNumberP(delayInMS ?? defaultIfNull));
   }
 

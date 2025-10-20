@@ -3,7 +3,7 @@ part of 'package:game_tools_lib/domain/game/game_window.dart';
 /// This offers only static methods like [isKeyDown] to interact with the games input, but some methods
 /// that are relative to a window may require a [GameWindow] or its bounds (see game window methods).
 ///
-/// Most important methods would be: [leftClick], [keyPress], [isKeyDown] and [isMouseDown]
+/// Most important methods would be: [leftClick], [keyPress], [isKeyDown] and [isMouseDown] (and [resetKeys])
 /// and [setClipboard], or [fillClipboard] and [getSelectedData], or [pasteDataIntoSelected], etc
 abstract final class InputManager {
   /// Returns [NativeWindow.instance]
@@ -75,7 +75,7 @@ abstract final class InputManager {
   /// [maxStepSize] on how far the pos should be moved at a time.The default value for [minMaxStepDelayInMS]
   /// is [FixedConfig.tinyDelayMS].
   ///
-  /// Before returning, this also awaits [FixedConfig.shortDelayMS] once at the end!
+  /// Before returning, this also awaits [FixedConfig.tinyDelayMS] once at the end!
   ///
   /// May throw a [WindowClosedException] if the window was not open. You can also use [GameWindow.moveMouse] instead!
   /// Affects both [getWindowMousePos] and [displayMousePos]
@@ -124,7 +124,7 @@ abstract final class InputManager {
       currX += addToX;
       currY += addToY;
       if (addToX == 0 && addToY == 0) {
-        await Utils.delay(NumUtils.getRandomDuration(FixedConfig.fixedConfig.shortDelayMS));
+        await Utils.delay(NumUtils.getRandomDuration(FixedConfig.fixedConfig.tinyDelayMS));
         final Point<int> currPos = getWindowMousePosNonNull(window);
         if (currPos.x != currX || currPos.y != currY) {
           addToX = targetX - currPos.x;
@@ -171,7 +171,6 @@ abstract final class InputManager {
   /// helper method used internally
   static Future<void> _mouseClick({required MouseKey key, required Point<int>? delayBeforeAndBetweenInMS}) async {
     final Duration duration = NumUtils.getRandomDuration(delayBeforeAndBetweenInMS);
-    await Utils.delay(duration);
     mouseDown(key);
     await Utils.delay(duration);
     mouseUp(key);
@@ -179,17 +178,17 @@ abstract final class InputManager {
   }
 
   /// Clicks the left mouse button down and up.
-  /// [delayBeforeAndBetweenInMS] is awaited at the start and middle of this and defaults to [FixedConfig.shortDelayMS]
+  /// [delayBeforeAndBetweenInMS] is awaited in the middle of this and defaults to [FixedConfig.shortDelayMS]
   static Future<void> leftClick({Point<int>? delayBeforeAndBetweenInMS}) async =>
       _mouseClick(key: MouseKey.LEFT, delayBeforeAndBetweenInMS: delayBeforeAndBetweenInMS);
 
   /// Clicks the right mouse button down and up.
-  /// [delayBeforeAndBetweenInMS] is awaited at the start and middle of this and defaults to [FixedConfig.shortDelayMS]
+  /// [delayBeforeAndBetweenInMS] is awaited in the middle of this and defaults to [FixedConfig.shortDelayMS]
   static Future<void> rightClick({Point<int>? delayBeforeAndBetweenInMS}) async =>
       _mouseClick(key: MouseKey.RIGHT, delayBeforeAndBetweenInMS: delayBeforeAndBetweenInMS);
 
   /// Clicks the middle mouse button down and up.
-  /// [delayBeforeAndBetweenInMS] is awaited at the start and middle of this and defaults to [FixedConfig.shortDelayMS]
+  /// [delayBeforeAndBetweenInMS] is awaited in the middle of this and defaults to [FixedConfig.shortDelayMS]
   static Future<void> middleMouseClick({Point<int>? delayBeforeAndBetweenInMS}) async =>
       _mouseClick(key: MouseKey.MIDDLE, delayBeforeAndBetweenInMS: delayBeforeAndBetweenInMS);
 
@@ -209,10 +208,9 @@ abstract final class InputManager {
   ///
   /// Otherwise if the [key] was already down, this returns false!
   ///
-  /// [delayBeforeAndBetweenInMS] is awaited at the start and middle of this and defaults to [FixedConfig.shortDelayMS]
+  /// [delayBeforeAndBetweenInMS] is awaited in the middle of this and defaults to [FixedConfig.tinyDelayMS]
   static Future<bool> keyPress(BoardKey key, {Point<int>? delayBeforeAndBetweenInMS}) async {
-    final Duration duration = NumUtils.getRandomDuration(delayBeforeAndBetweenInMS);
-    await Utils.delay(duration);
+    final Duration duration = NumUtils.getRandomDuration(delayBeforeAndBetweenInMS, defaultToTiny: true);
     final List<LogicalKeyboardKey> keyCodes = key.logicalKeysToPress;
     if (_nativeWindow.isKeyDown(keyCodes.last)) {
       Logger.spam("Can't press ", key, " because it was already down!");
@@ -235,6 +233,18 @@ abstract final class InputManager {
     }
     Logger.spam("Pressed key ", key);
     return true;
+  }
+
+  /// Just sends key up events for all logical keys if they were down or not (right and left side modifiers and the
+  /// key itself) to prevent side effects!
+  static void resetKeys(BoardKey key) {
+    final List<LogicalKeyboardKey> keys = key.allKeysToReset;
+    for (int i = 0; i < keys.length; ++i) {
+      if (_nativeWindow.isKeyDown(keys[i]) == false) {
+        keys.removeAt(i--);
+      }
+    }
+    sendRawKeyEvents(keyUp: true, keyCodes: keys);
   }
 
   /// Returns if the virtual keycode is currently pressed down and optionally also its modifier keys
@@ -276,16 +286,12 @@ abstract final class InputManager {
   static bool isMouseDown(MouseKey mouseButton) => _nativeWindow.isMouseDown(mouseButton);
 
   /// Stores [data] in the clipboard (may be empty).
-  /// [delayBeforeAndAfter] will be awaited first and x2 after and is [FixedConfig.mediumDelayMS] if null. It
+  /// [delayBeforeAndAfter] will be awaited after and is [FixedConfig.mediumDelayMS] if null. It
   /// will also be awaited again 5 times if a [PlatformException] is thrown during clipboard access (if that try
   /// fails, then the exception is rethrown!)
   static Future<void> setClipboard(String data, {Point<int>? delayBeforeAndAfter}) async {
-    final Duration duration = NumUtils.getRandomDuration(
-      delayBeforeAndAfter,
-      defaultIfNull: FixedConfig.fixedConfig.mediumDelayMS,
-    );
+    final Duration duration = NumUtils.getRandomDuration(delayBeforeAndAfter ?? FixedConfig.fixedConfig.mediumDelayMS);
     try {
-      await Utils.delay(duration);
       await Clipboard.setData(ClipboardData(text: data));
     } catch (_) {
       Logger.spam("could not get clipboard, trying again...");
@@ -297,16 +303,13 @@ abstract final class InputManager {
   }
 
   /// Returns the data currently stored in the clipboard (may be empty)
-  /// [delayBeforeAndAfter] will be awaited first and after and is [FixedConfig.mediumDelayMS] if null. It will also
+  /// [delayBeforeAndAfter] will be awaited first and is [FixedConfig.shortDelayMS] if null. It will also
   /// be awaited again 5 times if a [PlatformException] is thrown during clipboard access (if that try fails, then
   /// the exception is rethrown!).
   ///
   /// Currently this can only return text and no image, or binary data from the clipboard!
   static Future<String> getClipboard({Point<int>? delayBeforeAndAfter}) async {
-    final Duration duration = NumUtils.getRandomDuration(
-      delayBeforeAndAfter,
-      defaultIfNull: FixedConfig.fixedConfig.mediumDelayMS,
-    );
+    final Duration duration = NumUtils.getRandomDuration(delayBeforeAndAfter);
     late final ClipboardData? data;
     try {
       await Utils.delay(duration);
@@ -318,33 +321,22 @@ abstract final class InputManager {
     }
     final String text = data?.text ?? "";
     Logger.spam("Got clipboard data length: ", text.length);
-    await Utils.delay(duration);
     return text;
   }
 
   /// Uses CTRL+C to copy something selected into the clipboard.
-  /// The [delayBeforeAndAfter] will be awaited first, middle and after and is [FixedConfig.mediumDelayMS] if
-  /// null.
+  /// The [delayBeforeAndAfter] will be awaited after and is [FixedConfig.shortDelayMS] if null.
   static Future<void> fillClipboard({Point<int>? delayBeforeAndAfter}) async {
-    final Duration duration = NumUtils.getRandomDuration(
-      delayBeforeAndAfter,
-      defaultIfNull: FixedConfig.fixedConfig.mediumDelayMS,
-    );
-    await Utils.delay(duration);
+    final Duration duration = NumUtils.getRandomDuration(delayBeforeAndAfter);
     await keyPress(BoardKey.ctrlC); // additional 2 smaller delays
     Logger.spam("Got clipboard from selection");
     await Utils.delay(duration);
   }
 
   /// Uses CTRL+V to paste the clipboard into something selected.
-  /// The [delayBeforeAndAfter] will be awaited first, middle and after and is [FixedConfig.mediumDelayMS] if
-  /// null.
+  /// The [delayBeforeAndAfter] will be awaited after and is [FixedConfig.shortDelayMS] if null.
   static Future<void> pasteClipboard({Point<int>? delayBeforeAndAfter}) async {
-    final Duration duration = NumUtils.getRandomDuration(
-      delayBeforeAndAfter,
-      defaultIfNull: FixedConfig.fixedConfig.mediumDelayMS,
-    );
-    await Utils.delay(duration);
+    final Duration duration = NumUtils.getRandomDuration(delayBeforeAndAfter);
     await keyPress(BoardKey.ctrlV); // additional 2 smaller delays
     Logger.spam("Pasted clipboard into selection");
     await Utils.delay(duration);
@@ -352,9 +344,9 @@ abstract final class InputManager {
 
   /// Tries to fill the clipboard with data of either some selected text with CTRL+C, or something at the position of
   /// the mouse cursor and returns the read data!
-  /// The [delayBeforeAndAfter] will be awaited 9 times and is [FixedConfig.mediumDelayMS] if null.
+  /// The [delayBeforeAndAfter] will be awaited 5 times and is [FixedConfig.shortDelayMS] if null.
   /// This uses [fillClipboard], but preserves the initial clipboard data of the user!
-  /// If [selectFirst] is true, then this will first select the data with CTRL+A with additional 4 awaits!
+  /// If [selectFirst] is true, then this will first select the data with CTRL+A with an additional await!
   ///
   /// Currently this can only restore your old clipboard text (and no image, or binary data!)
   static Future<String> getSelectedData({Point<int>? delayBeforeAndAfter, bool selectFirst = false}) async {
@@ -372,7 +364,7 @@ abstract final class InputManager {
 
   /// Tries to paste [data] into some selected text field with CTRL+V, or something at the position of the mouse cursor.
   /// For example used in [sendChatMessage].
-  /// The [delayBeforeAndAfter] will be awaited 9 times and is [FixedConfig.mediumDelayMS] if null.
+  /// The [delayBeforeAndAfter] will be awaited 6 times and is [FixedConfig.shortDelayMS] if null.
   /// This uses [pasteClipboard], but preserves the initial clipboard data of the user!
   ///
   /// Currently this can only restore your old clipboard text (and no image, or binary data!)
@@ -387,25 +379,27 @@ abstract final class InputManager {
     Logger.spam("Pasted data into selection: ", data, "\nand preserved old data: ", oldData);
   }
 
-  /// Tries to open a default chat window with [LogicalKeyboardKey.enter] to then use [pasteDataIntoSelected] to put
-  /// the [text] into it and pressing enter again to send the chat message.
-  /// There will be in total 11 await calls for the [delay] which is [FixedConfig.mediumDelayMS] if null.
+  /// Tries to open a default chat window with [LogicalKeyboardKey.enter] to then use similar functions like
+  /// [pasteDataIntoSelected] to put the [text] into it and pressing enter again to send the chat message.
+  /// There will be in total 7 await calls for the [delay] which is [FixedConfig.shortDelayMS] if null. and one medium
   ///
   /// Currently this can only restore your old clipboard text (and no image, or binary data!)
   ///
   /// If [clearFirst] is overridden to true, then it will first select with CTRL+A and paste over the currently
-  /// stored text (it will await 3 additional smaller delays then and 2 additional which may be overridden with the
-  /// delay)!
+  /// stored text (it will await 1 additional which may be overridden with the delay or medium optionally)!
   static Future<void> sendChatMessage(String text, {Point<int>? delay, bool clearFirst = false}) async {
     Logger.verbose("Sending chat message...: $text");
+    final Duration duration = NumUtils.getRandomDuration(delay ?? FixedConfig.fixedConfig.mediumDelayMS);
+    final String oldData = await getClipboard();
+    await setClipboard(text);
     await keyPress(BoardKey.enter); // additional 2 smaller delays
-    if(clearFirst){
-      final Duration duration = NumUtils.getRandomDuration(delay);
-      await Utils.delay(duration);
+    await Utils.delay(duration);
+    if (clearFirst) {
       await keyPress(BoardKey.ctrlA);
       await Utils.delay(duration);
     }
-    await pasteDataIntoSelected(text, delayBeforeAndAfter: delay); // 9 medium delays
+    await pasteClipboard();
     await keyPress(BoardKey.enter); // additional 2 smaller delays
+    await setClipboard(oldData);
   }
 }

@@ -209,7 +209,8 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
   ///
   /// [buildElement] is optional to build custom widgets for the left part of the row that is build for each card of
   /// the list [elements]! Otherwise a default "Element $elementNumber: [LT.toString]" [Text] will be build for each
-  /// child. For default types [int], or [String] this will be ignored if [buildCreateOrEditDialog] is null.
+  /// child. For default types [int], or [String] this will be ignored if [buildCreateOrEditDialog] is null. For
+  /// [buildElement] remember that the elementNumber starts at 1!
   ///
   /// Also Important: the [buildCreateOrEditDialog] must only be not null for [LT] not being [int], or [String]
   /// (because otherwise a default one will be used. and then it's used to build the dialog content when creating a
@@ -221,6 +222,9 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
   /// and will be added to the list automatically after you are done!). Its of the type [GTListOnElementUpdate]
   /// The [elementNumber] is the not zero based index (1 to size for edit, size+1 for create) and is ignored most of
   /// the times.
+  ///
+  /// If you only want to show some elements expandable, use [buildListOptionSimple] instead (could also optionally
+  /// still include add and delete buttons)
   Widget buildListOption<LT>({
     required TranslationString title,
     TranslationString? description,
@@ -246,8 +250,18 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
         return GTListEditorInt(
           title: title,
           description: description,
-          buildEditButtons: buildEditButtons,
+          buildEditButton: buildEditButtons,
+          buildDeleteButton: buildEditButtons,
           elements: elements as List<int>,
+          onChange: onChange,
+        );
+      } else if (LT == String) {
+        return GTListEditorString(
+          title: title,
+          description: description,
+          buildEditButton: buildEditButtons,
+          buildDeleteButton: buildEditButtons,
+          elements: elements as List<String>,
           onChange: onChange,
         );
       } else {
@@ -257,11 +271,61 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
     return GTListEditor<LT>(
       title: title,
       description: description,
-      buildEditButtons: buildEditButtons,
+      buildEditButton: buildEditButtons,
+      buildDeleteButton: buildEditButtons,
       elements: elements,
       onChange: onChange,
       buildElement: buildElement,
       buildCreateOrEditDialog: buildCreateOrEditDialog,
+    );
+  }
+
+  /// Similar to [buildListOption], but modification is only possible inside and no buttons will be build on the
+  /// outside depending on the booleans (edit will never be build and dialog never opened, but add and delete may be
+  /// build)! The add button at the top will only be build if [addNewElementCallback] is not null!
+  /// For an even more simpler element use [buildSimpleExpansionTile] which has just one child that it may
+  /// expand. For [buildElement] remember that the elementNumber starts at 1 and also for the [addNewElementCallback]
+  /// it will be current length + 2 !
+  Widget buildListOptionSimple<LT>({
+    required TranslationString title,
+    TranslationString? description,
+    required List<LT> elements,
+    Widget Function(BuildContext context, LT element, int elementNumber)? buildElement,
+    Future<LT> Function(int elementNumber)? addNewElementCallback,
+    required bool deleteButton,
+  }) {
+    return GTListEditor<LT>(
+      customCreateNewElement: addNewElementCallback,
+      title: title,
+      description: description,
+      buildEditButton: false,
+      buildDeleteButton: deleteButton,
+      elements: elements,
+      onChange: () {},
+      buildElement: buildElement,
+      buildCreateOrEditDialog: (_, _, _, _) => const SizedBox(),
+      buildTopActions: addNewElementCallback != null ? null : (BuildContext context, bool isExpanded) => <Widget>[],
+    );
+  }
+
+  /// Like [buildListOptionSimple], but without a list and no buttons. just shows the [buildElement].
+  /// For [buildElement] remember that the elementNumber starts at 1!
+  Widget buildSimpleExpansionTile<LT>({
+    required TranslationString title,
+    TranslationString? description,
+    required LT element,
+    required Widget Function(BuildContext context, LT element) buildElement,
+  }) {
+    return GTListEditor<LT>(
+      title: title,
+      description: description,
+      buildEditButton: false,
+      buildDeleteButton: false,
+      elements: <LT>[element],
+      onChange: () {},
+      buildElement: (BuildContext context, LT element, int elementNumber) => buildElement.call(context, element),
+      buildCreateOrEditDialog: (_, _, _, _) => const SizedBox(),
+      buildTopActions: (BuildContext context, bool isExpanded) => <Widget>[],
     );
   }
 
