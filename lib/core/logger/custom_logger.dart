@@ -129,9 +129,13 @@ base class CustomLogger extends Logger with SimpleChangeStream<List<LogMessage>>
   static FixedConfig? get fixedConfig => Logger.config?.fixed;
 }
 
-/// Used on Startup, because it will never log to storage, but always to console and ui!
+/// Used on Startup, because it will never log to storage and ui, but always to console!
+/// Optionally can also use a custom log level override which is spam per default
 final class StartupLogger extends CustomLogger {
-  StartupLogger() : super(sensitiveDataToRemove: <String>[]);
+  /// Set in constructor and used in [logLevel] and mutable!
+  LogLevel logLevelOverride;
+
+  StartupLogger([this.logLevelOverride = LogLevel.SPAM]) : super(sensitiveDataToRemove: <String>[]);
 
   @override
   void logToConsole(String logMessage) {
@@ -139,13 +143,11 @@ final class StartupLogger extends CustomLogger {
   }
 
   @override
-  void logToUi(LogMessage logMessage) {
-    sendToUi(logMessage);
-  }
+  void logToUi(LogMessage logMessage) {}
 
   @override
   Future<void> logToStorage(LogMessage logMessage) async {}
 
   @override
-  LogLevel get logLevel => LogLevel.SPAM;
+  LogLevel get logLevel => logLevelOverride;
 }

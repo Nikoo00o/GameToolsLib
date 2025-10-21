@@ -368,10 +368,15 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
   ///
   /// Important: prefer to use [changeModeAsync] instead if you need to wait for the window modifications after
   /// activating/deactivating the overlay!
-  void changeMode(OverlayMode newOverlayMode) {
+  ///
+  /// Don't manually use [setActive], it will only be used internally automatically
+  void changeMode(OverlayMode newOverlayMode, {bool setActive = true}) {
     if (!_active) {
       Logger.warn("Tried to call OverlayManager.changeMode while it was not active with $newOverlayMode");
       return;
+    }
+    if (setActive) {
+      _active = false;
     }
     if (!windowToTrack.isOpen && _lastMode == OverlayMode.APP_OPEN) {
       // todo: MULTI-WINDOW IN THE FUTURE: might change
@@ -384,15 +389,20 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
     } else {
       Logger.warn("Tried to change to the same new overlay mode $newOverlayMode");
     }
+    if (setActive) {
+      _active = true;
+    }
   }
 
   /// Same as [changeMode], but also waits for the window modifications after activating/deactivating the overlay!
   @override
   Future<void> changeModeAsync(OverlayMode newOverlayMode) async {
-    changeMode(newOverlayMode);
+    _active = false;
+    changeMode(newOverlayMode, setActive: false);
     if (_pendingWindowChange != null) {
       await _pendingWindowChange;
     }
+    _active = true;
   }
 
   /// Helper for [_overlayModeListener]

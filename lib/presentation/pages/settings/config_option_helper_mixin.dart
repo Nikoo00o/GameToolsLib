@@ -311,16 +311,20 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
   /// Like [buildListOptionSimple], but without a list and no buttons. just shows the [buildElement].
   /// For [buildElement] remember that the elementNumber starts at 1!
   Widget buildSimpleExpansionTile<LT>({
+    Key? key,
     required TranslationString title,
     TranslationString? description,
     required LT element,
     required Widget Function(BuildContext context, LT element) buildElement,
+    double? maxHeight,
   }) {
     return GTListEditor<LT>(
+      key: key,
       title: title,
       description: description,
       buildEditButton: false,
       buildDeleteButton: false,
+      maxHeight: maxHeight,
       elements: <LT>[element],
       onChange: () {},
       buildElement: (BuildContext context, LT element, int elementNumber) => buildElement.call(context, element),

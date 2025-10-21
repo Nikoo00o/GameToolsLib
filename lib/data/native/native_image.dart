@@ -29,7 +29,8 @@ part 'base_native_image.dart';
 ///
 /// [NativeImage.nativeSync] and [NativeImage.nativeAsync] are used internally in [GameWindow] to create images.
 ///
-/// For debugging you can also show this image in the ui with [showImageDialog]
+/// For debugging you can also show this image in the ui with [showImageDialog]. You can also modify pixel with
+/// [modifyPixel].
 final class NativeImage extends BaseNativeImage {
   /// Used for pixel comparison how high the total R, G, B value difference may be until a pixel is counted as invalid
   static int defaultPixelValueThreshold = 75;
@@ -86,11 +87,16 @@ final class NativeImage extends BaseNativeImage {
   /// A copy is only made here with [changeTypeSync] if the [type] should be [NativeImageType.RGBA], but the file has
   /// no alpha channel!
   factory NativeImage.readSync({required String path, NativeImageType type = NativeImageType.RGB}) {
-    final int flags = BaseNativeImage._loadFileType(path, type);
-    final NativeImage img = NativeImage._mat(cv.imread(path, flags: flags));
-    Logger.verbose("Loaded $img ${img.type != type ? "with different type ${img.type}" : ""} from path $path");
-    img.changeTypeSync(type);
-    return img;
+    try {
+      final int flags = BaseNativeImage._loadFileType(path, type);
+      final NativeImage img = NativeImage._mat(cv.imread(path, flags: flags));
+      Logger.verbose("Loaded $img ${img.type != type ? "with different type ${img.type}" : ""} from path $path");
+      img.changeTypeSync(type);
+      return img;
+    } catch (e, s) {
+      Logger.error("NativeImage internal error ", e, s);
+      throw ImageException(message: "can not read from $path for $type");
+    }
   }
 
   /// Creates an image by reading it from a [path] and otherwise throws a [ImageException] exception.
@@ -98,17 +104,23 @@ final class NativeImage extends BaseNativeImage {
   /// A copy is only made here with [changeTypeAsync] if the [type] should be [NativeImageType.RGBA], but the file has
   /// no alpha channel!
   static Future<NativeImage> readAsync({required String path, NativeImageType type = NativeImageType.RGB}) async {
-    final int flags = BaseNativeImage._loadFileType(path, type);
-    final NativeImage img = NativeImage._mat(await cv.imreadAsync(path, flags: flags));
-    Logger.verbose("Loaded $img ${img.type != type ? "with different type ${img.type}" : ""} from path $path");
-    await img.changeTypeAsync(type);
-    return img;
+    try {
+      final int flags = BaseNativeImage._loadFileType(path, type);
+      final NativeImage img = NativeImage._mat(await cv.imreadAsync(path, flags: flags));
+      Logger.verbose("Loaded $img ${img.type != type ? "with different type ${img.type}" : ""} from path $path");
+      await img.changeTypeAsync(type);
+      return img;
+    } catch (e, s) {
+      Logger.error("NativeImage internal error ", e, s);
+      throw ImageException(message: "can not read from $path for $type");
+    }
   }
 
   /// Returns true if the [_data] was successfully stored in [path]
   Future<bool> saveAsync(String path) async {
     if (_data != null) {
       Logger.verbose("Saving $this to path $path");
+      FileUtils.createDirectory(FileUtils.parentPath(path));
       return cv.imwriteAsync(path, _data!);
     }
     return false;
@@ -282,6 +294,10 @@ final class NativeImage extends BaseNativeImage {
       throw ImageException(message: "$this getSubImage at $x, $y, $width, $height for ${this.width}, ${this.height}");
     }
   }
+
+  /// Can be used to retrieve or modify the [pixel] at [row] and [col] Where row is y / height and col is x / width!
+  /// The color values indices of [pixel] will be B = 0, G = 1, R = 2, A = 3  (or if gray only 1 element)
+  void modifyPixel(void Function(int row, int col, List<num> pixel) callback) => _data!.forEachPixel(callback);
 
   /// Displays this in the ui by using [getDartImage]!
   Future<void> showImageDialog(BuildContext outerContext) async {

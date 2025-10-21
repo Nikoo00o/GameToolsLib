@@ -325,34 +325,39 @@ abstract final class InputManager {
   }
 
   /// Uses CTRL+C to copy something selected into the clipboard.
-  /// The [delayBeforeAndAfter] will be awaited after and is [FixedConfig.shortDelayMS] if null.
+  /// The [delayBeforeAndAfter] will be awaited after and is [FixedConfig.longDelayMS] if null.
   static Future<void> fillClipboard({Point<int>? delayBeforeAndAfter}) async {
-    final Duration duration = NumUtils.getRandomDuration(delayBeforeAndAfter);
     await keyPress(BoardKey.ctrlC); // additional 2 smaller delays
     Logger.spam("Got clipboard from selection");
-    await Utils.delay(duration);
+    await Utils.delay(NumUtils.getRandomDuration(delayBeforeAndAfter ?? FixedConfig.fixedConfig.longDelayMS));
   }
 
   /// Uses CTRL+V to paste the clipboard into something selected.
-  /// The [delayBeforeAndAfter] will be awaited after and is [FixedConfig.shortDelayMS] if null.
+  /// The [delayBeforeAndAfter] will be awaited after and is [FixedConfig.longDelayMS] if null.
   static Future<void> pasteClipboard({Point<int>? delayBeforeAndAfter}) async {
-    final Duration duration = NumUtils.getRandomDuration(delayBeforeAndAfter);
     await keyPress(BoardKey.ctrlV); // additional 2 smaller delays
     Logger.spam("Pasted clipboard into selection");
-    await Utils.delay(duration);
+    await Utils.delay(NumUtils.getRandomDuration(delayBeforeAndAfter ?? FixedConfig.fixedConfig.longDelayMS));
+  }
+
+  /// Uses CTRL+A to select something and the [delayBeforeAndAfter] will be awaited after and is
+  /// [FixedConfig.mediumDelayMS] if null.
+  static Future<void> selectText({Point<int>? delayBeforeAndAfter}) async {
+    await keyPress(BoardKey.ctrlA);
+    await Utils.delay(NumUtils.getRandomDuration(delayBeforeAndAfter ?? FixedConfig.fixedConfig.longDelayMS));
   }
 
   /// Tries to fill the clipboard with data of either some selected text with CTRL+C, or something at the position of
   /// the mouse cursor and returns the read data!
-  /// The [delayBeforeAndAfter] will be awaited 5 times and is [FixedConfig.shortDelayMS] if null.
+  /// The [delayBeforeAndAfter] will be awaited around 5 times and is a mix of [FixedConfig.shortDelayMS]
+  /// and [FixedConfig.mediumDelayMS] and [FixedConfig.longDelayMS] if null.
   /// This uses [fillClipboard], but preserves the initial clipboard data of the user!
   /// If [selectFirst] is true, then this will first select the data with CTRL+A with an additional await!
   ///
   /// Currently this can only restore your old clipboard text (and no image, or binary data!)
   static Future<String> getSelectedData({Point<int>? delayBeforeAndAfter, bool selectFirst = false}) async {
     if (selectFirst) {
-      await keyPress(BoardKey.ctrlA, delayBeforeAndBetweenInMS: delayBeforeAndAfter);
-      await Utils.delay(NumUtils.getRandomDuration(delayBeforeAndAfter));
+      await selectText(delayBeforeAndAfter: delayBeforeAndAfter);
     }
     final String oldData = await getClipboard(delayBeforeAndAfter: delayBeforeAndAfter);
     await fillClipboard(delayBeforeAndAfter: delayBeforeAndAfter);
@@ -364,8 +369,9 @@ abstract final class InputManager {
 
   /// Tries to paste [data] into some selected text field with CTRL+V, or something at the position of the mouse cursor.
   /// For example used in [sendChatMessage].
-  /// The [delayBeforeAndAfter] will be awaited 6 times and is [FixedConfig.shortDelayMS] if null.
-  /// This uses [pasteClipboard], but preserves the initial clipboard data of the user!
+  /// The [delayBeforeAndAfter] will be awaited around 6 times and is a mix of [FixedConfig.shortDelayMS] and
+  /// [FixedConfig.mediumDelayMS] and [FixedConfig.longDelayMS] if null. This uses [pasteClipboard], but preserves
+  /// the initial clipboard data of the user!
   ///
   /// Currently this can only restore your old clipboard text (and no image, or binary data!)
   static Future<void> pasteDataIntoSelected(String data, {Point<int>? delayBeforeAndAfter}) async {
@@ -381,7 +387,8 @@ abstract final class InputManager {
 
   /// Tries to open a default chat window with [LogicalKeyboardKey.enter] to then use similar functions like
   /// [pasteDataIntoSelected] to put the [text] into it and pressing enter again to send the chat message.
-  /// There will be in total 7 await calls for the [delay] which is [FixedConfig.shortDelayMS] if null. and one medium
+  /// There will be around 8 await calls for the [delay] which is a mix of [FixedConfig.shortDelayMS] and
+  /// [FixedConfig.mediumDelayMS] and [FixedConfig.longDelayMS] if null.
   ///
   /// Currently this can only restore your old clipboard text (and no image, or binary data!)
   ///
@@ -389,17 +396,16 @@ abstract final class InputManager {
   /// stored text (it will await 1 additional which may be overridden with the delay or medium optionally)!
   static Future<void> sendChatMessage(String text, {Point<int>? delay, bool clearFirst = false}) async {
     Logger.verbose("Sending chat message...: $text");
-    final Duration duration = NumUtils.getRandomDuration(delay ?? FixedConfig.fixedConfig.mediumDelayMS);
-    final String oldData = await getClipboard();
-    await setClipboard(text);
+    final String oldData = await getClipboard(delayBeforeAndAfter: delay);
+    await setClipboard(text, delayBeforeAndAfter: delay);
+    await Utils.delay(NumUtils.getRandomDuration(delay ?? FixedConfig.fixedConfig.mediumDelayMS));
     await keyPress(BoardKey.enter); // additional 2 smaller delays
-    await Utils.delay(duration);
+    await Utils.delay(NumUtils.getRandomDuration(delay ?? FixedConfig.fixedConfig.longDelayMS));
     if (clearFirst) {
-      await keyPress(BoardKey.ctrlA);
-      await Utils.delay(duration);
+      await selectText(delayBeforeAndAfter: delay);
     }
-    await pasteClipboard();
+    await pasteClipboard(delayBeforeAndAfter: delay);
     await keyPress(BoardKey.enter); // additional 2 smaller delays
-    await setClipboard(oldData);
+    await setClipboard(oldData, delayBeforeAndAfter: delay);
   }
 }

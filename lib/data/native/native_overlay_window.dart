@@ -24,6 +24,7 @@ final class NativeOverlayWindow {
   static bool? _shadow;
   static bool? _fullScreen;
   static bool? _maximized;
+  static bool? _minimized;
 
   static int? _width;
   static int? _height;
@@ -117,6 +118,7 @@ final class NativeOverlayWindow {
       _shadow = await windowManager.hasShadow();
       _fullScreen = await windowManager.isFullScreen();
       _maximized = await windowManager.isMaximized();
+      _minimized = await windowManager.isMinimized();
 
       if (_fullScreen == true) {
         await windowManager.setFullScreen(false);
@@ -124,12 +126,19 @@ final class NativeOverlayWindow {
       if (_maximized == true) {
         await windowManager.unmaximize();
       }
+      if (_minimized == true) {
+        await windowManager.restore();
+      }
       await windowManager.setBackgroundColor(Colors.transparent);
       await windowManager.setAlwaysOnTop(true);
       await windowManager.setAsFrameless();
 
       if (mode != OverlayMode.EDIT_UI && mode != OverlayMode.EDIT_COMP_IMAGES) {
         await setMouseEvents(ignore: true);
+      }
+
+      if (_minimized == true) {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
       }
 
       _isActive = true;
@@ -161,11 +170,17 @@ final class NativeOverlayWindow {
       if (_maximized == true) {
         await windowManager.maximize(vertically: true);
       }
+      if (_minimized == true) {
+        _oldSize = const Size(1280, 720);
+        _oldPos = const Offset(1, 1);
+        // await windowManager.minimize(); THIS DOES NOT WORK
+      }
 
       await setMouseEvents(ignore: false);
 
       await windowManager.setSize(_oldSize!);
       await windowManager.setPosition(_oldPos!, animate: false);
+
       _isActive = false;
       Logger.spam("NativeOverlayWindow deactivated overlay");
     } else {

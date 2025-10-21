@@ -393,6 +393,8 @@ base class OverlayElement with ChangeNotifier implements Model {
   ///
   /// Only affects [bounds], because [editable] is final and the identifier is used as file name! And visible should
   /// only be used for dynamic toggling!
+  ///
+  /// IMPORTANT: HERE THE SUPER METHOD CALL MUST HAPPEN LAST after your changes, because that notifies the listeners!!!
   @mustCallSuper
   void fromJson(Map<String, dynamic> json) {
     _bounds = ScaledBounds<int>.fromJson(json[JSON_BOUNDS] as Map<String, dynamic>);

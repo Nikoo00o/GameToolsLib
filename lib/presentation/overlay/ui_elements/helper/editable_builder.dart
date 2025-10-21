@@ -158,23 +158,30 @@ class _EditableBuilderState extends State<EditableBuilder> {
   Widget buildMiddleContainer(BuildContext context) {
     final double innerWidth = width - borderSize * 4;
     final double innerHeight = height - borderSize * 4;
-    return Container(
-      color: widget.alsoColorizeMiddle ? widget.borderColor.withValues(alpha: 0.15) : null,
-      width: innerWidth,
-      height: innerHeight,
-      child: Stack(
-        children: <Widget>[
-          Center(child: widget.child ?? Text(widget.overlayElement.identifier.tl(context))),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: innerWidth / 3, vertical: innerHeight / 3),
-            child: buildDraggable(
-              SystemMouseCursors.move,
-              _move,
-              Container(color: widget.borderColor.withValues(alpha: 0.05)),
-            ),
+    final double middleDistX = innerWidth / 3;
+    final double middleDistY = innerHeight / 3;
+    return Stack(
+      children: <Widget>[
+        IgnorePointer(
+          child: Container(
+            color: widget.alsoColorizeMiddle ? widget.borderColor.withValues(alpha: 0.15) : null,
+            width: innerWidth,
+            height: innerHeight,
+            child: Center(child: widget.child ?? Text(widget.overlayElement.identifier.tl(context))),
           ),
-        ],
-      ),
+        ),
+        Positioned(
+          left: middleDistX,
+          right: middleDistX,
+          top: middleDistY,
+          bottom: middleDistY,
+          child: buildDraggable(
+            SystemMouseCursors.move,
+            _move,
+            Container(color: widget.borderColor.withValues(alpha: 0.05)),
+          ),
+        ),
+      ],
     );
   }
 
