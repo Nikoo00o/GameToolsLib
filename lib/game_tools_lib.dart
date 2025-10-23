@@ -23,6 +23,7 @@ import 'package:game_tools_lib/core/logger/log_color.dart';
 import 'package:game_tools_lib/core/logger/log_message.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/data/assets/gt_asset.dart';
+import 'package:game_tools_lib/data/cached_data.dart';
 import 'package:game_tools_lib/data/native/ffi_loader.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/data/native/native_overlay_window.dart';
@@ -96,6 +97,7 @@ part 'package:game_tools_lib/domain/game/states/game_state.dart';
 /// For other file, or data storage, use [HiveDatabase] with [database]. For simple user modifiable json files, use
 /// [HiveDatabase.loadSimpleJson] and [HiveDatabase.storeSimpleJson] instead! And for static asset json files directly
 /// create and use an instance of [JsonAsset] anywhere. look at doc comments there for info and also [GTAsset]!).
+/// Or there are also other helper classes like [CachedData].
 ///
 /// Config Values should be saved in a subclass of [GameToolsConfig] and can be used with the correct type in [config].
 /// But you can also access this and every other instances from below in [gameManager].
@@ -382,7 +384,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   static void addEvent(GameEvent event) => _GameToolsLibEventLoop._addEventInternal(event);
 
   /// Returns a list of all currently active [GameEvent]s that match the [EventType]
-  static List<GameEvent> getEventByType<EventType>() {
+  static List<GameEvent> getEventByType<EventType extends GameEvent>() {
     final List<GameEvent> events = <GameEvent>[];
     _GameToolsLibEventLoop._runForAllEvents((GameEvent event) {
       if (event is EventType) {
@@ -418,6 +420,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     }
     Logger.verbose("Changing state from $oldState to $newState");
     await oldState?.onStop(newState);
+    oldState?.isLoading = false;
     _GameToolsLibEventLoop._currentState = newState;
     await newState.onStart(oldState!);
     if (GameManager._instance != null) {

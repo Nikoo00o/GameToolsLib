@@ -118,7 +118,7 @@ abstract base class GameManager<ConfigType extends GameToolsConfigBaseType> {
   void addEvent(GameEvent event) => GameToolsLib.addEvent(event);
 
   /// Returns a list of all currently active [GameEvent]s that match the [EventType]
-  List<GameEvent> getEventByType<EventType>() => GameToolsLib.getEventByType<EventType>();
+  List<GameEvent> getEventByType<EventType extends GameEvent>() => GameToolsLib.getEventByType<EventType>();
 
   /// Returns a list of all currently active [GameEvent]s that are in the group [group].
   /// You have to cast this to your event subclass manually if you need specific access!
@@ -138,7 +138,7 @@ abstract base class GameManager<ConfigType extends GameToolsConfigBaseType> {
   GameState get currentState => GameToolsLib.currentState;
 
   /// Returns the [currentState] as [StateType] (should be nullable type and checked afterwards)
-  StateType getCurrentState<StateType>() => currentState as StateType;
+  StateType getCurrentState<StateType extends GameState>() => currentState as StateType;
 
   /// Adds a new [listener] to the internal list of input listeners (important: this does not include the
   /// [LogInputListener]!)

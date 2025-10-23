@@ -132,7 +132,6 @@ void _testEvents() {
     tGm.addEvent(event); // don't add twice
     expect(GameToolsLib.events.length, 1, reason: "1 delayed event");
     expect(GameToolsLib.getEventByType<ExampleEvent>().length, 1, reason: "1 event by type");
-    expect(GameToolsLib.getEventByType<String>().length, 0, reason: "0 wrong type");
     expect(GameToolsLib.getEventByGroup(GameEventGroup.group1).length, 0, reason: "0 wrong group");
     expect(GameToolsLib.getEventByGroup(GameEventGroup.group3).length, 1, reason: "1 correct group");
     expect(GameToolsLib.getEventByGroup(GameEventGroup.group6).length, 1, reason: "1 correct group 2");

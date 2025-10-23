@@ -148,14 +148,14 @@ abstract base class GameEvent {
   void onOverlayModeChanged(OverlayMode? oldMode, OverlayMode newMode) {}
 
   /// Shortcut that returns the [GameToolsLib.currentState] as [StateType]
-  StateType getCurrentState<StateType>() => GameToolsLib.currentState as StateType;
+  StateType getCurrentState<StateType extends GameState>() => GameToolsLib.currentState as StateType;
 
   /// Synchronously receives [data] from other events sent from [sendDataToEventsT], or [sendDataToEventsG].
   void onData(dynamic data) {}
 
   /// Synchronously sends some [data] to all currently active [GameEvent]s that match the [EventType] in their [onData]
   /// callback!
-  void sendDataToEventsT<EventType>(dynamic data) {
+  void sendDataToEventsT<EventType extends GameEvent>(dynamic data) {
     Logger.spam("Sending data from ", this, " to other events...");
     _GameToolsLibEventLoop._runForAllEvents((GameEvent event) {
       if (event != this && event is EventType) {

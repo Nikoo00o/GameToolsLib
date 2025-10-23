@@ -7,7 +7,7 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// [deleteFile] directly!
 ///
 /// For simple dynamic user modifiable json files, use [loadSimpleJson] and [storeSimpleJson] with [simpleJsonExists]
-/// instead within the [GameToolsConfig.dynamicDataFolder]!
+/// instead within the [GameToolsConfig.dynamicDataFolder]! Or better yet extend from the helper class [CachedData]!
 ///
 /// For static asset files shipped with the application, look at [GTAsset] instead!
 ///
@@ -177,7 +177,11 @@ final class HiveDatabase {
   /// If this is called from testing, it will modify no file!
   void writeJson({required String absoluteFilePath, required Map<String, dynamic> json}) {
     final String data = _encoder.convert(json);
-    File(absoluteFilePath).writeAsStringSync(data, flush: true);
+    final File file = File(absoluteFilePath);
+    if (file.existsSync() == false) {
+      file.createSync(recursive: true);
+    }
+    file.writeAsStringSync(data, flush: true);
   }
 
   /// Same as [readFile], but returns a json map instead and takes in an absolute file path!
@@ -188,6 +192,9 @@ final class HiveDatabase {
       return null;
     }
     final String data = File(absoluteFilePath).readAsStringSync();
+    if (data.isEmpty) {
+      return null;
+    }
     return jsonDecode(data) as Map<String, dynamic>?;
   }
 
@@ -200,7 +207,8 @@ final class HiveDatabase {
   /// Used to store simple json modifiable files within subfolders of [GameToolsConfig.dynamicDataFolder] with the
   /// ending ".json".
   ///
-  /// Of course [convertToJson] must contain the [Model.toJson] method from the interface!
+  /// Of course [convertToJson] must contain the [Model.toJson] method from the interface! Similar to the helper class
+  /// [CachedData] which you can extend from!
   ///
   /// If this is called from testing, it will modify no file!
   void storeSimpleJson({required List<String> subPath, required Model convertToJson}) {
@@ -216,7 +224,8 @@ final class HiveDatabase {
   /// Used to load simple json modifiable files within subfolders of [GameToolsConfig.dynamicDataFolder] with the
   /// ending ".json".
   ///
-  /// If the file does not exist yet, this will return null!
+  /// If the file does not exist yet, this will return null! Used in the helper class [CachedData] which you can
+  /// extend from!
   ///
   /// Of course you have to convert the returned map to your object with a fromJson constructor!
   ///
@@ -228,6 +237,9 @@ final class HiveDatabase {
       return null;
     }
     final String data = file.readAsStringSync();
+    if (data.isEmpty) {
+      return null;
+    }
     final Map<String, dynamic>? json = jsonDecode(data) as Map<String, dynamic>?;
     if (json == null) {
       Logger.warn("Simple JSON file existed at $path but had invalid format");

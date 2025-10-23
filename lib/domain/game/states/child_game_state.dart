@@ -33,11 +33,11 @@ abstract base class ChildGameState<ParentStateType extends GameState> extends Ga
 
   @override
   /// Also checks additional [parentState]!
-  bool isType<StateType>() => super.isType<StateType>() || parentState.isType<StateType>();
+  bool isType<StateType extends GameState>() => super.isType<StateType>() || parentState.isType<StateType>();
 
   @override
   /// This checks the [parentState] first and returns it if it matches and otherwise checks the child (this)!
-  StateType asType<StateType>() {
+  StateType asType<StateType extends GameState>() {
     if (parentState is StateType) {
       return parentState as StateType;
     } else {

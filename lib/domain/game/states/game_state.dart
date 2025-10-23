@@ -10,7 +10,8 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 ///
 /// You can also override the following: [onStart], [onStop], [onOpenChange], [onFocusChange].
 ///
-/// In subclasses you can do your custom initialization in the constructor and you can access everything there!
+/// In subclasses you can do your custom initialization in the constructor and you can access everything there! You
+/// can also use [isLoading] as you like.
 ///
 /// If you want to compare objects of this, you have to implement custom equality yourself in your sub classes! Per
 /// default it compares if references point to the same object. Important to check if a state is of a specific type,
@@ -26,10 +27,16 @@ abstract base class GameState {
   /// Internal counter for better logging [_idCounter]
   final int _id;
 
+  /// Mutable var that may be accessed and modified directly to signal some kind of loading screen during the
+  /// transition from  this current state to the next (if you have components that need to listen to something like
+  /// this!). But probably don't include this in any comparison! This will automatically be reset after [onStop] is
+  /// done for this!
+  bool isLoading;
+
   static int _idCounter = 0;
 
   /// This logs something, so only use this after [GameToolsLib.initGameToolsLib]!
-  GameState() : _id = _idCounter++ {
+  GameState({this.isLoading = false}) : _id = _idCounter++ {
     Logger.verbose("Created new state $this");
   }
 
@@ -79,11 +86,11 @@ abstract base class GameState {
 
   /// Returns if this state object is a subtype of [StateType], but subclasses may also override this! (for example
   /// [ChildGameState] also checks its parent state!). And then you can use [asType] for the cast
-  bool isType<StateType>() => this is StateType;
+  bool isType<StateType extends GameState>() => this is StateType;
 
   /// Similar to [isType] it will return this as [StateType], but is overridden in child state to return the parent
   /// state or itself depending on the type!
-  StateType asType<StateType>() => this as StateType;
+  StateType asType<StateType extends GameState>() => this as StateType;
 
   @override
   String toString() => "$runtimeType($_id)";

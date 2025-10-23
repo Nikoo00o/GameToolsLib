@@ -371,7 +371,7 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
   ///
   /// Don't manually use [setActive], it will only be used internally automatically
   void changeMode(OverlayMode newOverlayMode, {bool setActive = true}) {
-    if (!_active) {
+    if (setActive == false && !_active) {
       Logger.warn("Tried to call OverlayManager.changeMode while it was not active with $newOverlayMode");
       return;
     }
