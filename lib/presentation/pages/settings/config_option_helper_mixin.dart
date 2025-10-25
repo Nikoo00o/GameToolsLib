@@ -239,6 +239,7 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
       GTListOnElementUpdate<LT> onElementUpdate,
     )?
     buildCreateOrEditDialog,
+    double? maxHeight,
   }) {
     if (buildCreateOrEditDialog == null) {
       if (buildElement != null) {
@@ -254,6 +255,7 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
           buildDeleteButton: buildEditButtons,
           elements: elements as List<int>,
           onChange: onChange,
+          maxHeight: maxHeight,
         );
       } else if (LT == String) {
         return GTListEditorString(
@@ -263,6 +265,7 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
           buildDeleteButton: buildEditButtons,
           elements: elements as List<String>,
           onChange: onChange,
+          maxHeight: maxHeight,
         );
       } else {
         throw ConfigException(message: "buildListOption was not given a buildCreateOrEditDialog for type $LT");
@@ -277,6 +280,7 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
       onChange: onChange,
       buildElement: buildElement,
       buildCreateOrEditDialog: buildCreateOrEditDialog,
+      maxHeight: maxHeight,
     );
   }
 

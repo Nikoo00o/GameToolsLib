@@ -312,6 +312,7 @@ final class GTListEditorInt extends GTListEditor<int> {
     super.description,
     super.buildEditButton,
     super.buildDeleteButton,
+    super.maxHeight,
   }) : super(
          buildCreateOrEditDialog:
              (BuildContext context, int? oldElement, int elementNumber, GTListOnElementUpdate<int> update) {
@@ -335,6 +336,7 @@ final class GTListEditorString extends GTListEditor<String> {
     super.description,
     super.buildEditButton,
     super.buildDeleteButton,
+    super.maxHeight,
   }) : super(
          buildCreateOrEditDialog:
              (BuildContext context, String? oldElement, int elementNumber, GTListOnElementUpdate<String> update) {

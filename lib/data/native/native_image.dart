@@ -22,7 +22,8 @@ part 'base_native_image.dart';
 /// Use either [NativeImage.readSync], or [readAsync] to create an instance of this. And you can also use
 /// [saveSync], or [saveAsync] to save this to the disk.
 ///
-/// For comparison there are multiple options like [equals], [pixelSimilarity], etc
+/// For comparison there are multiple options like [equals], [pixelSimilarity], etc. But you can also try to find
+/// another image inside of this image with [findPositionOfSubImage].
 ///
 /// Important: always try to use async methods instead of sync methods! You can also modify the internal data with
 /// for example [resize] or [changeTypeAsync].
@@ -293,6 +294,65 @@ final class NativeImage extends BaseNativeImage {
     } else {
       throw ImageException(message: "$this getSubImage at $x, $y, $width, $height for ${this.width}, ${this.height}");
     }
+  }
+
+  /// Tries to find [subImage] within this image and returns the position of it or null if it was not found.
+  /// You can use the different opencv template matching modes TM_SQDIFF = 0, TM_SQDIFF_NORMED = 1, TM_CCORR = 2,
+  /// TM_CCORR_NORMED = 3, TM_CCOEFF =4, TM_CCOEFF_NORMED = 5.
+  ///
+  /// Th [threshold] can also be customized on how much the search has to match (higher is stricter).
+  ///
+  /// Important: this image will be cloned to [NativeImageType.RGB] if it has a different type, so it's best to use
+  /// that type directly. Also for the other [subImage] it has to be either [NativeImageType.RGB] or
+  /// [NativeImageType.RGBA], but the alpha channel will be ignored!
+  ///
+  /// Also very important: of course if using an asset image it also has to be scaled to the correct size as how it
+  /// would look for the current window!!!
+  Bounds<int>? findPositionOfSubImage(
+    NativeImage subImage, {
+    int matchMethod = cv.TM_CCOEFF_NORMED,
+    double threshold = 0.65,
+  }) {
+    if (_data == null || subImage._data == null || subImage.width >= width || subImage.height >= height) {
+      return null;
+    }
+    changeTypeSync(NativeImageType.RGB); // src image must be RGB!
+    cv.Mat? mask;
+    final cv.Mat srcImg = _data!;
+    late final cv.Mat templateImg;
+    cv.Mat? toClean;
+    if (subImage.type == NativeImageType.RGBA) {
+      final cv.VecMat channels = cv.split(subImage._data!);
+      // BGR channels
+      templateImg = cv.merge(cv.VecMat.fromList(<cv.Mat>[channels[0], channels[1], channels[2]]));
+      final (double val, cv.Mat newMask) = cv.threshold(channels[3], 1, 255, cv.THRESH_BINARY); // ignore alpha channel!
+      channels.dispose();
+      mask = newMask;
+      toClean = templateImg;
+    } else {
+      templateImg = subImage._data!;
+    }
+
+    final int resultCols = srcImg.cols - templateImg.cols + 1;
+    final int resultRows = srcImg.rows - templateImg.rows + 1;
+    final cv.Mat resultImg = cv.Mat.create(rows: resultRows, cols: resultCols, type: cv.MatType.CV_32FC1);
+
+    cv.matchTemplate(srcImg, templateImg, matchMethod, result: resultImg, mask: mask);
+    if (matchMethod != cv.TM_CCOEFF_NORMED && matchMethod != cv.TM_CCORR_NORMED && matchMethod != cv.TM_SQDIFF_NORMED) {
+      cv.normalize(resultImg, resultImg, alpha: 0, beta: 1, normType: cv.NORM_MINMAX);
+    }
+    final (double minVal, double maxVal, cv.Point minLoc, cv.Point maxLoc) = cv.minMaxLoc(resultImg);
+    final cv.Point matchLoc = (matchMethod == cv.TM_SQDIFF || matchMethod == cv.TM_SQDIFF_NORMED) ? minLoc : maxLoc;
+    final double similarity = (matchMethod == cv.TM_SQDIFF || matchMethod == cv.TM_SQDIFF_NORMED) ? 1 - minVal : maxVal;
+
+    if (similarity < threshold) {
+      return null;
+    }
+    Logger.spam("Found sub image ", subImage, " in ", this, " with similarity: ", similarity);
+    resultImg.dispose();
+    mask?.dispose();
+    toClean?.dispose();
+    return Bounds<int>(x: matchLoc.x.toInt(), y: matchLoc.y.toInt(), width: templateImg.cols, height: templateImg.rows);
   }
 
   /// Can be used to retrieve or modify the [pixel] at [row] and [col] Where row is y / height and col is x / width!

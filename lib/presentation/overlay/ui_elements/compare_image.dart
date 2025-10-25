@@ -80,17 +80,17 @@ base class CompareImage extends OverlayElement {
     final TranslationString identifier = TranslationString.raw(fileName);
     final OverlayElement overlayElement =
         OverlayElement.cachedInstance(identifier) ??
-        OverlayElement.storeToCache(
-          CompareImage.newInstance(
-            identifier: identifier,
-            editable: editable,
-            contentBuilder: contentBuilder,
-            visible: visible,
-            bounds: bounds,
-            unscaledImage: unscaledImage,
-            overlayAwareComparison: overlayAwareComparison,
-          ),
-        );
+            OverlayElement.storeToCache(
+              CompareImage.newInstance(
+                identifier: identifier,
+                editable: editable,
+                contentBuilder: contentBuilder,
+                visible: visible,
+                bounds: bounds,
+                unscaledImage: unscaledImage,
+                overlayAwareComparison: overlayAwareComparison,
+              ),
+            );
     return overlayElement as CompareImage;
   }
 
@@ -113,22 +113,23 @@ base class CompareImage extends OverlayElement {
     bool isMultiLanguage = false,
     NativeImageType imageType = NativeImageType.RGB,
     bool overlayAwareComparison = true,
-  }) => CompareImage(
-    editable: editable,
-    contentBuilder: contentBuilder,
-    visible: visible,
-    bounds: ScaledBounds<int>(
-      Bounds<int>(x: x, y: y, width: width, height: height),
-      creationWidth: null,
-      creationHeight: null,
-    ),
-    fileName: fileName,
-    subFolder: subFolder,
-    fileEnding: fileEnding,
-    isMultiLanguage: isMultiLanguage,
-    imageType: imageType,
-    overlayAwareComparison: overlayAwareComparison,
-  );
+  }) =>
+      CompareImage(
+        editable: editable,
+        contentBuilder: contentBuilder,
+        visible: visible,
+        bounds: ScaledBounds<int>(
+          Bounds<int>(x: x, y: y, width: width, height: height),
+          creationWidth: null,
+          creationHeight: null,
+        ),
+        fileName: fileName,
+        subFolder: subFolder,
+        fileEnding: fileEnding,
+        isMultiLanguage: isMultiLanguage,
+        imageType: imageType,
+        overlayAwareComparison: overlayAwareComparison,
+      );
 
   /// New instance constructor should only be called internally from sub classes to create a new object instance!
   /// From the outside, use the default factory constructor instead!
@@ -172,7 +173,8 @@ base class CompareImage extends OverlayElement {
       img = _scaledImageCache = await unscaledImage.validContent.clone(); // first load clone
       if (bounds.width != img.width || bounds.height != img.height) {
         Logger.warn(
-          "$runtimeType first load: size of image $img ${img.width}, ${img.height} does not match size of bounds $bounds",
+          "$runtimeType first load: size of image $img ${img.width}, ${img
+              .height} does not match size of bounds $bounds",
         );
       }
     }
@@ -238,13 +240,27 @@ base class CompareImage extends OverlayElement {
   /// bot right corner (worse performance). Its best to always choose a target area even if its big
   ///
   /// Just returns null if the window was closed
-  Future<Bounds<int>?> findPos(Bounds<int>? targetBounds) async {
+  ///
+  /// Important: alpha of this image will be removed and also alpha of the window image will be removed!
+  ///
+  /// Also very important: of course if using an asset image it also has to be scaled to the correct size as how it
+  /// would look for the current window!!!
+  ///
+  /// You can use the different opencv template matching modes TM_SQDIFF = 0, TM_SQDIFF_NORMED = 1, TM_CCORR = 2,
+  /// TM_CCORR_NORMED = 3, TM_CCOEFF =4, TM_CCOEFF_NORMED = 5.
+  Future<Bounds<int>?> findPos(Bounds<int>? targetBounds, {
+    int matchMethod = 5,
+    double threshold = 0.65,
+  }) async {
     if (!attachedWindow.isOpen) {
       return null;
     }
     final NativeImage windowImage = await windowImageToCompareAgainst(targetBounds);
     final NativeImage myImage = await scaledImage;
-    throw UnimplementedError("todo: implement"); // todo: implement with template matching from native image
+    final Bounds<int>? bounds = windowImage.findPositionOfSubImage(
+        myImage, threshold: threshold, matchMethod: matchMethod);
+    windowImage.cleanupMemory();
+    return bounds;
   }
 
   /// This will take a new screenshot of the current [displayDimension] and then save the [unscaledImage] with the
