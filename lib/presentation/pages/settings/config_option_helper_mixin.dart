@@ -224,7 +224,10 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
   /// the times.
   ///
   /// If you only want to show some elements expandable, use [buildListOptionSimple] instead (could also optionally
-  /// still include add and delete buttons)
+  /// still include add and delete buttons).
+  ///
+  ///
+  /// Currently the [buildTopActions] can only be used when using not a default type.
   Widget buildListOption<LT>({
     required TranslationString title,
     TranslationString? description,
@@ -240,6 +243,8 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
     )?
     buildCreateOrEditDialog,
     double? maxHeight,
+    // ignore: avoid_positional_boolean_parameters
+    List<Widget>? Function(BuildContext context, bool isExpanded, VoidCallback rebuild)? buildTopActions,
   }) {
     if (buildCreateOrEditDialog == null) {
       if (buildElement != null) {
@@ -281,6 +286,7 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
       buildElement: buildElement,
       buildCreateOrEditDialog: buildCreateOrEditDialog,
       maxHeight: maxHeight,
+      buildTopActions: buildTopActions,
     );
   }
 
@@ -308,7 +314,7 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
       onChange: () {},
       buildElement: buildElement,
       buildCreateOrEditDialog: (_, _, _, _) => const SizedBox(),
-      buildTopActions: addNewElementCallback != null ? null : (BuildContext context, bool isExpanded) => <Widget>[],
+      buildAddButton: addNewElementCallback != null,
     );
   }
 
@@ -333,7 +339,7 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
       onChange: () {},
       buildElement: (BuildContext context, LT element, int elementNumber) => buildElement.call(context, element),
       buildCreateOrEditDialog: (_, _, _, _) => const SizedBox(),
-      buildTopActions: (BuildContext context, bool isExpanded) => <Widget>[],
+      buildAddButton: false,
     );
   }
 

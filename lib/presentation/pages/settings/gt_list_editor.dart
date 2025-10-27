@@ -32,6 +32,9 @@ base class GTListEditor<T> extends StatefulWidget {
   /// This should be the case if you dont want your elements to be deleted!
   final bool buildDeleteButton;
 
+  /// If this is false, then the top add button will not be build. Otherwise per default it will be build when expanded!
+  final bool buildAddButton;
+
   /// This can be used to build custom widgets for the left part of the row that is build for each card of the
   /// [elements]. If this is null, then a default "Element $elementNumber: [T.toString]" [Text] will be build for
   /// each child! The [elementNumber] is the not zero based index of the elements (from 1 to size)
@@ -57,12 +60,13 @@ base class GTListEditor<T> extends StatefulWidget {
   )
   buildCreateOrEditDialog;
 
-  /// Optional builder method to build the top bar (per default this is null and builds nothing when not expanded and
-  /// otherwise only the add button to add a new item!). Important: there will always be a sizedbox with 16 px and
-  /// then the dropdown icon on the right of your returned list! This can be used to prevent new elements from being
-  /// added!
+  /// Optional builder method to build the top bar when expanded (per default this is null and builds nothing when not
+  /// expanded and otherwise only the add button to add a new item!). Important: there will always be a sizedbox
+  /// with 16 px and then the dropdown icon on the right of your returned list! This can be used to prevent new
+  /// elements from being added! To control if the add button should be build, use [buildAddButton]! If expanded is
+  /// false this can just return null! The [rebuild] method can be called after state changes in own buttons!
   // ignore: avoid_positional_boolean_parameters
-  final List<Widget> Function(BuildContext context, bool isExpanded)? buildTopActions;
+  final List<Widget>? Function(BuildContext context, bool isExpanded, VoidCallback rebuild)? buildTopActions;
 
   /// Optional callback which if not null will be called instead of opening the dialog when a new element should be
   /// created after pressing the add button. This is useful to use with [buildEditButton] being false, but
@@ -83,6 +87,7 @@ base class GTListEditor<T> extends StatefulWidget {
     this.description,
     this.buildEditButton = true,
     this.buildDeleteButton = true,
+    this.buildAddButton = true,
     this.buildElement,
     required this.buildCreateOrEditDialog,
     this.buildTopActions,
@@ -253,13 +258,15 @@ base class _GTListEditorState<T> extends State<GTListEditor<T>> with GTBaseWidge
     return <Widget>[child];
   }
 
+  void _updateCallback() => setState(() {});
+
   Widget buildTopBar(BuildContext context) {
-    final List<Widget>? children = widget.buildTopActions?.call(context, _expanded);
+    final List<Widget>? children = widget.buildTopActions?.call(context, _expanded, _updateCallback);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         if (children != null) ...children,
-        if (children == null && _expanded)
+        if (widget.buildAddButton && _expanded)
           IconButton(
             onPressed: () => onCreate(widget.elements.length),
             icon: const Icon(Icons.add_circle_sharp),

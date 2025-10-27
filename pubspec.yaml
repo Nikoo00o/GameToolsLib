@@ -56,7 +56,7 @@ flutter:
         pluginClass: GameToolsLibPluginCApi
         ffiPlugin: true
 
-  # Asset file folders to be used in this and following packages!
+  # Asset file folders to be used in this and following packages! Avoid spaces (use underscores _ instead)!
   assets:
     - assets/
     - assets/locales/

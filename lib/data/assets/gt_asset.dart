@@ -46,6 +46,9 @@ part 'locale_asset.dart';
 /// projects "/assets/images" folder that is included in your pubspec.yaml! and then you would also put a
 /// "test_de.png" there for a different language! But if you use a library (for example this game tools lib) that
 /// contains the same "test_en.png" image than you in your final app project, then yours will replace the old one!
+///
+/// Important: you should not use spaces inside of the asset subfolders and also not in the file names (use
+/// underscores _ instead)!
 abstract base class GTAsset<T> {
   /// The path after "data/flutter_assets/assets" or "data/flutter_assets/packages/game_tools_lib/assets" (which
   /// relates to the "assets" folder in your project directory [GameToolsConfig.staticAssetFolders]) to the folder

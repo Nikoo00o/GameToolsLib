@@ -223,8 +223,16 @@ base class OverlayElement with ChangeNotifier implements Model {
   /// rather the already scaled [displayDimension]) and should return true (which it does per default) if it should
   /// capture the user clicks instead of the underlying window! Can be overridden to return false and just display
   /// some hover mechanic instead. When overriding and checking the [mousePos], then use [displayDimension] for
-  /// comparison!
+  /// comparison! You can also check inner positions with the translated [mousePos] with [getInnerMousePos]!
   bool onMouseEnter(Point<double> mousePos) => true;
+
+  /// Converts the [windowMousePos] to local space relative to the [displayDimension] or null if it is not contained!
+  Point<double>? getInnerMousePos(Point<double> windowMousePos) {
+    if (displayDimension == null || displayDimension!.contains(windowMousePos) == false) {
+      return null;
+    }
+    return Point<double>(windowMousePos.x - displayDimension!.x, windowMousePos.y - displayDimension!.y);
+  }
 
   /// If [editable] and [onMouseEnter] returned true, this is called when the mouse leaves the [bounds] (or rather
   /// [displayDimension]) again.

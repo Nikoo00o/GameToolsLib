@@ -60,6 +60,12 @@ final class Bounds<T extends num> implements Model {
     return Point<T>((x + width / 2.0) as T, (y + height / 2.0) as T);
   }
 
+  /// Shortcut conversion
+  Bounds<int> toIntBounds() => Bounds<int>.pos(pos: pos.toIntPoint(), size: size.toIntPoint());
+
+  /// Shortcut conversion
+  Bounds<double> toDoubleBounds() => Bounds<double>.pos(pos: pos.toDoublePoint(), size: size.toDoublePoint());
+
   Bounds<T> operator +(Bounds<T> other) => Bounds<T>.pos(pos: pos + other.pos, size: size + other.size);
 
   Bounds<T> operator -(Bounds<T> other) => Bounds<T>.pos(pos: pos - other.pos, size: size - other.size);
@@ -102,9 +108,17 @@ final class Bounds<T extends num> implements Model {
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Bounds && x == other.x && y == other.y && width == other.width && height == other.height;
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! Bounds) return false;
+    if (T == double) {
+      return (x as double).isEqual(other.x) &&
+          (y as double).isEqual(other.y) &&
+          (width as double).isEqual(other.width) &&
+          (height as double).isEqual(other.height);
+    }
+    return x == other.x && y == other.y && width == other.width && height == other.height;
+  }
 
   @override
   int get hashCode => Object.hash(x, y, width, height);

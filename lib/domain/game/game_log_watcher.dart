@@ -13,7 +13,9 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// alternative if you want (for an example you can also look at the [ExampleLogWatcher] that is used for testing.
 /// Important: if your log file has a specific open/start signal for each session, then you can use
 /// [onlyHandleLastLinesUntil] to only handle last lines until the line matches it and then stop (to avoid false
-/// events), but per default it is null and [handleLastLine] is executed until it returns true.
+/// events), but per default it is null and [handleLastLine] is executed until it returns true. You can also override
+/// [onlyHandleLastLinesWhen] to only conditionally load last lines and for example only load them if window is open,
+/// but set the delay to almost infinite!
 ///
 /// You also don't have to decide on listeners in the constructor call and can use [addListener], or [removeListener]
 /// later. If your game does not have a log file, then just use the [GameLogWatcher.empty] constructor. And you can
@@ -237,6 +239,11 @@ base class GameLogWatcher {
     return false;
   }
 
+  /// Per default this just returns true, but sub classes could for example check if the window is open, etc!
+  /// Important: this is called right before the loop starts, so if you want to check if the window is open, you have
+  /// to use [GameWindow.updateAndGetOpen] instead of [GameWindow.isOpen] on the [GameToolsLib.mainGameWindow]!
+  bool onlyHandleLastLinesWhen() => true;
+
   /// called after [GameManager.onStart] to process old lines if the game was already running longer.
   /// calls [handleLastLine] until it returns true. It will stop when a line matches [onlyHandleLastLinesUntil] if
   /// its not null! Also first skips lines with [shouldLineBeSkipped]!
@@ -246,6 +253,11 @@ base class GameLogWatcher {
     if (_file != null) {
       _lastModified = await _file!.lastModified(); // update to current last modified time and pos!
       _currentPos = await _file!.length();
+
+      if (onlyHandleLastLinesWhen() == false) {
+        Logger.verbose("Did not parse old log lines");
+        return;
+      }
 
       final DateTime oldest = DateTime.now().subtract(delayForOldLines); // only seconds precision
       if (oldest.millisecondsSinceEpoch - _lastModified!.millisecondsSinceEpoch >= 1000) {

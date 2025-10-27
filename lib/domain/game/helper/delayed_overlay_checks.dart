@@ -49,6 +49,9 @@ base mixin DelayedOverlayChecks<OverlayStateType extends GTOverlayState> {
   /// first tick counter for the two methods
   static int _currentPositionAndClickTicks = _maxPositionAndClickTicks;
 
+  /// Modules also set and updated in [executeDelayedUpdates] and cached here!
+  List<Module<dynamic>>? _modules;
+
   /// Will be called from [executeDelayedUpdates] inside of a check for [active] to check if the mouse hovers over
   /// a [OverlayElement.clickable] element and then [NativeOverlayWindow.setMouseEvents] for the passthrough setting
   /// only if the [OverlayElement.visible] is true .
@@ -126,6 +129,10 @@ base mixin DelayedOverlayChecks<OverlayStateType extends GTOverlayState> {
         final bool posChanged = await checkWindowPosition();
         if (!posChanged) {
           await checkMouseForClickableOverlayElements();
+        }
+        _modules ??= GameToolsLib.gameManager().modules;
+        for (final Module<dynamic> module in _modules!) {
+          await module.onDelayedOverlayUpdate();
         }
       }
     }

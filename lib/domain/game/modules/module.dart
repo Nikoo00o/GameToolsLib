@@ -2,9 +2,9 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 
 /// Subclasses of this are used in [GameManager.moduleConfiguration] to split of code/logic to handle:
 ///
-/// 1. the callbacks [onStart], [onStop], [onUpdate], [onOpenChange], [onFocusChange], [onStateChange] which can
-/// optionally be overridden like in the [GameManager] subclass itself (important: these callbacks of the module will
-/// always be called after those of the game manager!),
+/// 1. the callbacks [onStart], [onStop], [onUpdate], [onDelayedOverlayUpdate], [onOpenChange], [onFocusChange],
+/// [onStateChange] which can optionally be overridden like in the [GameManager] subclass itself (important:
+/// these callbacks of the module will always be called after those of the game manager!),
 ///
 /// 2. additional [MutableConfigOption] similar to [MutableConfig.getConfigurableOptions] but without any
 /// groups and instead grouped together with the [moduleName] which will be loaded once with
@@ -46,6 +46,10 @@ abstract base class Module<GameManagerType extends GameManagerBaseType> {
   /// delays inside of this, then check [GameWindow.isOpen] and [GameWindow.hasFocus] after every delay, because it
   /// might have changed in the meantime (see [onFocusChange] and [onOpenChange])!
   Future<void> onUpdate() async {}
+
+  /// This can optionally also be overridden and it is called at the end of [OverlayManager.executeDelayedUpdates] every
+  /// [FixedConfig.overlayRefreshTicks] normal update ticks only if the overlay is active (so its a slower update).
+  Future<void> onDelayedOverlayUpdate() async {}
 
   /// Is called when the open status changes for [window]. This will also be called when it opens for the first time!
   /// Don't use any delays inside of this!

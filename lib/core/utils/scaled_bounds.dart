@@ -69,6 +69,16 @@ final class ScaledBounds<T extends num> implements Model {
     );
   }
 
+  /// Shortcut constructor
+  factory ScaledBounds.defaultFromUnscaled(Bounds<T> unscaled, {GameWindow? gameWindow}) {
+    return ScaledBounds<T>(
+      unscaled,
+      creationWidth: 2560,
+      creationHeight: 1440,
+      gameWindow: gameWindow,
+    );
+  }
+
   /// The (x, y) scale factor for the current [gameWindow]'s [GameWindow.size] in relation to the initial
   /// [creationWidth] and [creationHeight].
   ///
@@ -115,6 +125,18 @@ final class ScaledBounds<T extends num> implements Model {
     return doubleBounds.scale(scaleFactor.x, scaleFactor.y);
   }
 
+  /// Returns the [scaledBounds] as [int]
+  Bounds<int> get scaledBoundsI {
+    final Point<double> scaleFactor = this.scaleFactor;
+    final Bounds<int> intBounds = Bounds<int>(
+      x: unscaledBounds.x.toInt(),
+      y: unscaledBounds.y.toInt(),
+      width: unscaledBounds.width.toInt(),
+      height: unscaledBounds.height.toInt(),
+    )..scale(scaleFactor.x, scaleFactor.y);
+    return intBounds;
+  }
+
   /// Accesses [unscaledBounds] scaled by [scaleFactor]!
   T get x => _scaleX(unscaledBounds.x);
 
@@ -146,6 +168,22 @@ final class ScaledBounds<T extends num> implements Model {
   /// [creationHeight] to the current [GameWindow.size] of the current [gameWindow]!
   ScaledBounds<T> move(Bounds<T> newPos) => ScaledBounds<T>(
     newPos,
+    creationWidth: gameWindow.width,
+    creationHeight: gameWindow.height,
+    gameWindow: gameWindow,
+  );
+
+  /// Shortcut conversion
+  ScaledBounds<int> toIntScaledBounds() => ScaledBounds<int>(
+    unscaledBounds.toIntBounds(),
+    creationWidth: gameWindow.width,
+    creationHeight: gameWindow.height,
+    gameWindow: gameWindow,
+  );
+
+  /// Shortcut conversion
+  ScaledBounds<double> toDoubleScaledBounds() => ScaledBounds<double>(
+    unscaledBounds.toDoubleBounds(),
     creationWidth: gameWindow.width,
     creationHeight: gameWindow.height,
     gameWindow: gameWindow,

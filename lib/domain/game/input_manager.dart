@@ -394,18 +394,48 @@ abstract final class InputManager {
   ///
   /// If [clearFirst] is overridden to true, then it will first select with CTRL+A and paste over the currently
   /// stored text (it will await 1 additional which may be overridden with the delay or medium optionally)!
-  static Future<void> sendChatMessage(String text, {Point<int>? delay, bool clearFirst = false}) async {
+  ///
+  /// Per default this always returns true, but if you pass the [cancelOn] callback and if that one returns true,
+  /// then this method will stop and return with false (will be checked after every long delay).
+  ///
+  /// [isChatAlreadyOpen] can also be used to prevent the first enter press!
+  static Future<bool> sendChatMessage(
+    String text, {
+    Point<int>? delay,
+    bool clearFirst = false,
+    bool Function()? cancelOn,
+    bool isChatAlreadyOpen = false,
+  }) async {
     Logger.verbose("Sending chat message...: $text");
     final String oldData = await getClipboard(delayBeforeAndAfter: delay);
     await setClipboard(text, delayBeforeAndAfter: delay);
     await Utils.delay(NumUtils.getRandomDuration(delay ?? FixedConfig.fixedConfig.mediumDelayMS));
-    await keyPress(BoardKey.enter); // additional 2 smaller delays
-    await Utils.delay(NumUtils.getRandomDuration(delay ?? FixedConfig.fixedConfig.longDelayMS));
+    if (cancelOn?.call() ?? false) {
+      await setClipboard(oldData, delayBeforeAndAfter: delay);
+      return false;
+    }
+    if (!isChatAlreadyOpen) {
+      await keyPress(BoardKey.enter); // additional 2 smaller delays
+      await Utils.delay(NumUtils.getRandomDuration(delay ?? FixedConfig.fixedConfig.longDelayMS));
+    }
+    if (!isChatAlreadyOpen && (cancelOn?.call() ?? false)) {
+      await setClipboard(oldData, delayBeforeAndAfter: delay);
+      return false;
+    }
     if (clearFirst) {
       await selectText(delayBeforeAndAfter: delay);
+      if (cancelOn?.call() ?? false) {
+        await setClipboard(oldData, delayBeforeAndAfter: delay);
+        return false;
+      }
     }
     await pasteClipboard(delayBeforeAndAfter: delay);
+    if (cancelOn?.call() ?? false) {
+      await setClipboard(oldData, delayBeforeAndAfter: delay);
+      return false;
+    }
     await keyPress(BoardKey.enter); // additional 2 smaller delays
     await setClipboard(oldData, delayBeforeAndAfter: delay);
+    return true;
   }
 }

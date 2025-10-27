@@ -34,6 +34,9 @@ class _GtExtendedDebugInfoState extends State<GtExtendedDebugInfo> with GTBaseWi
     assetDirs.insert(0, GameToolsConfig.resourceFolderPath); // root path to project "data" first
     final String baseAssetPath = FileUtils.parentPath(assetDirs.last); // last one is always direct asset dir of app
     final List<String> simplePaths = assetDirs.map((String path) {
+      if (path.length < baseAssetPath.length) {
+        return path;
+      }
       return path.substring(baseAssetPath.length);
     }).toList();
     simplePaths.removeAt(0); // not the resource

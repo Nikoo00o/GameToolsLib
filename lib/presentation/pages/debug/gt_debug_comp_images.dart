@@ -77,7 +77,7 @@ final class _GTDebugCompImagesState extends State<GTDebugCompImages> {
         );
       },
       buildCreateOrEditDialog: (_, _, _, _) => const SizedBox(),
-      buildTopActions: (BuildContext context, bool isExpanded) {
+      buildTopActions: (BuildContext context, bool isExpanded, VoidCallback  rebuild) {
         return <Widget>[
           IconButton(
             onPressed: () {
@@ -90,6 +90,7 @@ final class _GTDebugCompImagesState extends State<GTDebugCompImages> {
           ),
         ];
       },
+      buildAddButton: false,
     );
   }
 }

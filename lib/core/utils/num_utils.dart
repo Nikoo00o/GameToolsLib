@@ -121,23 +121,23 @@ abstract final class NumUtils {
 /// use [NumUtils._epsilon]). Some utils are also in
 extension DoubleExtension on double {
   /// if the [abs] difference between [other] and this is smaller than [epsilon]
-  bool isEqual(double other, {double epsilon = NumUtils.epsilon}) => (this - other).abs() < epsilon;
+  bool isEqual(num other, {double epsilon = NumUtils.epsilon}) => (this - other).abs() < epsilon;
 
   bool isZero({double epsilon = NumUtils.epsilon}) => isEqual(0.0, epsilon: epsilon);
 
-  bool isLessThan(double more, {double epsilon = NumUtils.epsilon}) => this + epsilon < more;
+  bool isLessThan(num more, {double epsilon = NumUtils.epsilon}) => this + epsilon < more;
 
-  bool isMoreThan(double less, {double epsilon = NumUtils.epsilon}) => this - epsilon > less;
+  bool isMoreThan(num less, {double epsilon = NumUtils.epsilon}) => this - epsilon > less;
 
-  bool isLessOrEqualThan(double moreOrEqual, {double epsilon = NumUtils.epsilon}) => !isMoreThan(moreOrEqual);
+  bool isLessOrEqualThan(num moreOrEqual, {double epsilon = NumUtils.epsilon}) => !isMoreThan(moreOrEqual);
 
-  bool isMoreOrEqualThan(double lessOrEqual, {double epsilon = NumUtils.epsilon}) => !isLessThan(lessOrEqual);
+  bool isMoreOrEqualThan(num lessOrEqual, {double epsilon = NumUtils.epsilon}) => !isLessThan(lessOrEqual);
 
   /// 10.00 would return false, 10.10 would return true
   bool hasDecimalPoints({double epsilon = NumUtils.epsilon}) => (this - floor().toDouble()) > epsilon;
 
   /// Absolute non negative difference / distance between [other] and this
-  double diff(double other) => (other - this).abs();
+  double diff(num other) => (other - this).abs();
 }
 
 /// Helper methods for [int] which return modified values.
