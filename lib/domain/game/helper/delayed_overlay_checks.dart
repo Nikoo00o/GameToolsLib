@@ -1,4 +1,4 @@
-import 'dart:async' show FutureOr;
+import 'dart:async' show FutureOr, Completer;
 import 'dart:math' show Point;
 
 import 'package:flutter/widgets.dart';
@@ -51,6 +51,9 @@ base mixin DelayedOverlayChecks<OverlayStateType extends GTOverlayState> {
 
   /// Modules also set and updated in [executeDelayedUpdates] and cached here!
   List<Module<dynamic>>? _modules;
+
+  /// used in getWindowImageWithoutOverlay for race conditions
+  bool _busy = false;
 
   /// Will be called from [executeDelayedUpdates] inside of a check for [active] to check if the mouse hovers over
   /// a [OverlayElement.clickable] element and then [NativeOverlayWindow.setMouseEvents] for the passthrough setting
@@ -138,12 +141,16 @@ base mixin DelayedOverlayChecks<OverlayStateType extends GTOverlayState> {
     }
   }
 
+
+
   /// Important: this can be used manually (and may be used in [CompareImage]) to return a screenshot of the game
   /// window without the overlay.
   ///
   /// This may throw a [WindowClosedException] and it may return a cached image depending on [allowCacheOlderThan].
   /// Because this method will always cause the overlay to flicker by turning it on and off !!! The default cache
   /// duration would be 500 milliseconds!
+  ///
+  /// This will always have a small delay!
   Future<NativeImage> getWindowImageWithoutOverlay([
     Duration allowCacheOlderThan = const Duration(milliseconds: 500),
   ]) async {
@@ -151,13 +158,23 @@ base mixin DelayedOverlayChecks<OverlayStateType extends GTOverlayState> {
       throw WindowClosedException(message: "$windowToTrack was closed during getWindowImageWithoutOverlay");
     }
     final DateTime newest = DateTime.now();
-
     if (_latestGet != null && newest.difference(_latestGet!) < allowCacheOlderThan) {
+      for (int i = 0; i < 50; ++i) {
+        if (_cachedImage != null && !_busy) {
+          break;
+        } else {
+          await Future<void>.delayed(const Duration(milliseconds: 4)); // avoid race condition
+        }
+      }
       return _cachedImage!;
+    }
+    if (overlayMode != OverlayMode.VISIBLE || active == false) {
+      throw const WindowClosedException(message: "Overlay was not visible during getWindowImageWithoutOverlay!");
     }
 
     if (overlayMode == OverlayMode.VISIBLE) {
       try {
+        _busy = true;
         await changeModeAsync(OverlayMode.HIDDEN);
         if (overlayMode == OverlayMode.HIDDEN) {
           await scheduleUIWork((_) async {
@@ -176,10 +193,11 @@ base mixin DelayedOverlayChecks<OverlayStateType extends GTOverlayState> {
         if (overlayMode == OverlayMode.HIDDEN) {
           await changeModeAsync(OverlayMode.VISIBLE);
         }
+        _busy = false;
         rethrow;
       }
     }
-
+    _busy = false;
     _latestGet = newest;
     return _cachedImage!;
   }

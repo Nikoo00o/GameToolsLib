@@ -87,7 +87,7 @@ base class ImageAsset extends GTAsset<NativeImage> {
   @override
   void initContentIfNeeded(NativeImage? _) {
     if (_path != null) {
-      _loadedContent = NativeImage.readSync(path: _path!);
+      _loadedContent = NativeImage.readSync(path: _path!, type: type);
       Logger.spam(runtimeType, " loaded image data from path ", _path);
     }
     super.initContentIfNeeded(_loadedContent);

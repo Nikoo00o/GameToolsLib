@@ -68,7 +68,7 @@ base class CanvasOverlayElement extends OverlayElement {
     required ScaledBounds<int> bounds,
     required Color color,
   }) {
-    final TranslationString identifier = TranslationString(_generateIdentifier);
+    final TranslationString identifier = TranslationString.raw(_generateIdentifier);
     final OverlayElement overlayElement =
         OverlayElement.cachedInstance(identifier) ??
         OverlayElement.storeToCache(

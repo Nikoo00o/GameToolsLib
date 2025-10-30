@@ -4,7 +4,7 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// but not [LogInputListener]! Also look at docs of [configLabel], [createEventCallback] with [eventCreateCondition],
 /// [alwaysCreateNewEvents], [defaultKey] and [currentKey].
 ///
-/// The current hotkey can also be loaded from storage (which will also be done automatically) with [loadKey]. And
+/// The current hotkey can also be loaded from storage (which will also be done automatically) with [_loadKey]. And
 /// you can always change the hotkey with [storeKey], or reset it to default with [deleteKey]. To retrieve the hotkey
 /// its better to use the sync [currentKey] from the outside!
 ///
@@ -30,7 +30,8 @@ abstract base class BaseInputListener<DataType> {
   /// display a info label text (or translation key), but it will also be used as the database storage key (for the
   /// editable stored [_key]). Also look at [configGroupLabel] if you want to group up some listeners. See
   /// [isConfigurable]. You can explicitly set this to empty with [TranslationString.empty] (or just use an empty
-  /// string)!
+  /// string)! If this is empty, then the input listener will also not be saved to storage and [_existsOnStorage]
+  /// will be false!
   final TranslationString configLabel;
 
   /// Optional additional smaller text for the ui in addition to [configLabel] (null by default).
@@ -147,7 +148,7 @@ abstract base class BaseInputListener<DataType> {
     return defaultKey;
   }
 
-  /// If this is modifiable in the ui
+  /// If this is modifiable in the ui and if this is stored on storage (depends if config label is not empty)
   bool get isConfigurable => configLabel.identifier.isNotEmpty;
 
   /// This is called internally in [_update] only once at the first event loop run, so from the outside the sync
@@ -158,6 +159,9 @@ abstract base class BaseInputListener<DataType> {
   Future<DataType?> _loadKey() async {
     if (_key != null) {
       Logger.warn("The key of $this was already set which should not happen");
+    }
+    if (isConfigurable == false) {
+      return defaultKey;
     }
     _existsOnStorage = await GameToolsLib.database.existsInHive(
       key: _transformedKey,
@@ -180,16 +184,20 @@ abstract base class BaseInputListener<DataType> {
   ///
   /// If [newKey] is null, then this will mark this hotkey as being unset / not set and after this [currentKey] will
   /// return null as well!
+  ///
+  /// Only saves to story if [isConfigurable] is true!
   Future<void> storeKey(DataType? newKey) async {
     Logger.verbose("Storing new hotkey $newKey for $this");
     _key = newKey;
-    _existsOnStorage = true;
+    if (isConfigurable) _existsOnStorage = true;
     _resetLoopState();
-    return GameToolsLib.database.writeToHive(
-      key: _transformedKey,
-      value: _keyToString(newKey),
-      databaseKey: HiveDatabase.INSTANT_DATABASE,
-    );
+    if (isConfigurable) {
+      await GameToolsLib.database.writeToHive(
+        key: _transformedKey,
+        value: _keyToString(newKey),
+        databaseKey: HiveDatabase.INSTANT_DATABASE,
+      );
+    }
   }
 
   /// Deletes the current hotkey back to the default value and also clears the [_key].
@@ -200,10 +208,12 @@ abstract base class BaseInputListener<DataType> {
     _existsOnStorage = false;
     Logger.verbose("Deleted old hotkey $oldKey from $this");
     _resetLoopState();
-    return GameToolsLib.database.deleteFromHive(
-      key: _transformedKey,
-      databaseKey: HiveDatabase.INSTANT_DATABASE,
-    );
+    if (isConfigurable) {
+      await GameToolsLib.database.deleteFromHive(
+        key: _transformedKey,
+        databaseKey: HiveDatabase.INSTANT_DATABASE,
+      );
+    }
   }
 
   @override

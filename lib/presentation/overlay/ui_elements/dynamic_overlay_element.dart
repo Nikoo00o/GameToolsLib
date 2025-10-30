@@ -33,7 +33,7 @@ base class DynamicOverlayElement extends OverlayElement {
     bool visible = true,
     required ScaledBounds<int> bounds,
   }) {
-    final TranslationString identifier = TranslationString(_generateIdentifier);
+    final TranslationString identifier = TranslationString.raw(_generateIdentifier);
     final OverlayElement overlayElement =
         OverlayElement.cachedInstance(identifier) ??
         OverlayElement.storeToCache(

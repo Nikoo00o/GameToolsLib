@@ -340,13 +340,15 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
           } else {
             done = false;
           }
-        } catch (_) {
+        } catch (e, s) {
+          Logger.warn("Schedule ui work error:", e, s);
           done = true;
           rethrow; // some ui error
         }
       });
-      WidgetsBinding.instance!.ensureVisualUpdate(); // otherwise no frame would be rebuild
-    } catch (_) {
+      WidgetsBinding.instance.ensureVisualUpdate(); // otherwise no frame would be rebuild
+    } catch (e, s) {
+      Logger.warn("Schedule ui work error:", e, s);
       done = true;
       // ui is not available yet, ignore errors which only happen on startup!
     }
@@ -369,9 +371,10 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
   /// Important: prefer to use [changeModeAsync] instead if you need to wait for the window modifications after
   /// activating/deactivating the overlay!
   ///
-  /// Don't manually use [setActive], it will only be used internally automatically
+  /// Don't manually use [setActive], it will only be used internally automatically as being false from change mod
+  /// async!
   void changeMode(OverlayMode newOverlayMode, {bool setActive = true}) {
-    if (setActive == false && !_active) {
+    if (setActive == true && !_active) {
       Logger.warn("Tried to call OverlayManager.changeMode while it was not active with $newOverlayMode");
       return;
     }
@@ -397,6 +400,10 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
   /// Same as [changeMode], but also waits for the window modifications after activating/deactivating the overlay!
   @override
   Future<void> changeModeAsync(OverlayMode newOverlayMode) async {
+    if (!_active) {
+      Logger.warn("Tried to call OverlayManager.changeModeAsync while it was not active with $newOverlayMode");
+      return;
+    }
     _active = false;
     changeMode(newOverlayMode, setActive: false);
     if (_pendingWindowChange != null) {

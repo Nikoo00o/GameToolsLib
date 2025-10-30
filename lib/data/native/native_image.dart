@@ -311,7 +311,7 @@ final class NativeImage extends BaseNativeImage {
   Bounds<int>? findPositionOfSubImage(
     NativeImage subImage, {
     int matchMethod = cv.TM_CCOEFF_NORMED,
-    double threshold = 0.65,
+    double threshold = 0.63,
   }) {
     if (_data == null || subImage._data == null || subImage.width >= width || subImage.height >= height) {
       return null;
@@ -349,10 +349,16 @@ final class NativeImage extends BaseNativeImage {
       return null;
     }
     Logger.spam("Found sub image ", subImage, " in ", this, " with similarity: ", similarity);
+    final Bounds<int> bounds = Bounds<int>(
+      x: matchLoc.x.toInt(),
+      y: matchLoc.y.toInt(),
+      width: templateImg.cols,
+      height: templateImg.rows,
+    );
     resultImg.dispose();
     mask?.dispose();
     toClean?.dispose();
-    return Bounds<int>(x: matchLoc.x.toInt(), y: matchLoc.y.toInt(), width: templateImg.cols, height: templateImg.rows);
+    return bounds;
   }
 
   /// Can be used to retrieve or modify the [pixel] at [row] and [col] Where row is y / height and col is x / width!

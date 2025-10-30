@@ -19,7 +19,9 @@ import 'package:game_tools_lib/presentation/overlay/ui_elements/overlay_element.
 /// [displayDimension] of this overlay element by using [isShown], or you can also try to find the position of the
 /// image inside of the window by using [findPos]. Also look at [overlayAwareComparison] which can affect them!
 ///
-/// The [unscaledImage] is used to store the image file and the [ImageAsset.fileName] will be used as the [identifier]!
+/// The [unscaledImage] is used to store the image file and the [ImageAsset.fileName] will be used as the
+/// [identifier] together with the subFolder of the constructor (for the instance reusing)! But you can also use the
+/// isDynamic parameter of the constructor to create unique not cached images that need to be [dispose]d manually!
 /// It will be created in the constructor automatically with some additional parameter. Per default all files will be
 /// stored inside of "assets/images/compare/", but read comments of constructors for more info.
 /// You can also update the image and store new data with [storeNewImage] (instead of [saveToStorage]. The
@@ -50,6 +52,10 @@ base class CompareImage extends OverlayElement {
   /// (see [windowImageToCompareAgainst])
   final bool overlayAwareComparison;
 
+  static int _identifierCounter = 0;
+
+  static String get _generateIdentifier => "overlay.compare.unique.${_identifierCounter++}";
+
   /// Factory constructor that will cache and reuse instances for [identifier] and should always be used from the
   /// outside! Checks [cachedInstance] first and then [storeToCache] with [OverlayElement.newInstance] otherwise.
   /// Remember that you have to use [bounds] to override the [attachedWindow]!
@@ -58,6 +64,10 @@ base class CompareImage extends OverlayElement {
   /// [subFolder] is per default "compare", but can also be extended with [FileUtils.combinePath] to subfolders.
   /// [fileEnding] is "png" per default and the default [imageType] is [NativeImageType.RGB]
   /// for [isMultiLanguage] look at [ImageAsset.isMultiLanguage].
+  ///
+  /// Important: if [isDynamic] is true (default is false), then the [identifier] will instead be uniquely created
+  /// and not be build from the file name! Images created with this must be [dispose]d manually before going out of
+  /// scope!!!! But in this case [editable] will always be false!
   factory CompareImage({
     bool editable = true,
     OverlayContentBuilder contentBuilder,
@@ -69,6 +79,7 @@ base class CompareImage extends OverlayElement {
     bool isMultiLanguage = false,
     NativeImageType imageType = NativeImageType.RGB,
     bool overlayAwareComparison = true,
+    bool isDynamic = false,
   }) {
     final ImageAsset unscaledImage = ImageAsset(
       fileName: fileName,
@@ -77,28 +88,37 @@ base class CompareImage extends OverlayElement {
       isMultiLanguage: isMultiLanguage,
       type: imageType,
     );
-    final TranslationString identifier = TranslationString.raw(fileName);
+    final TranslationString identifier = isDynamic
+        ? TranslationString.raw(_generateIdentifier)
+        : TranslationString.raw("$subFolder/$fileName");
     final OverlayElement overlayElement =
         OverlayElement.cachedInstance(identifier) ??
-            OverlayElement.storeToCache(
-              CompareImage.newInstance(
-                identifier: identifier,
-                editable: editable,
-                contentBuilder: contentBuilder,
-                visible: visible,
-                bounds: bounds,
-                unscaledImage: unscaledImage,
-                overlayAwareComparison: overlayAwareComparison,
-              ),
-            );
+        OverlayElement.storeToCache(
+          CompareImage.newInstance(
+            identifier: identifier,
+            editable: editable && !isDynamic,
+            contentBuilder: contentBuilder,
+            visible: visible,
+            bounds: bounds,
+            unscaledImage: unscaledImage,
+            overlayAwareComparison: overlayAwareComparison,
+          ),
+        );
     return overlayElement as CompareImage;
   }
 
-  /// Just a simple constructor for the current [GameToolsLib.mainGameWindow]!
+  /// Just a simple constructor for the current [GameToolsLib.mainGameWindow]! Otherwise you would have to use
+  /// [gameWindow] to override it. Important: The creation width will be 2560 and the height 1440 if no gameWindow is
+  /// provided, see [ScaledBounds.defaultBounds]!!!!!!!
+  ///
   /// New Params: [fileName] as the pure name of the image asset file which is also used as the [identifier]!
   /// [subFolder] is per default "compare", but can also be extended with [FileUtils.combinePath] to subfolders.
   /// [fileEnding] is "png" per default and the default [imageType] is [NativeImageType.RGB]
   /// for [isMultiLanguage] look at [ImageAsset.isMultiLanguage].
+  ///
+  /// Important: if [isDynamic] is true (default is false), then the [identifier] will instead be uniquely created
+  /// and not be build from the file name! Images created with this must be [dispose]d manually before going out of
+  /// scope!!!! But in this case [editable] will always be false!
   factory CompareImage.forPos({
     required int x,
     required int y,
@@ -113,23 +133,34 @@ base class CompareImage extends OverlayElement {
     bool isMultiLanguage = false,
     NativeImageType imageType = NativeImageType.RGB,
     bool overlayAwareComparison = true,
-  }) =>
-      CompareImage(
-        editable: editable,
-        contentBuilder: contentBuilder,
-        visible: visible,
-        bounds: ScaledBounds<int>(
-          Bounds<int>(x: x, y: y, width: width, height: height),
-          creationWidth: null,
-          creationHeight: null,
-        ),
-        fileName: fileName,
-        subFolder: subFolder,
-        fileEnding: fileEnding,
-        isMultiLanguage: isMultiLanguage,
-        imageType: imageType,
-        overlayAwareComparison: overlayAwareComparison,
+    GameWindow? gameWindow,
+    bool isDynamic = false,
+  }) {
+    late final ScaledBounds<int> bounds;
+    if (gameWindow == null) {
+      bounds = ScaledBounds<int>.defaultBounds(x: x, y: y, width: width, height: height);
+    } else {
+      bounds = ScaledBounds<int>(
+        Bounds<int>(x: x, y: y, width: width, height: height),
+        creationWidth: null,
+        creationHeight: null,
+        gameWindow: gameWindow,
       );
+    }
+    return CompareImage(
+      editable: editable,
+      contentBuilder: contentBuilder,
+      visible: visible,
+      bounds: bounds,
+      fileName: fileName,
+      subFolder: subFolder,
+      fileEnding: fileEnding,
+      isMultiLanguage: isMultiLanguage,
+      imageType: imageType,
+      overlayAwareComparison: overlayAwareComparison,
+      isDynamic: isDynamic,
+    );
+  }
 
   /// New instance constructor should only be called internally from sub classes to create a new object instance!
   /// From the outside, use the default factory constructor instead!
@@ -173,8 +204,7 @@ base class CompareImage extends OverlayElement {
       img = _scaledImageCache = await unscaledImage.validContent.clone(); // first load clone
       if (bounds.width != img.width || bounds.height != img.height) {
         Logger.warn(
-          "$runtimeType first load: size of image $img ${img.width}, ${img
-              .height} does not match size of bounds $bounds",
+          "$runtimeType first load: size of image $img ${img.width}, ${img.height} does not match size of bounds $bounds",
         );
       }
     }
@@ -248,7 +278,11 @@ base class CompareImage extends OverlayElement {
   ///
   /// You can use the different opencv template matching modes TM_SQDIFF = 0, TM_SQDIFF_NORMED = 1, TM_CCORR = 2,
   /// TM_CCORR_NORMED = 3, TM_CCOEFF =4, TM_CCOEFF_NORMED = 5.
-  Future<Bounds<int>?> findPos(Bounds<int>? targetBounds, {
+  ///
+  /// IMPORTANT: remember to get the global position add [targetBounds] x and y to the returned bounds!!! (or for
+  /// example the middle pos)
+  Future<Bounds<int>?> findPos(
+    Bounds<int>? targetBounds, {
     int matchMethod = 5,
     double threshold = 0.65,
   }) async {
@@ -258,7 +292,10 @@ base class CompareImage extends OverlayElement {
     final NativeImage windowImage = await windowImageToCompareAgainst(targetBounds);
     final NativeImage myImage = await scaledImage;
     final Bounds<int>? bounds = windowImage.findPositionOfSubImage(
-        myImage, threshold: threshold, matchMethod: matchMethod);
+      myImage,
+      threshold: threshold,
+      matchMethod: matchMethod,
+    );
     windowImage.cleanupMemory();
     return bounds;
   }
