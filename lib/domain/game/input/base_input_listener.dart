@@ -25,6 +25,8 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 ///
 /// For very quick non-async actions that need no event, use [KeyInputListener.instant] and
 /// [MouseInputListener.instant] instead of a [GameEvent] with [GameEventPriority.INSTANT]!
+///
+/// Internally this will use a different isolate [InputIsolate] to poll the events!
 abstract base class BaseInputListener<DataType> {
   /// If this is empty, then this listener will not get any ui build to be able to modify it! Otherwise it should
   /// display a info label text (or translation key), but it will also be used as the database storage key (for the
@@ -98,6 +100,12 @@ abstract base class BaseInputListener<DataType> {
 
   String get _transformedKey => "$KEY_PREFIX${configLabel.identifier}";
 
+  /// Created in the constructor and used as an identifier in the [InputIsolate]
+  final int uniqueId;
+
+  /// For [uniqueId]
+  static int _identifierCounter = 0;
+
   BaseInputListener({
     required this.configLabel,
     this.configLabelDescription,
@@ -107,7 +115,7 @@ abstract base class BaseInputListener<DataType> {
     required this.defaultKey,
     this.configGroupLabel,
     required this.isActive,
-  }) {
+  }) : uniqueId = _identifierCounter++ {
     if (isConfigurable == false && configGroupLabel != null) {
       throw ConfigException(
         message: "Used config group label $configGroupLabel when configLabel was null for default key $defaultKey",
@@ -232,7 +240,7 @@ abstract base class BaseInputListener<DataType> {
   /// Needs to be overridden in the sub classes for keyboard vs mouse and return the current state.
   ///
   /// Remember the [currentKey] will never be null if this is called, because it will not be called if its null!
-  bool _getNewKeyState();
+  Future<bool> _getNewKeyState();
 
   /// Called in [storeKey] and [deleteKey] automatically to prevent other listeners from firing their events when
   /// keys are modified
@@ -259,7 +267,7 @@ abstract base class BaseInputListener<DataType> {
       await _loadKey();
     }
     if (updateChecks()) {
-      final bool newKeyDown = _getNewKeyState();
+      final bool newKeyDown = await _getNewKeyState();
       if (_isKeyDown == false && newKeyDown) {
         _addEvent();
       }

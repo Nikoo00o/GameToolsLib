@@ -286,11 +286,13 @@ base class CompareImage extends OverlayElement {
   /// TM_CCORR_NORMED = 3, TM_CCOEFF =4, TM_CCOEFF_NORMED = 5.
   ///
   /// IMPORTANT: remember to get the global position add [targetBounds] x and y to the returned bounds!!! (or for
-  /// example the middle pos)
+  /// example the middle pos).
+  ///
+  /// For many different small compares use [findPosInImage] instead with a captured image of the window!
   Future<Bounds<int>?> findPos(
     Bounds<int>? targetBounds, {
     int matchMethod = 5,
-    double threshold = 0.65,
+    double threshold = 0.72,
   }) async {
     if (!attachedWindow.isOpen) {
       return null;
@@ -303,6 +305,28 @@ base class CompareImage extends OverlayElement {
       matchMethod: matchMethod,
     );
     windowImage.cleanupMemory();
+    return bounds;
+  }
+
+  /// A version of [findPos] that is used for many different small compares and instead takes in a [windowImage] for
+  /// a better performance. (does not cleanup the memory of the window image here)
+  ///
+  /// Important: of course you have to check obscuring by the overlay yourself here because [windowImageToCompareAgainst]
+  /// is not used!
+  Future<Bounds<int>?> findPosInImage(
+    NativeImage windowImage, {
+    int matchMethod = 5,
+    double threshold = 0.72,
+  }) async {
+    if (!attachedWindow.isOpen) {
+      return null;
+    }
+    final NativeImage myImage = await scaledImage;
+    final Bounds<int>? bounds = await windowImage.findPositionOfSubImage(
+      myImage,
+      threshold: threshold,
+      matchMethod: matchMethod,
+    );
     return bounds;
   }
 

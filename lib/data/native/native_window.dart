@@ -11,6 +11,7 @@ import 'package:game_tools_lib/core/utils/bounds.dart';
 import 'package:game_tools_lib/data/native/ffi_loader.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart' show GameWindow;
+import 'package:game_tools_lib/domain/game/input/input_isolate.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
 import 'package:opencv_dart/opencv.dart' as cv;
 
@@ -482,8 +483,15 @@ final class NativeWindow {
 
   static const int _INVALID_VALUE = 999999999;
 
-  /// removes the internal [instance] reference, so mostly used for testing
-  static void clearNativeWindowInstance() {
+  /// removes the internal [instance] reference, so mostly used for testing with [createNewWindow] being false.
+  ///
+  /// Additionally this is also used in [InputIsolate] with [createNewWindow] being true to initialize!
+  static void clearNativeWindowInstance({bool createNewWindow = false}) {
     _nativeWindowInstance = null;
+    if (createNewWindow == true) {
+      _api ??= FFILoader.api;
+      _initConfig ??= _api!.lookupFunction<initConfigN, initConfigD>("initConfig");
+      _nativeWindowInstance = NativeWindow._();
+    }
   }
 }

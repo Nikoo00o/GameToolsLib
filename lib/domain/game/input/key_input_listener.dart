@@ -76,5 +76,5 @@ base class KeyInputListener extends BaseInputListener<BoardKey> {
   }
 
   @override
-  bool _getNewKeyState() => InputManager.isKeyDown(currentKey!);
+  Future<bool> _getNewKeyState() => InputIsolate.isKeyDown(uniqueId, currentKey!);
 }

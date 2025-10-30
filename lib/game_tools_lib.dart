@@ -35,6 +35,7 @@ import 'package:game_tools_lib/domain/game/helper/example/example_config.dart';
 import 'package:game_tools_lib/domain/game/helper/example/example_event.dart';
 import 'package:game_tools_lib/domain/game/helper/example/example_game_manager.dart';
 import 'package:game_tools_lib/domain/game/helper/example/example_state.dart';
+import 'package:game_tools_lib/domain/game/input/input_isolate.dart';
 import 'package:game_tools_lib/domain/game/input/log_input_listener.dart';
 import 'package:game_tools_lib/domain/game/states/child_game_state.dart';
 import 'package:game_tools_lib/domain/game/states/game_closed_state.dart';
@@ -265,6 +266,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     }
     await GameLogWatcher._instance!._handleOldLastLines();
     _GameToolsLibHelper._printRunningLog();
+    await InputIsolate.createIsolate();
     await _GameToolsLibEventLoop._startLoop(baseConfig.fixed.updatesPerSecond);
     return overlayInit;
   }
@@ -284,6 +286,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
         await changeState(GameClosedState()); // first always change to game closed to trigger any cleanups
       }
       await _GameToolsLibEventLoop._stopLoop(); // then wait for loop to stop
+      await InputIsolate.destroyIsolate();
       if (GameManager._instance != null) {
         for (final ModuleBaseType module in GameManager._instance!.modules) {
           await module.onStop(); // then stop modules
