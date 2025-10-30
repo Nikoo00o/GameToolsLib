@@ -235,9 +235,9 @@ final class NativeWindow {
       _windowLog.write(msg); // // 1 is used for window names
     } else if (id == 2) {
       if (msg == "No handle") {
-        Logger.spamPeriodic(_logSpam, "NativeWindow affinity ", msg, " found open windows:", _windowLog.toString());
+        Logger.spamPeriodic(_logSpam, "NativeWindow affinity ", msg, " found open windows:", _windowLog);
       } else {
-        Logger.spam("NativeWindow affinity ", msg, " found open windows:", _windowLog.toString());
+        Logger.spam("NativeWindow affinity ", msg, " found open windows:", _windowLog);
       }
       _windowLog.clear(); // 2 is used for end of window names with affinity
     }

@@ -308,24 +308,25 @@ final class NativeImage extends BaseNativeImage {
   ///
   /// Also very important: of course if using an asset image it also has to be scaled to the correct size as how it
   /// would look for the current window!!!
-  Bounds<int>? findPositionOfSubImage(
+  Future<Bounds<int>?> findPositionOfSubImage(
     NativeImage subImage, {
     int matchMethod = cv.TM_CCOEFF_NORMED,
     double threshold = 0.63,
-  }) {
+  }) async {
     if (_data == null || subImage._data == null || subImage.width >= width || subImage.height >= height) {
       return null;
     }
-    changeTypeSync(NativeImageType.RGB); // src image must be RGB!
+    await changeTypeAsync(NativeImageType.RGB); // src image must be RGB!
     cv.Mat? mask;
     final cv.Mat srcImg = _data!;
     late final cv.Mat templateImg;
     cv.Mat? toClean;
     if (subImage.type == NativeImageType.RGBA) {
-      final cv.VecMat channels = cv.split(subImage._data!);
+      final cv.VecMat channels = await cv.splitAsync(subImage._data!);
       // BGR channels
-      templateImg = cv.merge(cv.VecMat.fromList(<cv.Mat>[channels[0], channels[1], channels[2]]));
-      final (double val, cv.Mat newMask) = cv.threshold(channels[3], 1, 255, cv.THRESH_BINARY); // ignore alpha channel!
+      templateImg = await cv.mergeAsync(cv.VecMat.fromList(<cv.Mat>[channels[0], channels[1], channels[2]]));
+      final (double val, cv.Mat newMask) = await cv.thresholdAsync(channels[3], 1, 255, cv.THRESH_BINARY); // ignore
+      // alpha channel!
       channels.dispose();
       mask = newMask;
       toClean = templateImg;
@@ -337,11 +338,11 @@ final class NativeImage extends BaseNativeImage {
     final int resultRows = srcImg.rows - templateImg.rows + 1;
     final cv.Mat resultImg = cv.Mat.create(rows: resultRows, cols: resultCols, type: cv.MatType.CV_32FC1);
 
-    cv.matchTemplate(srcImg, templateImg, matchMethod, result: resultImg, mask: mask);
+    await cv.matchTemplateAsync(srcImg, templateImg, matchMethod, result: resultImg, mask: mask);
     if (matchMethod != cv.TM_CCOEFF_NORMED && matchMethod != cv.TM_CCORR_NORMED && matchMethod != cv.TM_SQDIFF_NORMED) {
-      cv.normalize(resultImg, resultImg, alpha: 0, beta: 1, normType: cv.NORM_MINMAX);
+      await cv.normalizeAsync(resultImg, resultImg, alpha: 0, beta: 1, normType: cv.NORM_MINMAX);
     }
-    final (double minVal, double maxVal, cv.Point minLoc, cv.Point maxLoc) = cv.minMaxLoc(resultImg);
+    final (double minVal, double maxVal, cv.Point minLoc, cv.Point maxLoc) = await cv.minMaxLocAsync(resultImg);
     final cv.Point matchLoc = (matchMethod == cv.TM_SQDIFF || matchMethod == cv.TM_SQDIFF_NORMED) ? minLoc : maxLoc;
     final double similarity = (matchMethod == cv.TM_SQDIFF || matchMethod == cv.TM_SQDIFF_NORMED) ? 1 - minVal : maxVal;
 

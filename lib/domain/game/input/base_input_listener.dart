@@ -243,6 +243,10 @@ abstract base class BaseInputListener<DataType> {
     }
   }
 
+  /// Used in [_update] and per default only checks if current key is not null and _canUpdate is true
+  @mustCallSuper
+  bool updateChecks() => currentKey != null && _canUpdate;
+
   /// Called periodically from the internal event loop
   Future<void> _update() async {
     if (isActive == false) {
@@ -254,7 +258,7 @@ abstract base class BaseInputListener<DataType> {
     if (_existsOnStorage == null) {
       await _loadKey();
     }
-    if (currentKey != null && _canUpdate) {
+    if (updateChecks()) {
       final bool newKeyDown = _getNewKeyState();
       if (_isKeyDown == false && newKeyDown) {
         _addEvent();

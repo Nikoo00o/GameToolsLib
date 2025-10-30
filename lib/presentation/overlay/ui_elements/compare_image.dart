@@ -203,8 +203,14 @@ base class CompareImage extends OverlayElement {
     if (img == null) {
       img = _scaledImageCache = await unscaledImage.validContent.clone(); // first load clone
       if (bounds.width != img.width || bounds.height != img.height) {
-        Logger.warn(
-          "$runtimeType first load: size of image $img ${img.width}, ${img.height} does not match size of bounds $bounds",
+        Logger.spam(
+          runtimeType,
+          " first load: size of stored image ",
+          img,
+          " ${img.width}, ",
+          img.height,
+          " does not match sizeof bounds ",
+          bounds,
         );
       }
     }
@@ -291,7 +297,7 @@ base class CompareImage extends OverlayElement {
     }
     final NativeImage windowImage = await windowImageToCompareAgainst(targetBounds);
     final NativeImage myImage = await scaledImage;
-    final Bounds<int>? bounds = windowImage.findPositionOfSubImage(
+    final Bounds<int>? bounds = await windowImage.findPositionOfSubImage(
       myImage,
       threshold: threshold,
       matchMethod: matchMethod,

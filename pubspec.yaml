@@ -56,7 +56,8 @@ flutter:
         pluginClass: GameToolsLibPluginCApi
         ffiPlugin: true
 
-  # Asset file folders to be used in this and following packages! Avoid spaces (use underscores _ instead)!
+  # Asset file folders to be used in this and following packages! Avoid spaces (use underscores _ instead)! Be
+  # careful with os specific max path length of like 200 characters or so!
   assets:
     - assets/
     - assets/locales/

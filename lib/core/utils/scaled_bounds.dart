@@ -1,10 +1,12 @@
-import 'dart:math' show Point;
 import 'dart:ui' show Rect;
+
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/utils/bounds.dart';
 import 'package:game_tools_lib/domain/entities/base/model.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
+
+export 'package:game_tools_lib/core/utils/bounds.dart';
 
 /// This is the same as the [Bounds] class (look at doc comments there!), but also resolution aware.
 ///

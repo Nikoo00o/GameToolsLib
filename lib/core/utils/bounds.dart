@@ -1,7 +1,10 @@
 import 'dart:math' show Point;
 import 'dart:ui';
+
 import 'package:game_tools_lib/core/utils/num_utils.dart';
 import 'package:game_tools_lib/domain/entities/base/model.dart';
+
+export 'dart:math' show Point;
 
 export 'package:game_tools_lib/core/utils/num_utils.dart';
 

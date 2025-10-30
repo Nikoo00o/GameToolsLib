@@ -48,7 +48,7 @@ part 'locale_asset.dart';
 /// contains the same "test_en.png" image than you in your final app project, then yours will replace the old one!
 ///
 /// Important: you should not use spaces inside of the asset subfolders and also not in the file names (use
-/// underscores _ instead)!
+/// underscores _ instead)!. Also be careful with the os specific max path length of like 200 characters or so!
 abstract base class GTAsset<T> {
   /// The path after "data/flutter_assets/assets" or "data/flutter_assets/packages/game_tools_lib/assets" (which
   /// relates to the "assets" folder in your project directory [GameToolsConfig.staticAssetFolders]) to the folder

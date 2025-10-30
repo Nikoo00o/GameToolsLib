@@ -48,10 +48,18 @@ base class MouseInputListener extends BaseInputListener<MouseKey> {
   MouseKey? _stringToKey(String? str) => MouseKey.fromString(str);
 
   @override
-  bool _getNewKeyState() {
+  bool updateChecks() {
+    if (super.updateChecks() == false) {
+      return false;
+    }
     try {
       if (OverlayManager.overlayManager().isOverlayFocused) return false;
     } catch (_) {}
+    return true;
+  }
+
+  @override
+  bool _getNewKeyState() {
     return InputManager.isMouseDown(currentKey!);
   }
 }
