@@ -39,7 +39,15 @@ enum MouseEvent implements Comparable<MouseEvent> {
 enum MouseKey implements Comparable<MouseKey> {
   LEFT(0x01),
   RIGHT(0x02),
-  MIDDLE(0x04);
+  MIDDLE(0x04),
+
+  /// Important: this does not have a related mouse event so the tool can't press it, but it can listen to it. This
+  /// is the extra side button 1.
+  MOUSE_3(0x05),
+
+  /// Important: this does not have a related mouse event so the tool can't press it, but it can listen to it. This
+  /// is the extra side button 2.
+  MOUSE_4(0x06);
 
   const MouseKey(this.value);
 
@@ -98,15 +106,11 @@ extension LogicalKeyboardKeyExtension on LogicalKeyboardKey {
 
   /// If this is either right, or left, or global alt key
   bool get isAnyAlt =>
-      this == BoardKey.altLeft.logicalKey ||
-          this == BoardKey.altRight.logicalKey ||
-          this == LogicalKeyboardKey.alt;
+      this == BoardKey.altLeft.logicalKey || this == BoardKey.altRight.logicalKey || this == LogicalKeyboardKey.alt;
 
   /// If this is either right, or left, or global meta key
   bool get isAnyMeta =>
-      this == BoardKey.metaLeft.logicalKey ||
-          this == BoardKey.metaRight.logicalKey ||
-          this == LogicalKeyboardKey.meta;
+      this == BoardKey.metaLeft.logicalKey || this == BoardKey.metaRight.logicalKey || this == LogicalKeyboardKey.meta;
 
   /// Converts the platform specific virtual [keyCode] to a logical key. Throws a [KeyNotFoundException] if no platform
   /// specific keycode was found! (for example special language/region specific characters like ÖÄÜ)

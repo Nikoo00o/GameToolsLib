@@ -60,4 +60,7 @@ base class MouseInputListener extends BaseInputListener<MouseKey> {
 
   @override
   Future<bool> _getNewKeyState() => InputIsolate.isMouseDown(uniqueId, currentKey!);
+
+  @override
+  bool isDown() => currentKey != null && InputManager.isMouseDown(currentKey!);
 }

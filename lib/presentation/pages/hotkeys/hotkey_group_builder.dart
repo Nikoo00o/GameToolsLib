@@ -66,6 +66,8 @@ base class HotkeyGroupBuilder with GTBaseWidget implements GTGroupBuilderInterfa
           MouseKey.LEFT => "page.hotkeys.mouse.left",
           MouseKey.RIGHT => "page.hotkeys.mouse.right",
           MouseKey.MIDDLE => "page.hotkeys.mouse.middle",
+          MouseKey.MOUSE_3 => "page.hotkeys.mouse.3",
+          MouseKey.MOUSE_4 => "page.hotkeys.mouse.4",
           _ => "page.hotkeys.mouse.none",
         }),
       ),

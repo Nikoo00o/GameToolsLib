@@ -67,6 +67,8 @@
   "page.hotkeys.mouse.left": "Left",
   "page.hotkeys.mouse.right": "Right",
   "page.hotkeys.mouse.middle": "Middle",
+  "page.hotkeys.mouse.3": "Extra 1",
+  "page.hotkeys.mouse.4": "Extra 2",
   "page.hotkeys.mouse.none": "None",
   "page.logs.title": "Application Logs",
   "page.logs.level": "Show Level",

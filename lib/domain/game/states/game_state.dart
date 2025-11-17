@@ -89,8 +89,8 @@ abstract base class GameState {
   bool isType<StateType extends GameState>() => this is StateType;
 
   /// Similar to [isType] it will return this as [StateType], but is overridden in child state to return the parent
-  /// state or itself depending on the type!
-  StateType asType<StateType extends GameState>() => this as StateType;
+  /// state or itself depending on the type! Can also be nullable.
+  StateType asType<StateType extends GameState?>() => this as StateType;
 
   @override
   String toString() => "$runtimeType($_id)";

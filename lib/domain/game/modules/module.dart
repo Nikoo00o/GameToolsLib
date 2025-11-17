@@ -76,15 +76,16 @@ abstract base class Module<GameManagerType extends GameManagerBaseType> {
   /// Should be overridden to provide additional [MouseInputListener] or [KeyInputListener] as hotkeys in addition to
   /// the constructor of [GameManager] which will automatically be added in [_addInputListeners].
   ///
-  /// Important: all of those listeners will have their [BaseInputListener.configGroupLabel] set to the [moduleName]!
+  /// Important: all of those listeners will have their [BaseInputListener.configGroupLabel] set to the [moduleName]
+  /// if it is null! So of course you can also explicitly use one default config group label for multiple keys!
   List<BaseInputListener<dynamic>> getAdditionalInputListener() => <BaseInputListener<dynamic>>[];
 
   /// Called automatically in [GameToolsLib.initGameToolsLib] to add the [getAdditionalInputListener] to the
-  /// [GameManager] and also set the [BaseInputListener.configGroupLabel] to the [moduleName] for them
+  /// [GameManager] and also set the [BaseInputListener.configGroupLabel] to the [moduleName] for them if it was null
   void _addInputListeners(int logListenerLength) {
     final List<BaseInputListener<dynamic>> listeners = getAdditionalInputListener();
     for (final BaseInputListener<dynamic> listener in listeners) {
-      listener.configGroupLabel = moduleName;
+      listener.configGroupLabel ??= moduleName;
     }
     GameManager._instance!._inputListeners.addAll(listeners);
     final String msg =

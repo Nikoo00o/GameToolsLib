@@ -155,17 +155,21 @@ abstract final class InputManager {
   }
 
   /// Presses and holds the mouse button down. Used in [leftClick], etc
+  /// Does not work for [MouseKey.MOUSE_3] and [MouseKey.MOUSE_4]!
   static void mouseDown(MouseKey mouseButton) => _nativeWindow.sendMouseEvent(switch (mouseButton) {
     MouseKey.LEFT => MouseEvent.LEFT_DOWN,
     MouseKey.RIGHT => MouseEvent.RIGHT_DOWN,
     MouseKey.MIDDLE => MouseEvent.MIDDLE_DOWN,
+    _ => throw UnimplementedError(),
   });
 
-  /// Releases a mouse button up that was pressed down before. Used in [leftClick], etc
+  /// Releases a mouse button up that was pressed down before. Used in [leftClick], etc.
+  /// Does not work for [MouseKey.MOUSE_3] and [MouseKey.MOUSE_4]!
   static void mouseUp(MouseKey mouseButton) => _nativeWindow.sendMouseEvent(switch (mouseButton) {
     MouseKey.LEFT => MouseEvent.LEFT_UP,
     MouseKey.RIGHT => MouseEvent.RIGHT_UP,
     MouseKey.MIDDLE => MouseEvent.MIDDLE_UP,
+    _ => throw UnimplementedError(),
   });
 
   /// helper method used internally

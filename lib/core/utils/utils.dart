@@ -50,7 +50,7 @@ abstract final class Utils {
       }
     }
     _executors[callback] = now.add(delay);
-    assert(_executors.keys.length < maxExecutorCountGuard);
+    assert(_executors.keys.length < maxExecutorCountGuard, "Don't use lambda functions as callback!");
     await callback.call();
   }
 
@@ -76,7 +76,7 @@ abstract final class Utils {
       }
     }
     _executors[callback] = now.add(delay);
-    assert(_executors.keys.length < maxExecutorCountGuard);
+    assert(_executors.keys.length < maxExecutorCountGuard, "Don't use lambda functions as callback!");
     callback.call();
   }
 
