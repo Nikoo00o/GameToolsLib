@@ -103,7 +103,7 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
   /// Builds a list tile with a drop down menu (which looks like a text field). Alternative would be [buildEnumSliderOption].
   ///
   /// [availableOptions] should be static, or const, or created/stored outside of the build method!
-  Widget buildEnumOption<ET>({
+  Widget buildEnumOption<ET extends Object>({
     required TranslationString title,
     TranslationString? description,
     required List<ET> availableOptions,

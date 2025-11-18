@@ -5,7 +5,7 @@ import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 /// Used to create a drop down menu for the type [T] which is mostly used for enums.
 /// You should provide the [initialValue] value and the list of [values] further up in the widget tree and then you
 /// can receive updates when the value changes with [onValueChange]!
-final class SimpleDropDownMenu<T> extends StatelessWidget with GTBaseWidget {
+final class SimpleDropDownMenu<T extends Object> extends StatelessWidget with GTBaseWidget {
   /// The list of available drop down options
   final List<T> values;
 
