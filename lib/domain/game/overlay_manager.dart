@@ -78,6 +78,7 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
       overlayElements = OverlayElementsList(),
       _win = windowToTrackOverride {
     _lastMode = initialOverlayMode;
+    GameToolsLib.checkMultiInstance<OverlayManagerBaseType>(this);
   }
 
   /// This is called after running the flutter app in [GameToolsLib.runLoop] (before any [GameManager.onStart] is

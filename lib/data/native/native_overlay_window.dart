@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/enums/overlay_mode.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';

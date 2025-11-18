@@ -4,7 +4,6 @@ import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/enums/log_level.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
-import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/domain/entities/base/model.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
@@ -25,8 +24,7 @@ Future<void> main() async {
   );
 }
 
-GameToolsConfigBaseType get _baseConfig =>
-    GameToolsConfigBaseType(fixed: const FixedConfig(), mutable: MutableConfig());
+GameToolsConfigBaseType get _baseConfig => GameToolsConfigBaseType(fixed: FixedConfig(), mutable: MutableConfig());
 
 void _testInit() {
   testO("initialize game tools lib with default example config", () async {

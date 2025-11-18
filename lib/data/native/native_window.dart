@@ -1,5 +1,4 @@
 import 'dart:ffi';
-import 'dart:math' show Point;
 import 'dart:ui' show Color;
 import 'package:ffi/ffi.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;

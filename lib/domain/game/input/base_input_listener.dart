@@ -32,10 +32,10 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 abstract base class BaseInputListener<DataType> {
   /// If this is empty, then this listener will not get any ui build to be able to modify it! Otherwise it should
   /// display a info label text (or translation key), but it will also be used as the database storage key (for the
-  /// editable stored [_key]). Also look at [configGroupLabel] if you want to group up some listeners. See
-  /// [isConfigurable]. You can explicitly set this to empty with [TranslationString.empty] (or just use an empty
-  /// string)! If this is empty, then the input listener will also not be saved to storage and [_existsOnStorage]
-  /// will be false!
+  /// editable stored [_key], SO IT MUST BE UNIQUE). Also look at [configGroupLabel] if you want to group up some
+  /// listeners. See [isConfigurable]. You can explicitly set this to empty with [TranslationString.empty] (or just
+  /// use an empty string)! If this is empty, then the input listener will also not be saved to storage and
+  /// [_existsOnStorage] will be false!
   final TranslationString configLabel;
 
   /// Optional additional smaller text for the ui in addition to [configLabel] (null by default).
@@ -122,6 +122,9 @@ abstract base class BaseInputListener<DataType> {
       throw ConfigException(
         message: "Used config group label $configGroupLabel when configLabel was null for default key $defaultKey",
       );
+    }
+    if (isConfigurable) {
+      GameToolsLib.checkMultiInstanceIdentifier(_transformedKey, this);
     }
   }
 

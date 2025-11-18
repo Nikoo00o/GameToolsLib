@@ -32,7 +32,7 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   /// Optional description text for the ui to display in addition to the [title]
   final TranslationString? description;
 
-  /// Added to the [title.identifier] internally in the storage
+  /// Added to the [title.identifier] internally in the storage for the [_transformedKey]
   static const String KEY_PREFIX = "CONFIG_";
 
   /// Cached Value loaded from storage and saved to storage
@@ -83,6 +83,7 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
     if (defaultValue == null && Utils.isNullableType<T>() == false) {
       throw ConfigException(message: "$this had a not nullable type $T, but no default value!");
     }
+    GameToolsLib.checkMultiInstanceIdentifier(_transformedKey, this);
   }
 
   /// Calls the [_onInit] which is an optional callback that will be called once at the end of

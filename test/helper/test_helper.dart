@@ -61,6 +61,7 @@ abstract final class TestHelper {
     Future<void> Function()? afterTest,
     required Map<String, TestFunction> testGroups,
   }) async {
+    GameToolsLib.allowMultiInstances = true; // for testing multi instances are allowed
     Logger.initLoggerInstance(StartupLogger()); // first prepare logger for tests
     await beforeAllTests?.call();
     setUp(() async => beforeTest?.call());
@@ -114,6 +115,7 @@ abstract final class TestHelper {
     String? appTitle,
     Widget? appBody,
   }) async {
+    GameToolsLib.allowMultiInstances = true; // for testing multi instances are allowed
     Logger.initLoggerInstance(StartupLogger()); // first prepare logger for tests
     if (_groups.isNotEmpty) {
       Logger.warn("Running tests $parentDescription when runOrderedTests was already called is dangerous!");

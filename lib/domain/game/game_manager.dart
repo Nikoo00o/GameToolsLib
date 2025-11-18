@@ -61,6 +61,7 @@ abstract base class GameManager<ConfigType extends GameToolsConfigBaseType> {
   }) : _inputListeners = inputListeners ?? <BaseInputListener<dynamic>>[] {
     modules = UnmodifiableListView<ModuleBaseType>(moduleConfiguration());
     _hasModules = modules.isNotEmpty;
+    GameToolsLib.checkMultiInstance<GameManagerBaseType>(this);
   }
 
   /// Can be overridden to return a list of modules to organize some codes and split of logic into modules which have

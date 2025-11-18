@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:game_tools_lib/core/utils/bounds.dart';
 import 'package:game_tools_lib/core/utils/scaled_bounds.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';

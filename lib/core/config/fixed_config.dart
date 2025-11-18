@@ -83,5 +83,7 @@ base class FixedConfig {
   /// Direct reference to the current instance of this
   static FixedConfig get fixedConfig => GameToolsConfig.baseConfig.fixed;
 
-  const FixedConfig();
+  FixedConfig() {
+    GameToolsLib.checkMultiInstance<FixedConfig>(this);
+  }
 }

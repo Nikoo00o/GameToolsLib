@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/enums/native_image_type.dart';
 import 'package:game_tools_lib/core/enums/overlay_mode.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
-import 'package:game_tools_lib/core/utils/bounds.dart';
 import 'package:game_tools_lib/core/utils/file_utils.dart';
 import 'package:game_tools_lib/core/utils/scaled_bounds.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';

@@ -39,6 +39,10 @@ base class WebManager {
   /// Used internally in [_retryRequest] to control delayed retries mapped to the hostname of the request query url!
   final Map<String, _Retry> _pendingRetries = <String, _Retry>{};
 
+  WebManager() {
+    GameToolsLib.checkMultiInstance<WebManager>(this);
+  }
+
   /// This is used internally for http error code 429 too many requests if the server does not provide a delay to use
   /// as a default delay when to send the next request. Per default this is 30 seconds.
   @protected

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' show Point;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

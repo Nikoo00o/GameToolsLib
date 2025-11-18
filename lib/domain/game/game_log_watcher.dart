@@ -71,7 +71,9 @@ base class GameLogWatcher {
     required List<LogInputListener>? listeners,
     this.onlyHandleLastLinesUntil,
   }) : _listeners = listeners ?? <LogInputListener>[],
-       _gameLogFilePaths = gameLogFilePaths;
+       _gameLogFilePaths = gameLogFilePaths {
+    GameToolsLib.checkMultiInstance<GameLogWatcher>(this);
+  }
 
   /// Can be used if the game has no log file, otherwise use the default constructor
   GameLogWatcher.empty() : this(gameLogFilePaths: null, listeners: <LogInputListener>[]);

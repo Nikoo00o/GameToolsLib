@@ -7,7 +7,6 @@ import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/locale_config_option.dart';
 import 'package:game_tools_lib/core/enums/log_level.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
-import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/domain/entities/base/model.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
@@ -156,6 +155,10 @@ base class MutableConfig {
 
   /// Direct reference to the current instance of this
   static MutableConfig get mutableConfig => GameToolsConfig.baseConfig.mutable;
+
+  MutableConfig() {
+    GameToolsLib.checkMultiInstance<MutableConfig>(this);
+  }
 
   /// Used for both [alwaysMatchGameWindowNamesEqual] and [debugPrintGameWindowNames] callbacks to update native code.
   /// Also waits [FixedConfig.tinyDelayMS] maximum afterwards!

@@ -1,4 +1,4 @@
-import 'dart:async' show FutureOr, Completer;
+import 'dart:async' show FutureOr;
 import 'dart:math' show Point;
 
 import 'package:flutter/widgets.dart';

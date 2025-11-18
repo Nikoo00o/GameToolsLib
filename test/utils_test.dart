@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' show Point;
 import 'dart:typed_data';
 
 import 'dart:ui' show Color;

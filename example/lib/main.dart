@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
-import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';

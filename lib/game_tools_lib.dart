@@ -84,7 +84,10 @@ part 'package:game_tools_lib/domain/game/overlay_manager.dart';
 part 'package:game_tools_lib/domain/game/states/game_state.dart';
 
 /// This is the main class of the game tools lib and you should call [initGameToolsLib] at the beginning of your
-/// program, then [runLoop] to start the internal update event loop and [close] at the end of it!
+/// program, then [runLoop] to start the internal update event loop and [close] at the end of it! Before this you may
+/// change [allowMultiInstances].
+///
+///
 /// The following contains some information on how to use the library:
 ///
 /// Your main interaction point will be the [GameManager] accessed in [gameManager], or [gm] with events to listen to
@@ -118,6 +121,13 @@ part 'package:game_tools_lib/domain/game/states/game_state.dart';
 /// [Module]'s are only available in [GameManager]! You can also access the [appLanguage] of the app or the
 /// [gameLanguage] here! Also look at shortcuts like [combinedMutableConfigOptions].
 final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop {
+  /// You can set this at the start of your program to disable error checks when creating multiple instances of the
+  /// manager and config classes like [GameToolsConfig] or [GameManager] (but not [GameWindow])! For example for
+  /// testing this is set to true. For [Module]'s this will use [checkMultiInstanceDynamic] with the runtime type
+  /// instead and otherwise [checkMultiInstance] is used with the static parent type. For [MutableConfigOption]'s,
+  /// etc it will use [checkMultiInstanceIdentifier] instead.
+  static bool allowMultiInstances = false;
+
   /// This will then block until the game tools lib is initialized and return true as soon as it is running (and
   /// otherwise false if an exception happened). And it will also initialize instances of native window, database,
   /// etc and also set the first state to [GameClosedState]. Multiple calls will be ignored and just return true!
@@ -482,6 +492,41 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
 
   /// Used in [close] to not close this multiple times
   static bool get wasInitStarted => GameManager._instance != null;
+
+  /// This will assert an error if [allowMultiInstances] is false and there already was an object created with the
+  /// [ParentType] before the [newInstance]
+  static void checkMultiInstance<ParentType>(Object newInstance) {
+    if (!allowMultiInstances) {
+      assert(
+        _instances.any((Object entry) => entry is ParentType) == false,
+        "Duplicated instance for $ParentType added: $newInstance",
+      );
+      _instances.add(newInstance);
+    }
+  }
+
+  /// Same as [checkMultiInstance], but uses runtimeType instead of a static type (used for [Module]'s)
+  static void checkMultiInstanceDynamic(Object newInstance) {
+    if (!allowMultiInstances) {
+      assert(
+        _instances.any((Object entry) => entry.runtimeType == newInstance.runtimeType) == false,
+        "Duplicated instance of same runtime type: $newInstance",
+      );
+      _instances.add(newInstance);
+    }
+  }
+
+  /// Same as [checkMultiInstance], but uses identifier strings instead of types (used for [MutableConfigOption]'s, etc)
+  static void checkMultiInstanceIdentifier(String identifier, Object instance) {
+    if (!allowMultiInstances) {
+      final bool added = _identifiers.add(identifier);
+      assert(added, "Duplicated identifier used: $identifier from $instance");
+    }
+  }
+
+  static final Set<Object> _instances = <Object>{};
+
+  static final Set<String> _identifiers = <String>{};
 }
 
 /// Returns your subclass of type [T] extending [GameManager] from [GameToolsLib.gameManager]

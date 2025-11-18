@@ -15,7 +15,9 @@ base class GameConfigLoader {
 
   GameConfigLoader({
     required this.filePath,
-  });
+  }) {
+    GameToolsLib.checkMultiInstance<GameConfigLoader>(this);
+  }
 
   /// Per default returns null, but should parse the game language from the config and convert it to a locale with
   /// [LocaleExtension.getLocaleByName] which then overrides the default of [GameToolsLib.gameLanguage] to be used for

@@ -20,7 +20,9 @@ base class GameToolsConfig<FixedConfigType extends FixedConfig, MutableConfigTyp
   /// Returns the mutable part of this config where all values are stored inside of a local file
   final MutableConfigType mutable;
 
-  const GameToolsConfig({required this.fixed, required this.mutable});
+  GameToolsConfig({required this.fixed, required this.mutable}) {
+    GameToolsLib.checkMultiInstance<GameToolsConfigBaseType>(this);
+  }
 
   /// Absolute path to the folder from the working directory where all resource/assets/etc files for this are stored!
   /// When running from debugger in android studio, or from tests, this will point to "project_dir/data" (of course

@@ -32,6 +32,7 @@ abstract base class Module<GameManagerType extends GameManagerBaseType> {
   /// Just for logging / debugging
   Module() {
     debugPrint("Created module $runtimeType");
+    GameToolsLib.checkMultiInstanceDynamic(this);
   }
 
   /// Is called at the start of [GameToolsLib.runLoop] (so after [GameToolsLib.initGameToolsLib] of the program start).
