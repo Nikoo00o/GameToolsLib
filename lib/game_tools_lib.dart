@@ -494,7 +494,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   static bool get wasInitStarted => GameManager._instance != null;
 
   /// This will assert an error if [allowMultiInstances] is false and there already was an object created with the
-  /// [ParentType] before the [newInstance]
+  /// [ParentType] before the [newInstance] (used for managers like [GameManager])
   static void checkMultiInstance<ParentType>(Object newInstance) {
     if (!allowMultiInstances) {
       assert(

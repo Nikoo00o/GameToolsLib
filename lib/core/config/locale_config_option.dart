@@ -11,6 +11,7 @@ import 'package:game_tools_lib/game_tools_lib.dart';
 /// This is a nullable [EnumConfigOption] and has [stringToData] and [dataToString] overridden!
 /// Because null should be stored to represent the system locale!
 final class LocaleConfigOption extends EnumConfigOption<Locale?> {
+  /// For [defaultValue] look at [MutableConfigOption.defaultValue]!
   LocaleConfigOption({
     required super.title,
     super.description,

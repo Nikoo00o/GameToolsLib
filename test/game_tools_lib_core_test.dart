@@ -33,7 +33,8 @@ void _testInit() {
     expect(GameToolsLib.baseConfig.fixed.logIntoStorage, false, reason: "log into storage is false");
     expect(await GameToolsLib.baseConfig.mutable.logLevel.getValue(), LogLevel.SPAM, reason: "log level is spam");
     expect(GameToolsLib.database.basePath, HiveDatabaseMock.FLUTTER_TEST_PATH, reason: "database path is testing");
-    expect(GameToolsLib.baseConfig.mutable.logLevel.title.identifier, "config.example.logLevel", reason: "key change");
+    expect(GameToolsLib.baseConfig.mutable.useDarkTheme.title.identifier, "config.useDarkTheme", reason: "no key change");
+    expect(await GameToolsLib.baseConfig.mutable.useDarkTheme.getValue(), false, reason: "dark theme change");
     expect(GameToolsLib.baseConfig.fixed.logPeriodicSpamDelayMS, 0, reason: "periodic spam delay always");
   }, initDefaultGameToolsLib: false);
   testO("initialize game tools lib with default base config", () async {
@@ -47,6 +48,7 @@ void _testInit() {
     expect(success, true);
     expect(GameToolsLib.baseConfig.fixed.logIntoStorage, true, reason: "log into storage is true");
     expect(await GameToolsLib.baseConfig.mutable.logLevel.getValue(), LogLevel.SPAM, reason: "log level is spam");
+    expect(await GameToolsLib.baseConfig.mutable.useDarkTheme.getValue(), true, reason: "default dark theme");
     expect(GameToolsLib.baseConfig.fixed.logPeriodicSpamDelayMS, 150, reason: "periodic spam delay is max long delay");
   }, initDefaultGameToolsLib: false);
   testO("simulating database error in init should return false", () async {

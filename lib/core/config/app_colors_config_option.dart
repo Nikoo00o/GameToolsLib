@@ -11,7 +11,8 @@ import 'package:game_tools_lib/presentation/widgets/helper/simple_color_picker.d
 ///
 /// It also builds the ui to configure the data! And static callbacks are used for all available parameters.
 final class AppColorsConfigOption extends CustomConfigOption<GTAppTheme> {
-  /// The [defaultValue] is the only option that can use the [GTAppTheme.seed] constructor
+  /// The [defaultValue] is the only option that can use the [GTAppTheme.seed] constructor, look at
+  /// [MutableConfigOption.defaultValue]!
   AppColorsConfigOption({
     super.defaultValue,
   }) : super(

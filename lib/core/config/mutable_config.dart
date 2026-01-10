@@ -27,8 +27,10 @@ part 'package:game_tools_lib/core/config/mutable_config_option_types.dart';
 part 'package:game_tools_lib/core/config/mutable_config_option_group.dart';
 
 /// Base class storing all mutable config values which are dynamically stored in a local storage file and may change
-/// during the runtime of the application. The members should always be final objects (like [logLevel])! If you want
-/// to override default values in sub classes look at [ExampleMutableConfig])
+/// during the runtime of the application. The members should always be final objects (like [logLevel])!
+///
+/// If you want to override default values in sub classes, override [overrideDefaultValues] and set them inside (look at
+/// [ExampleMutableConfig]), but never override the member variables of this class!!!
 ///
 /// For more info (and an example) look at the general documentation of [GameToolsConfig]
 ///
@@ -101,6 +103,16 @@ base class MutableConfig {
     updateCallback: _updateGameWindowConfigValues,
   );
 
+  /// Automatically called from the constructor and can be overridden in sub classes to change default values of the
+  /// config options provided by the base mutable config by using [setDefaultValue] with for example [logLevel]!
+  @protected
+  void overrideDefaultValues() {}
+
+  /// Important: this should only be used from [overrideDefaultValues] to change default values for any of the
+  /// options provided from the base mutable config!
+  @protected
+  void setDefaultValue<T>(MutableConfigOption<T> option, T newDefaultValue) => option._defaultValue = newDefaultValue;
+
   /// You can override this to return references to those config options you want to be able to modify in the UI!
   ///
   /// Important: you can group your config options except [ModelConfigOption] and [CustomConfigOption] with
@@ -157,6 +169,7 @@ base class MutableConfig {
   static MutableConfig get mutableConfig => GameToolsConfig.baseConfig.mutable;
 
   MutableConfig() {
+    overrideDefaultValues();
     GameToolsLib.checkMultiInstance<MutableConfig>(this);
   }
 

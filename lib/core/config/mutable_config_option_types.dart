@@ -3,6 +3,7 @@ part of 'package:game_tools_lib/core/config/mutable_config.dart';
 /// Wrapper for primitive types as config options. Use the following typedefs instead [BoolConfigOption],
 /// [IntConfigOption], [DoubleConfigOption], [StringConfigOption] and don't use this with any other type [T]!
 final class TypeConfigOption<T> extends MutableConfigOption<T> {
+  /// For [defaultValue] look at [MutableConfigOption.defaultValue]!
   TypeConfigOption({
     required super.title,
     super.description,
@@ -42,7 +43,7 @@ base class EnumConfigOption<EnumType> extends MutableConfigOption<EnumType> {
 
   /// Should return a translation key for a given [EnumType]'s [value]. Can also be null to just use [toString] on them.
   final TranslationString Function(EnumType value)? convertToTranslationKeys;
-
+  /// For [defaultValue] look at [MutableConfigOption.defaultValue]!
   EnumConfigOption({
     required super.title,
     super.description,
@@ -117,6 +118,7 @@ base class ModelConfigOption<T extends Model?> extends MutableConfigOption<T> {
   /// Can be overridden in sub classes!
   String get jsonFolderName => "config";
 
+  /// For [defaultValue] look at [MutableConfigOption.defaultValue]!
   /// [createNewModelInstance] function that creates a new instance of [T] by calling its fromJson factory constructor
   /// [updateCallback] Optional update callback that is called after [setValue] to update data references elsewhere.
   /// [lazyLoaded] For big data this should be [true] to load on demand. Defaults to [false] (all data is kept in memory)
@@ -256,6 +258,7 @@ base class CustomConfigOption<T> extends MutableConfigOption<T> {
   final bool Function(BuildContext context, ConfigOptionBuilderCustom<T> builder, String upperCaseSearchString)?
   containsSearchCallback;
 
+  /// For [defaultValue] look at [MutableConfigOption.defaultValue]!
   /// [createNewInstance] function that creates a new instance of [T] (or return null)
   /// [updateCallback] Optional update callback that is called after [setValue] to update data references elsewhere.
   /// [lazyLoaded] For big data this should be [true] to load on demand. Defaults to [false] (all data is kept in memory)
@@ -296,6 +299,7 @@ base class CustomConfigOption<T> extends MutableConfigOption<T> {
 
 /// Special case: [LogLevel] as a enum config option.
 final class LogLevelConfigOption extends EnumConfigOption<LogLevel> {
+  /// For [defaultValue] look at [MutableConfigOption.defaultValue]!
   LogLevelConfigOption({
     required super.title,
     super.description,

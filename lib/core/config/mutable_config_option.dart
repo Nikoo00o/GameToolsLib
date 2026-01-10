@@ -42,12 +42,16 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   /// [cachedValue] (which may be null depending on what is stored and the default)!
   final FutureOr<void> Function(T?)? _updateCallback;
 
+  /// See [defaultValue]. This is only changed from [MutableConfig.setDefaultValue] on object creation (so its still
+  /// kinda final)
+  T? _defaultValue;
+
   /// Optional default value that will be used if saved data is null (if [setValue] is called with [null] then this
   /// will be ignored until [deleteValue] is called). Important: if [T] is not nullable, then this is required!
   ///
   /// If there is a lot of code that's needed to create a const default value, consider moving the declaration to a
   /// different single file as a global static const object!
-  final T? defaultValue;
+  T? get defaultValue => _defaultValue;
 
   /// For larger data sets this should be [true] to only load the data into memory on demand when its used.
   /// Defaults to [false] where all data is always kept in memory since the start of the program when the database is
@@ -60,6 +64,7 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
   /// see constructor, or general class configuration
   Future<void> Function(MutableConfigOption<dynamic> configOption)? _onInit;
 
+  /// For [defaultValue] look at [MutableConfigOption.defaultValue]!
   /// [updateCallback] Optional update callback that is called after [setValue] to update data references elsewhere!
   /// [lazyLoaded] For big data this should be [true] to load on demand. Defaults to [false] (all data is kept in memory)
   ///
@@ -74,10 +79,11 @@ sealed class MutableConfigOption<T> with ChangeNotifier {
     required this.title,
     this.description,
     FutureOr<void> Function(T?)? updateCallback,
-    this.defaultValue,
+    T? defaultValue,
     bool lazyLoaded = false,
     Future<void> Function(MutableConfigOption<dynamic> configOption)? onInit,
-  }) : _updateCallback = updateCallback,
+  }) : _defaultValue = defaultValue,
+       _updateCallback = updateCallback,
        _lazyLoaded = lazyLoaded,
        _onInit = onInit {
     if (defaultValue == null && Utils.isNullableType<T>() == false) {

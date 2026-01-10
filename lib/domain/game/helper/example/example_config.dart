@@ -1,6 +1,6 @@
+import 'package:flutter/foundation.dart' show protected;
 import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
-import 'package:game_tools_lib/core/enums/log_level.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
 import 'package:game_tools_lib/domain/entities/base/model.dart';
 import 'package:game_tools_lib/game_tools_lib.dart';
@@ -19,8 +19,7 @@ final class ExampleFixedConfig extends FixedConfig {
 
 /// Adds a new more complex member [somethingNew] by using a [ModelConfigOption] with a [ExampleModel] as the stored
 /// object which can be modified.
-/// Also here an example is given how to override default values for members of the super class like here [logLevel]
-/// with a different key, but the same default value spam
+/// Also here an example is given how to override default values for members of the super class with [useDarkTheme].
 final class ExampleMutableConfig extends MutableConfig {
   /// For showcase this does not use a translation key here!
   final ModelConfigOption<ExampleModel?> somethingNew = ModelConfigOption<ExampleModel?>(
@@ -33,23 +32,19 @@ final class ExampleMutableConfig extends MutableConfig {
     createModelBuilder: ModelConfigOption.createExampleModelBuilder,
   );
 
-  /// Private member instance is needed to supply different value to the overridden getter below!
-  /// This translation key is only for showcase and not contained in the translation files!
-  final LogLevelConfigOption _logLevelInstance = LogLevelConfigOption(
-    title: TS.raw("config.example.logLevel"),
-    defaultValue: LogLevel.SPAM,
-  );
-
-  /// Override getter and return cached instance!
-  @override
-  LogLevelConfigOption get logLevel => _logLevelInstance;
-
   /// New option used above in [ExampleFixedConfig] to override the long periodic spam delay and set it to 0 per
   /// default (so all periodic spam logs are always logged)
   IntConfigOption get mutableDelay => IntConfigOption(title: TS.raw("Mutable Delay"), defaultValue: 0);
 
-  /// Important: also pass all new config options to the ui! (no translation key used for the group in this example
-  /// and the last log level instance config option will be duplicated and put in the "other" group as well to test it)
+  @override
+  @protected
+  void overrideDefaultValues() {
+    /// Here the default value for the dark theme config option is changed!
+    setDefaultValue(useDarkTheme, false);
+  }
+
+  /// Important: also pass all new config options to the ui! (no translation key used for the group in this example).
+  /// Could of course also not call the super class method and only select some of those options here!
   @override
   getConfigurableOptions() => <MutableConfigOption<dynamic>>[
     ...super.getConfigurableOptions(),
@@ -58,7 +53,6 @@ final class ExampleMutableConfig extends MutableConfig {
       configOptions: <MutableConfigOption<dynamic>>[mutableDelay],
     ),
     somethingNew,
-    logLevel,
   ];
 }
 
