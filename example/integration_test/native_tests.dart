@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
+import 'package:game_tools_lib/core/enums/init_result.dart';
 import 'package:game_tools_lib/core/enums/native_image_type.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
@@ -333,11 +334,12 @@ void _testInput() {
       " terminal in focus!!!", () async {
     await GameToolsLib.close();
     final GameWindow second = GameWindow(name: "Command Prompt");
-    await TestHelper.initGameToolsLib("game_tools_lib_example", <GameWindow>[second]); // additional window to _window
+    // additional window to _window
+    final InitResult init = await TestHelper.initGameToolsLib("game_tools_lib_example", <GameWindow>[second]);
     await MutableConfig.mutableConfig.alwaysMatchGameWindowNamesEqual.setValue(false); // needed for cmd find
     await Utils.delayMS(55); // wait for update
 
-    unawaited(GameToolsLib.runLoop(app: null, appWasAlreadyStarted: true));
+    unawaited(GameToolsLib.runLoop(app: null, appWasAlreadyStarted: true, initResult: init));
     Logger.warn("this test can fail if you un focus the window");
     Logger.warn(
       "Remember to start the tests from the terminal command prompt and not with the run configuration: "

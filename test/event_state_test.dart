@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:game_tools_lib/core/enums/event/game_event_group.dart';
+import 'package:game_tools_lib/core/enums/init_result.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/domain/game/helper/example/example_event.dart';
 import 'package:game_tools_lib/domain/game/helper/example/example_game_manager.dart';
@@ -31,7 +32,7 @@ Future<void> main() async {
 void _testStates() {
   testO("Normal game manager run", () async {
     expect(tGm.startStopCounter, 0, reason: "gm should be reset correctly");
-    final Future<void> loop = GameToolsLib.runLoop(app: null); // not awaited
+    final Future<void> loop = GameToolsLib.runLoop(app: null, initResult: InitResult.SUCCESS); // not awaited
     await Utils.delayMS(16); // need 2 longer delays here because of internal on start await and then loop...
     await Utils.delayMS(16);
     expect(GameToolsLib.currentState is GameClosedState, true, reason: "first state is game closed");
@@ -54,7 +55,7 @@ void _testStates() {
 
   testO("Testing periodic updates", () async {
     expect(tGm.startStopCounter, 0, reason: "gm should be reset correctly");
-    final Future<void> loop = GameToolsLib.runLoop(app: null);
+    final Future<void> loop = GameToolsLib.runLoop(app: null, initResult: InitResult.SUCCESS);
     await Utils.delayMS(16);
     await Utils.delayMS(16);
     final int next = tGm.updateCounter + 1000;
@@ -86,7 +87,7 @@ void _testStates() {
 void _testEvents() {
   testO("Instant event workflow", () async {
     expect(tGm.startStopCounter, 0, reason: "gm should be reset correctly");
-    unawaited(GameToolsLib.runLoop(app: null));
+    unawaited(GameToolsLib.runLoop(app: null, initResult: InitResult.SUCCESS));
     await Utils.delayMS(16); // need 2 longer delays here because of internal on start await and then loop...
     await Utils.delayMS(16);
     final ExampleEvent event = ExampleEvent(isInstant: true);
@@ -99,7 +100,7 @@ void _testEvents() {
 
   testO("Delayed event workflow", () async {
     expect(tGm.startStopCounter, 0, reason: "gm should be reset correctly");
-    unawaited(GameToolsLib.runLoop(app: null));
+    unawaited(GameToolsLib.runLoop(app: null, initResult: InitResult.SUCCESS));
     await Utils.delayMS(16); // need 2 longer delays here because of internal on start await and then loop...
     await Utils.delayMS(16);
     final ExampleEvent event = ExampleEvent(isInstant: false, groups: GameEventGroup.group3 | GameEventGroup.group6);
@@ -124,7 +125,7 @@ void _testEvents() {
 
   testO("Delayed event find and state change test", () async {
     expect(tGm.startStopCounter, 0, reason: "gm should be reset correctly");
-    unawaited(GameToolsLib.runLoop(app: null));
+    unawaited(GameToolsLib.runLoop(app: null, initResult: InitResult.SUCCESS));
     await Utils.delayMS(16); // need 2 longer delays here because of internal on start await and then loop...
     await Utils.delayMS(16);
     final ExampleEvent event = ExampleEvent(isInstant: false, groups: GameEventGroup.group3 | GameEventGroup.group6);

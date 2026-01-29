@@ -35,10 +35,10 @@ base class GameConfigLoader {
   /// Otherwise [parseUnknownConfig] is used which needs to be overridden in sub classes (or throws [ConfigException]).
   ///
   /// This is called automatically in [GameToolsLib.initGameToolsLib].
-  Future<bool> readConfig() async {
+  Future<InitResult> readConfig() async {
     if (FileUtils.fileExists(filePath) == false) {
       Logger.error("Game Config $filePath does not exist!");
-      return false;
+      return InitResult.GAME_CONFIG_NOT_FOUND;
     }
     final String data = await FileUtils.readFile(filePath);
     if (filePath.endsWith(".ini")) {
@@ -58,12 +58,12 @@ base class GameConfigLoader {
         _entries = map.map((String key, dynamic value) => MapEntry<String, String>(key, value?.toString() ?? ""));
       } else {
         Logger.error("Could not load json from Game Config $filePath");
-        return false;
+        return InitResult.GAME_CONFIG_INVALID;
       }
     } else {
       _entries = parseUnknownConfig(data);
     }
-    return true;
+    return InitResult.SUCCESS;
   }
 
   /// Should be overridden in sub classes to get the [_entries] from the [fileData] for config files that do not end

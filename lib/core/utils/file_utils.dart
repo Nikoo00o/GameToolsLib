@@ -20,6 +20,17 @@ abstract final class FileUtils {
     if (wasRunFromTests) {
       return absolutePath(combinePath(<String>[workingDirectory, localPath]));
     }
+    // todo: maybe change this to a more dart friendly approach that always works
+    /*
+    late final String scriptFolder;
+    final String lastPart = combinePath(<String>["lib", "main.dart"]);
+    if(_scriptPath.endsWith(lastPart)){
+      scriptFolder = parentPath(p.dirname(_scriptPath));
+    } else {
+      scriptFolder = p.dirname(_scriptPath);
+    }
+    return absolutePath(combinePath(<String>[p.dirname(scriptFolder), localPath]));
+    */
     return absolutePath(combinePath(<String>[p.dirname(Platform.resolvedExecutable), localPath]));
   }
 
@@ -30,17 +41,22 @@ abstract final class FileUtils {
     return combinePath(<String>[documents.path, ...parts]);
   }
 
-  /// Combines the [parts] with [Platform.pathSeparator] in between them (if no seperator), but not at the start and
+  /// Combines the [parts] with [Platform.pathSeparator] in between them (if no separator), but not at the start and
   /// end!
-  static String combinePath(List<String> parts) {
+  static String combinePath(List<String> parts, {bool addLeadingSeparator = false}) {
     final StringBuffer output = StringBuffer("");
+    if (addLeadingSeparator) {
+      output.write(Platform.pathSeparator);
+    }
     for (int i = 0; i < parts.length; ++i) {
       if (parts.elementAt(i).isEmpty) {
         continue; // skip empty parts!
       }
       output.write(parts.elementAt(i));
       if (i < parts.length - 1 && parts.elementAt(i).endsWith(Platform.pathSeparator) == false) {
-        output.write(Platform.pathSeparator);
+        if (!parts.elementAt(i + 1).startsWith(Platform.pathSeparator)) {
+          output.write(Platform.pathSeparator);
+        }
       }
     }
     return output.toString();
@@ -122,6 +138,9 @@ abstract final class FileUtils {
     if (p.basenameWithoutExtension(_exePath) == "tester" || p.basenameWithoutExtension(_exePath) == "flutter_tester") {
       return true;
     }
+    if (_scriptPath.contains("dart_test.kernel")) {
+      return true;
+    }
     if (_scriptPath.isNotEmpty && _scriptPath.startsWith("/")) {
       final String exeDir = p.dirname(absolutePath(_exePath));
       final String scriptDir = p.dirname(absolutePath(_scriptPath.substring(1)));
@@ -131,12 +150,13 @@ abstract final class FileUtils {
   }
 
   /// For example "C:\...\game_tools_lib\example\build\windows\x64\runner\Debug\game_tools_lib_example.exe"
-  /// (real path platform specific separators)
+  /// (real path platform specific separators). During debugging can also be path to dart sdk!
   static final String _exePath = Platform.resolvedExecutable;
 
   /// Internal script path saved by flutter only with separator "/" not platform specific.
   /// Can be "/C:/.../game_tools_lib/example/main.dart" during testing and during release it can be:
   /// "/C:/...game_tools_lib/example/build/windows/x64/runner/Debug/main.dart"
+  /// During debugging can also be path to dart sdk!
   static final String _scriptPath = Platform.script.path;
 
   /// Returns the path to the working directory from where the script was executed

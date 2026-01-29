@@ -28,6 +28,20 @@ typedef DoubleConfigOption = TypeConfigOption<double>;
 /// Used for string config options
 typedef StringConfigOption = TypeConfigOption<String>;
 
+/// Special instance of [StringConfigOption] which also just stores a string, but allows the user to pick the path.
+base class FileConfigOption extends TypeConfigOption<String> {
+  FileConfigOption({
+    required super.title,
+    super.description,
+    super.updateCallback,
+    super.defaultValue,
+    super.onInit,
+  });
+
+  @override
+  ConfigOptionBuilder<String> get builder => FileConfigOptionBuilder(configOption: this);
+}
+
 /// This can be used with [EnumType] being any [enum] by just converting them to string and then to convert them back
 /// to an object [availableOptions] needs to be supplied with the enum values which will be compared as string!
 ///
@@ -43,6 +57,7 @@ base class EnumConfigOption<EnumType> extends MutableConfigOption<EnumType> {
 
   /// Should return a translation key for a given [EnumType]'s [value]. Can also be null to just use [toString] on them.
   final TranslationString Function(EnumType value)? convertToTranslationKeys;
+
   /// For [defaultValue] look at [MutableConfigOption.defaultValue]!
   EnumConfigOption({
     required super.title,

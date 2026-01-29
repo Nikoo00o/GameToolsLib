@@ -25,6 +25,10 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 ///
 /// Important: you might want to use multi language [JsonAsset]'s to store any strings that you search for because
 /// the game log messages might be translated depending on the [GameToolsLib.gameLanguage]!
+///
+/// Important: users may also set a config option [customUserPath] (if not [isEmpty]) which will be provided by this
+/// game log watcher in the default group and on startup if no path was found, the user needs to select a custom path
+/// in a dialog and restart the tool! This then provides an additional game log file path!
 base class GameLogWatcher {
   final List<String>? _gameLogFilePaths;
   final List<LogInputListener> _listeners;
@@ -43,6 +47,17 @@ base class GameLogWatcher {
 
   /// used in [_didFileChange]
   bool _lastChanged = false;
+
+  /// Can be used by the user to provide a custom path to a game log file! It will be shown in the config options
+  /// without a group (so inside "Other"), but is also used on startup for a dialog if none of the paths is valid!
+  ///
+  /// Important: the initial [FileConfigOption.getValue] and [FileConfigOption.onInit] calls will automatically be
+  /// done in [_init] if not constructed with [GameLogWatcher.empty]!
+  final FileConfigOption customUserPath = FileConfigOption(
+    title: const TS("config.customUserPath"),
+    description: const TS("config.customUserPath.description"),
+    defaultValue: "",
+  );
 
   /// Quick getter to get resulting path used for debugging
   String get readingFromPath => _file?.absolute.path ?? "";
@@ -64,6 +79,7 @@ base class GameLogWatcher {
 
   /// If the game has no log file, then use [GameLogWatcher.empty] instead.
   /// [gameLogFilePaths] is a list of possible paths to the game log file (will use the most recent modified found file)
+  /// (remember the [customUserPath] will also automatically be added to that)
   /// and [listeners] can be your list of [LogInputListener] that you want to use, but can also be [null] and then
   /// added later with [addListener].
   GameLogWatcher({
@@ -77,6 +93,9 @@ base class GameLogWatcher {
 
   /// Can be used if the game has no log file, otherwise use the default constructor
   GameLogWatcher.empty() : this(gameLogFilePaths: null, listeners: <LogInputListener>[]);
+
+  /// Returns if this was created with [GameLogWatcher.empty] if the game has no log file!
+  bool get isEmpty => _gameLogFilePaths == null;
 
   /// This can be overridden in subclasses as an alternative to the listeners in the constructor or [addListener]
   /// calls. You can just return a list of listeners that will be added internally during [GameToolsLib.initGameToolsLib]
@@ -153,16 +172,23 @@ base class GameLogWatcher {
   static GameLogWatcher? _instance;
 
   /// This is called automatically from [GameToolsLib.initGameToolsLib] to initialize this
-  Future<bool> _init(List<LogInputListener> additionalListenerFromModules) async {
+  Future<InitResult> _init(List<LogInputListener> additionalListenerFromModules) async {
     if (_gameLogFilePaths == null || _gameLogFilePaths.isEmpty) {
       if (_listeners.isNotEmpty) {
         Logger.error("GameLogWatcher was not given a path to a game log file, but it was given LogInputListener's!");
-        return false;
+        return InitResult.LOG_NO_PATHS_GIVEN;
       } else {
         Logger.verbose("GameLogWatcher was not given a path to a game log file, so skipping processing log");
-        return true;
+        return InitResult.SUCCESS;
       }
     }
+    final String? value = await customUserPath.getValue(updateListeners: false);
+    await customUserPath.onInit();
+    if (value != null && value.isNotEmpty) {
+      Logger.verbose("Also including custom user game log file path $value");
+      _gameLogFilePaths.add(value);
+    }
+
     for (final String path in _gameLogFilePaths) {
       final File file = File(path);
       if (await file.exists()) {
@@ -175,13 +201,14 @@ base class GameLogWatcher {
     }
     if (_file == null) {
       Logger.error("GameLogWatcher can't find a game log file with paths: $_gameLogFilePaths");
+      return InitResult.LOG_NOT_FOUND;
     } else {
       final String? path = _file?.absolute.path;
       _listeners.addAll(additionalListeners());
       _listeners.addAll(additionalListenerFromModules);
       Logger.verbose("GameLogWatcher initialized with game log file path: $path and log listeners: $_listeners");
+      return InitResult.SUCCESS;
     }
-    return _file != null;
   }
 
   /// returns if there was a listener for the line. if [shouldLineBeSkipped] returns true, this returns false

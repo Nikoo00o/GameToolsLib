@@ -7,13 +7,13 @@ final class ExampleLogWatcher extends GameLogWatcher {
 
   ExampleLogWatcher({required super.gameLogFilePaths, required super.listeners});
 
-  Future<bool> manualInit() async {
-    final bool result = await super._init(<LogInputListener>[]);
-    if (result == false) {
-      return false;
+  Future<InitResult> manualInit() async {
+    final InitResult result = await super._init(<LogInputListener>[]);
+    if (result.hasError) {
+      return result;
     }
     await super._handleOldLastLines();
-    return true;
+    return InitResult.SUCCESS;
   }
 
   Future<void> manualUpdate() async => super._fetchNewLines();

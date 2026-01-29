@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
+import 'package:game_tools_lib/core/enums/init_result.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/data/native/native_image.dart';
 import 'package:game_tools_lib/domain/game/game_window.dart';
@@ -148,11 +149,11 @@ String get testFolder => FileUtils.combinePath(<String>[FileUtils.getLocalFilePa
 String testFile(String fileName) => FileUtils.combinePath(<String>[testFolder, fileName]);
 
 Future<void> main() async {
-  final bool init = await GameToolsLib.useExampleConfig(
+  final InitResult init = await GameToolsLib.useExampleConfig(
     isCalledFromTesting: false,
     windowName: "Snipping Tool",
   );
-  if (init == false) {
+  if (init.hasError) {
     Logger.error("Could not init lib");
     return; // todo: show some error ui?
   }
@@ -213,5 +214,6 @@ Future<void> main() async {
     app: GTApp(
       additionalNavigatorPages: <GTNavigationPage>[ExamplePage()],
     ),
+    initResult: init,
   );
 }

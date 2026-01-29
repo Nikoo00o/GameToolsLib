@@ -46,6 +46,8 @@
   "config.debugPrintGameWindowNames.description": "Loggt alle offene Fenster nach Neustart der App zum debuggen",
   "config.alwaysMatchGameWindowNamesEqual": "Fenster exakt vergleichen",
   "config.alwaysMatchGameWindowNamesEqual.description": "Das Fenster vom Spiel muss den gleichen Namen haben. Ansonsten wird verglichen, ob der gesuchte Name im Fenster Namen vorhanden ist",
+  "config.customUserPath": "Custom Game Log Pfad",
+  "config.customUserPath.description": "Hier kann der Pfad zur log.txt Datei eingetragen werden",
   "page.home.title": "Home",
   "page.home.open": "Öffne",
   "page.home.window.status": "Fenster Status",

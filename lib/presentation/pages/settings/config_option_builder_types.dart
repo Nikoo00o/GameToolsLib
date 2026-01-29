@@ -124,6 +124,27 @@ final class ConfigOptionBuilderTypes<T> extends ConfigOptionBuilder<T> with Conf
   }
 }
 
+/// This is used to build the menu entries for config options of [FileConfigOption]
+final class FileConfigOptionBuilder extends ConfigOptionBuilder<String> with ConfigOptionHelperMixin<String> {
+  const FileConfigOptionBuilder({
+    required FileConfigOption configOption,
+  }) : super(configOption: configOption);
+
+  @override
+  Widget buildContent(BuildContext context, String currentData, {required bool calledFromInnerGroup}) {
+    return SimpleCard(
+      title: configOption.title,
+      description: configOption.description,
+      // todo: implement file picker!
+      trailingActions: SimpleTextField<String>(
+        width: 280,
+        initialValue: currentData ?? "",
+        onChanged: (String newValue) => configOption.setValue(newValue),
+      ),
+    );
+  }
+}
+
 /// This is used to build the menu entries for config options of [TypeConfigOption]
 final class ConfigOptionBuilderEnum<T> extends ConfigOptionBuilder<T> with ConfigOptionHelperMixin<T> {
   const ConfigOptionBuilderEnum({

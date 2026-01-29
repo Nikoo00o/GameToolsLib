@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:game_tools_lib/core/enums/init_result.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/logger/custom_logger.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
@@ -27,7 +28,7 @@ void testO(
 );
 
 /// Rarely used in tests manually to init lib with example config. For more params, use [TestHelper.initGameToolsLib]
-Future<bool> initDefaultGameToolsLib() async =>
+Future<InitResult> initDefaultGameToolsLib() async =>
     GameToolsLib.useExampleConfig(isCalledFromTesting: true, windowName: "Not_Found");
 
 String get testFolder => TestHelper.testFolder;
@@ -165,17 +166,18 @@ abstract final class TestHelper {
 
   /// Initializes [GameToolsLib] with a default [ExampleGameToolsConfig] for testing, creating a game window for the
   /// [searchName], but can also add the [moreWindows]. For less params, use [initDefaultGameToolsLib]
-  static Future<void> initGameToolsLib(String searchName, [List<GameWindow> moreWindows = const <GameWindow>[]]) async {
-    final bool result = await GameToolsLib.initGameToolsLib(
+  static Future<InitResult> initGameToolsLib(String searchName, [List<GameWindow> moreWindows = const <GameWindow>[]]) async {
+    final InitResult result = await GameToolsLib.initGameToolsLib(
       config: ExampleGameToolsConfig(),
       gameManager: ExampleGameManager(inputListeners: null),
       isCalledFromTesting: true,
       gameWindows: GameToolsLib.createDefaultWindowForInit(searchName)..addAll(moreWindows),
       gameLogWatcher: GameLogWatcher.empty(),
     );
-    if (result == false) {
+    if (result.hasError) {
       throw const TestException(message: "TestHelper.initGameToolsLib failed");
     }
+    return result;
   }
 
   static Future<void> _runOrdered(Future<void> Function()? beforeTest, Future<void> Function()? afterTest) async {

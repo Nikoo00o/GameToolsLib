@@ -14,6 +14,7 @@ import 'package:game_tools_lib/core/config/mutable_config.dart';
 import 'package:game_tools_lib/core/enums/event/game_event_group.dart';
 import 'package:game_tools_lib/core/enums/event/game_event_priority.dart';
 import 'package:game_tools_lib/core/enums/event/game_event_status.dart';
+import 'package:game_tools_lib/core/enums/init_result.dart';
 import 'package:game_tools_lib/core/enums/input/input_enums.dart';
 import 'package:game_tools_lib/core/enums/log_level.dart';
 import 'package:game_tools_lib/core/enums/overlay_mode.dart';
@@ -128,9 +129,10 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   /// etc it will use [checkMultiInstanceIdentifier] instead.
   static bool allowMultiInstances = false;
 
-  /// This will then block until the game tools lib is initialized and return true as soon as it is running (and
-  /// otherwise false if an exception happened). And it will also initialize instances of native window, database,
-  /// etc and also set the first state to [GameClosedState]. Multiple calls will be ignored and just return true!
+  /// This will then block until the game tools lib is initialized and return an [InitResult] as soon as it is running
+  /// (which should be checked if something failed!). And it will also initialize instances of native window, database,
+  /// etc and also set the first state to [GameClosedState]. Multiple calls will be ignored and just return
+  /// [InitResult.SUCCESS] directly!
   ///
   /// It should be the first thing to call in your program (also read the [GameToolsLib] Documentation)!
   ///
@@ -152,9 +154,9 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   /// IMPORTANT: remember that you have to include all of your sensitive data strings of your application in the
   /// constructor in [CustomLogger.sensitiveDataToRemove] so that they wont get logged to storage!
   ///
-  /// For unknown dynamic errors, this just returns [false], but for known avoidable config errors, this can also
-  /// throw a [ConfigException] (for example if you manually set a config instance before calling this, or if
-  /// [gameWindows] is empty).
+  /// For unknown dynamic errors, this just returns a code in [InitResult], but for known avoidable config errors,
+  /// this can also throw a [ConfigException] (for example if you manually set a config instance before calling this,
+  /// or if [gameWindows] is empty).
   ///
   /// You have to call [runLoop] afterwards with your ui (or none) to start the internal event loop of this!
   ///
@@ -184,7 +186,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   /// Don't initialize anything in the constructor of your sub classes for the parameters and instead use  something
   /// like [GameManager.onStart] which is called after [GameToolsLib.initGameToolsLib] so that you can also
   /// access the config, etc during your custom init!
-  static Future<bool> initGameToolsLib<CF extends GameToolsConfigBaseType, GM extends GameManagerBaseType>({
+  static Future<InitResult> initGameToolsLib<CF extends GameToolsConfigBaseType, GM extends GameManagerBaseType>({
     required CF config,
     required GM gameManager,
     OverlayManagerBaseType? overlayManager,
@@ -197,7 +199,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   }) async {
     if (_GameToolsLibHelper._initialized) {
       Logger.verbose("Game Tools Lib is already initialized and not doing it again!");
-      return true; // first check if already called
+      return InitResult.SUCCESS; // first check if already called
     }
     GameManager._instance = gameManager; // most important first signal that init was started
     OverlayManager._instance = overlayManager ?? OverlayManagerBaseType(); // also already set overlay manager at top
@@ -211,18 +213,16 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     } else {
       _gameWindows = gameWindows; // static instance variables that need to be assigned
     }
-    // then init data base
-    if (await _GameToolsLibHelper._initDatabase(isCalledFromTesting: isCalledFromTesting) == false) {
-      return false;
-    }
-    // then init native code
-    if (await _GameToolsLibHelper._initNativeCode(isCalledFromTesting: isCalledFromTesting) == false) {
-      return false;
-    }
-    // then init game log watcher and game config loader if available
-    if (await _GameToolsLibHelper._initGameSpecificClasses(gameLogWatcher, gameConfigLoader) == false) {
-      return false;
-    }
+
+    // init others and return if not success
+    InitResult result = await _GameToolsLibHelper._initDatabase(isCalledFromTesting: isCalledFromTesting);
+    if (result.hasError) return result;
+    result = await _GameToolsLibHelper._initNativeCode(isCalledFromTesting: isCalledFromTesting);
+    if (result.hasError) return result;
+    // lastly init game log watcher and game config loader if available
+    result = await _GameToolsLibHelper._initGameSpecificClasses(gameLogWatcher, gameConfigLoader);
+    if (result.hasError && result != InitResult.LOG_NOT_FOUND) return result; // dont return on special case
+
     WebManager.instance = webManager ?? WebManager();
     await WebManager.instance!.init();
     await _GameToolsLibHelper._postInit(); // set state, initialized bool and call onInit for config options(+load)
@@ -230,23 +230,33 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       "GameToolsLib.initGameToolsLib done with config ${config.runtimeType}, manager "
       "${gameManager.runtimeType}\nand windows $gameWindows",
     );
-    return true; // done (afterwards runLoop is called to call onStart and start the loop)
+    if (result == InitResult.LOG_NOT_FOUND) return result; // return on special case here
+    return InitResult.SUCCESS; // done (afterwards runLoop is called to call onStart and start the loop)
   }
 
-  /// Remember to call [initGameToolsLib] before to initialize this, otherwise a [ConfigException] will be thrown!
+  /// Remember to call [initGameToolsLib] before to initialize this to get the [initResult], otherwise a
+  /// [ConfigException] will be thrown!
+  ///
+  /// Important: if the [InitResult.hasError] this will instantly return false without running the loop! Except for
+  /// the special case [InitResult.LOG_NOT_FOUND] (if the [app] is not null) where it will first show a dialog and then
+  /// return false to terminate the app!
   ///
   /// First this will run the flutter [app], then call [OverlayManager.init] and afterwards [GameManager.onStart], then
   /// [GameLogWatcher._handleOldLastLines], start the internal event loop  and wait and block until [close] is called
   /// (by stopping the lib)!
   ///
-  /// This should always return true except when [OverlayManager.init] fails!
+  /// Otherwise this should always return true except when [OverlayManager.init] fails!
   ///
   /// [app] can also be null if you don't want any user interface (then [runApp] is not called to run the flutter app
   /// and [OverlayManager.init] is not called, but this method will still return true).
   ///
   /// But from tests you can also use [app] null and then pass [appWasAlreadyStarted] as true to still call
   /// [OverlayManager.init] even tho there is no app! Otherwise leave it at false!
-  static Future<bool> runLoop({required Widget? app, bool appWasAlreadyStarted = false}) async {
+  static Future<bool> runLoop({
+    required InitResult initResult,
+    required Widget? app,
+    bool appWasAlreadyStarted = false,
+  }) async {
     if (_GameToolsLibHelper._initialized == false) {
       Logger.error("initGameToolsLib was not called before runLoop!");
       throw const ConfigException(message: "initGameToolsLib was not called before runLoop");
@@ -259,6 +269,9 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       }
       runApp(app);
       overlayInit = await OverlayManager._instance?.init() ?? false;
+      if (overlayInit && initResult == InitResult.LOG_NOT_FOUND) {
+        await _selectFileAfterLogNotFound();
+      }
     } else if (appWasAlreadyStarted) {
       overlayInit = await OverlayManager._instance?.init() ?? false;
     } else {
@@ -270,6 +283,10 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       overlayInit,
       ". Now calling GameManager.onStart and then GameLogWatcher._handleOldLastLines before starting the loop",
     );
+    if (initResult.hasError) {
+      Logger.error("GameToolsLib.initGameToolsLib resulted in an error, so runLoop will also return false!");
+      return false;
+    }
     await GameManager._instance!.onStart();
     for (final ModuleBaseType module in GameManager._instance!.modules) {
       await module.onStart();
@@ -279,6 +296,26 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     await InputIsolate.createIsolate();
     await _GameToolsLibEventLoop._startLoop(baseConfig.fixed.updatesPerSecond);
     return overlayInit;
+  }
+
+  // todo: comment and also implement better when implementing file option
+  static Future<void> _selectFileAfterLogNotFound() async {
+    final FileConfigOption configOption = GameLogWatcher._instance!.customUserPath;
+    await configOption.onInit();
+    await OverlayManager._instance!.showCustomDialog<void>(blockTouches: true, (BuildContext context) {
+      return AlertDialog(
+        title: Text(configOption.title.tl(context)),
+        content: configOption.builder.buildProviderWithContent(context, calledFromInnerGroup: false),
+        actions: <Widget>[
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+            },
+            child: Text(const TS("input.ok").tl(context)),
+          ),
+        ],
+      );
+    });
   }
 
   /// Should be called at the end of your program (and otherwise is used for testing to cleanup all data)
@@ -346,8 +383,11 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   /// nothing is saved to local storage and is instead kept in memory. and other lib paths are used).
   ///
   /// Important: this is only an example for testing and should not be used in production code!
-  static Future<bool> useExampleConfig({bool isCalledFromTesting = false, String windowName = "Not_Found"}) async {
-    final bool init = await GameToolsLib.initGameToolsLib(
+  static Future<InitResult> useExampleConfig({
+    bool isCalledFromTesting = false,
+    String windowName = "Not_Found",
+  }) async {
+    final InitResult init = await GameToolsLib.initGameToolsLib(
       config: ExampleGameToolsConfig(),
       gameManager: ExampleGameManager(inputListeners: null),
       overlayManager: OverlayManagerBaseType(),
@@ -355,14 +395,16 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       gameWindows: GameToolsLib.createDefaultWindowForInit(windowName),
       gameLogWatcher: GameLogWatcher.empty(),
     ); // first init game tools lib with sub config type
-    if (init == false) {
-      return false;
+    if (init.hasError) {
+      return init;
     }
     final ExampleFixedConfig fixedConfig = GameToolsLib.config<ExampleGameToolsConfig>().fixed; // using sub types
     final ExampleMutableConfig mutableConfig = GameToolsLib.config<ExampleGameToolsConfig>().mutable;
     final GameToolsConfigBaseType baseAccess = GameToolsLib.baseConfig; // using base type
     final ExampleModel? newValue = await mutableConfig.somethingNew.valueNotNull();
-    return !fixedConfig.logIntoStorage && (newValue?.someData ?? 1) >= 0 && !baseAccess.fixed.logIntoStorage;
+    final bool error =
+        !fixedConfig.logIntoStorage && (newValue?.someData ?? 1) >= 0 && !baseAccess.fixed.logIntoStorage;
+    return error ? InitResult.DATABASE_ERROR : InitResult.SUCCESS;
   }
 
   GameToolsLib._();
@@ -449,6 +491,8 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
 
   /// Shortcut to provide the [MutableConfigOption] of all [Module]'s and the [MutableConfig] together!
   /// Only returns the config options from modules if they contain any children!
+  ///
+  /// Also includes [GameLogWatcher.customUserPath] if not null and not [GameLogWatcher.isEmpty]!
   static List<MutableConfigOption<dynamic>> get combinedMutableConfigOptions {
     final List<MutableConfigOption<dynamic>> options = <MutableConfigOption<dynamic>>[];
     options.addAll(MutableConfig.mutableConfig.configurableOptions);
@@ -457,6 +501,9 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       if (additional.children.isNotEmpty) {
         options.add(additional);
       }
+    }
+    if (GameLogWatcher._instance?.isEmpty == false) {
+      options.add(GameLogWatcher._instance!.customUserPath);
     }
     return options;
   }
@@ -519,8 +566,14 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   /// Same as [checkMultiInstance], but uses identifier strings instead of types (used for [MutableConfigOption]'s, etc)
   static void checkMultiInstanceIdentifier(String identifier, Object instance) {
     if (!allowMultiInstances) {
-      final bool added = _identifiers.add(identifier);
-      assert(added, "Duplicated identifier used: $identifier from $instance");
+      if (instance is MutableConfigOptionGroup) {
+        final String groupIdentifier = "group_$identifier";
+        final bool added = _identifiers.add(groupIdentifier);
+        assert(added, "Duplicated group identifier used: $groupIdentifier from $instance");
+      } else {
+        final bool added = _identifiers.add(identifier);
+        assert(added, "Duplicated identifier used: $identifier from $instance");
+      }
     }
   }
 

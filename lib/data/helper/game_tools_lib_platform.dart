@@ -33,7 +33,7 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
   }
 
   /// This is called from [GameToolsLib.initGameToolsLib] after setting the important base classes to init local storage
-  static Future<bool> _initDatabase({required bool isCalledFromTesting}) async {
+  static Future<InitResult> _initDatabase({required bool isCalledFromTesting}) async {
     try {
       if (isCalledFromTesting) {
         HiveDatabase._instance = HiveDatabaseMock._();
@@ -48,21 +48,21 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
         "Initialized GameToolsLib DataBase from path ${database.basePath}, Logger ${Logger._instance.runtimeType} "
         "with LogLevel ${Logger.currentLogLevel} and config ${GameToolsConfig.config().runtimeType}",
       );
-      return true;
+      return InitResult.SUCCESS;
     } catch (e, s) {
       Logger.error("Error initializing Database of GameToolsLib", e, s);
-      return false;
+      return InitResult.DATABASE_ERROR;
     }
   }
 
   /// Called from [GameToolsLib.initGameToolsLib] to load native libs
-  static Future<bool> _initNativeCode({required bool isCalledFromTesting}) async {
+  static Future<InitResult> _initNativeCode({required bool isCalledFromTesting}) async {
     try {
       final bool unChanged = await NativeWindow.initNativeWindow(); // first init native window (this also calls
       // NativeWindow.initConfig / GameWindow.updateConfigVariables )
       if (unChanged == false) {
         Logger.error("Error, copy new Native C/C++ library file to ${FileUtils.absolutePath(FFILoader.apiPath)}");
-        return false;
+        return InitResult.NATIVE_WRONG_VERSION;
       }
       for (final GameWindow gameWindow in GameToolsLib.gameWindows) {
         gameWindow.init(); // now init all game windows once
@@ -114,7 +114,7 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
               "You have the OpenCV environment variable $opencvVar set to $openCVPath But no $_openCvName "
               "lib file exists there",
             );
-            return false;
+            return InitResult.NATIVE_OPENCV_MISSING;
           } else {
             Logger.verbose("Loading OpenCV from environment variable path $openCVPath");
           }
@@ -124,12 +124,12 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
         // first usage of opencv to load lib dependencies
         Logger.verbose("OpenCV Version: ${NativeWindow.openCvVersion}");
       }
-      return true;
+      return InitResult.SUCCESS;
     } on TestException {
       rethrow; // don't handle test exception
     } catch (e, s) {
       Logger.error("Error initializing Native Code of GameToolsLib", e, s);
-      return false;
+      return InitResult.NATIVE_CODE_ERROR;
     }
   }
 
@@ -147,7 +147,7 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
 
   /// This is called from [GameToolsLib.initGameToolsLib] at the end to init remaining stuff. Can also throw
   /// [ConfigException]! This also adds the additional listeners of the modules
-  static Future<bool> _initGameSpecificClasses(
+  static Future<InitResult> _initGameSpecificClasses(
     GameLogWatcher? gameLogWatcher,
     GameConfigLoader? gameConfigLoader,
   ) async {
@@ -158,13 +158,16 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
       moduleLogListeners.addAll(listeners);
       module._addInputListeners(listeners.length); // also logs message and adds input listeners
     }
-    final bool firstLoaded = await GameLogWatcher.logWatcher<GameLogWatcher>()._init(moduleLogListeners);
-    if (firstLoaded == false) {
-      return false;
+    final InitResult firstLoaded = await GameLogWatcher.logWatcher<GameLogWatcher>()._init(moduleLogListeners);
+    if (firstLoaded.hasError) {
+      return firstLoaded;
     }
     GameConfigLoader._instance = gameConfigLoader;
-    final bool? secondLoaded = await gameConfigLoader?.readConfig(); // may be null
-    return secondLoaded ?? true;
+    final InitResult? secondLoaded = await gameConfigLoader?.readConfig(); // may be null
+    if (secondLoaded?.hasError ?? false) {
+      return secondLoaded!;
+    }
+    return InitResult.SUCCESS;
   }
 
   /// Last part of [GameToolsLib.initGameToolsLib] to set the current state to [GameClosedState], then set

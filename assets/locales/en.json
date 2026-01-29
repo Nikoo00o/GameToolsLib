@@ -46,6 +46,8 @@
   "config.debugPrintGameWindowNames.description": "Logs all open windows after restart of the app for debugging",
   "config.alwaysMatchGameWindowNamesEqual": "Compare windows strictly",
   "config.alwaysMatchGameWindowNamesEqual.description": "The window of the game has to have the same name. Otherwise it will be tested if the target name is contained in the window name",
+  "config.customUserPath": "Custom Game Log File Path",
+  "config.customUserPath.description": "You can set the absolute path to your log.txt file",
   "page.home.title": "Home",
   "page.home.open": "Open",
   "page.home.window.status": "Window status",

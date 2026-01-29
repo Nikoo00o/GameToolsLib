@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:game_tools_lib/core/config/fixed_config.dart';
 import 'package:game_tools_lib/core/config/mutable_config.dart';
+import 'package:game_tools_lib/core/enums/init_result.dart';
 import 'package:game_tools_lib/core/enums/log_level.dart';
 import 'package:game_tools_lib/core/exceptions/exceptions.dart';
 import 'package:game_tools_lib/core/utils/utils.dart';
@@ -28,8 +29,8 @@ GameToolsConfigBaseType get _baseConfig => GameToolsConfigBaseType(fixed: FixedC
 
 void _testInit() {
   testO("initialize game tools lib with default example config", () async {
-    final bool success = await initDefaultGameToolsLib();
-    expect(success, true);
+    final InitResult success = await initDefaultGameToolsLib();
+    expect(success.hasError, false);
     expect(GameToolsLib.baseConfig.fixed.logIntoStorage, false, reason: "log into storage is false");
     expect(await GameToolsLib.baseConfig.mutable.logLevel.getValue(), LogLevel.SPAM, reason: "log level is spam");
     expect(GameToolsLib.database.basePath, HiveDatabaseMock.FLUTTER_TEST_PATH, reason: "database path is testing");
@@ -38,14 +39,14 @@ void _testInit() {
     expect(GameToolsLib.baseConfig.fixed.logPeriodicSpamDelayMS, 0, reason: "periodic spam delay always");
   }, initDefaultGameToolsLib: false);
   testO("initialize game tools lib with default base config", () async {
-    final bool success = await GameToolsLib.initGameToolsLib(
+    final InitResult success = await GameToolsLib.initGameToolsLib(
       config: _baseConfig,
       gameManager: TestGameManager(),
       isCalledFromTesting: true,
       gameWindows: GameToolsLib.createDefaultWindowForInit("Not_Found"),
       gameLogWatcher: GameLogWatcher.empty(),
     );
-    expect(success, true);
+    expect(success.hasError, false);
     expect(GameToolsLib.baseConfig.fixed.logIntoStorage, true, reason: "log into storage is true");
     expect(await GameToolsLib.baseConfig.mutable.logLevel.getValue(), LogLevel.SPAM, reason: "log level is spam");
     expect(await GameToolsLib.baseConfig.mutable.useDarkTheme.getValue(), true, reason: "default dark theme");
@@ -57,8 +58,8 @@ void _testInit() {
     HiveDatabaseMock.throwExceptionInInit = false;
   }, initDefaultGameToolsLib: false);
   testO("user initializing game tools lib twice should just return true", () async {
-    final bool success = await initDefaultGameToolsLib();
-    expect(success, true);
+    final InitResult success = await initDefaultGameToolsLib();
+    expect(success.hasError, false);
   });
   testO("user initializing game tools lib while there is already a config", () async {
     GameToolsLib.testResetInitialized();
@@ -78,7 +79,7 @@ void _testInit() {
     }, throwsA(predicate((Object e) => e is ConfigException)));
   }, initDefaultGameToolsLib: false);
   testO("initialize game tools lib with multiple game windows should still work", () async {
-    final bool success = await GameToolsLib.initGameToolsLib(
+    final InitResult success = await GameToolsLib.initGameToolsLib(
       config: _baseConfig,
       gameManager: TestGameManager(),
       isCalledFromTesting: true,
@@ -88,7 +89,7 @@ void _testInit() {
       ],
       gameLogWatcher: GameLogWatcher.empty(),
     );
-    expect(success, true);
+    expect(success.hasError, false);
     expect(GameToolsLib.mainGameWindow.name, "first", reason: "first name should be correct");
     expect(GameToolsLib.gameWindows.elementAt(1).name, "second", reason: "second name should be correct");
   }, initDefaultGameToolsLib: false);

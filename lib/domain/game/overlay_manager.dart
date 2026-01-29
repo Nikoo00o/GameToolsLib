@@ -288,14 +288,23 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
   /// If you choose a specific [t] then your dialog can use specific data in its [Navigator.pop] which will be
   /// returned here! Returns null if you return nothing or if there is no build context available.
   ///
-  /// This will block until your dialog returned something (or if the context was null)
-  Future<t?> showCustomDialog<t>(Widget Function(BuildContext context) buildDialog) async {
+  /// This will block until your dialog returned something (or if the context was null).
+  ///
+  /// [blockTouches] can be used to block touches outside of the dialog!
+  Future<t?> showCustomDialog<t>(
+    Widget Function(BuildContext context) buildDialog, {
+    bool blockTouches = false,
+  }) async {
     final Completer<t?> completer = Completer<t?>();
     Future<void> callback(BuildContext? context) async {
       if (context == null) {
         completer.complete(null);
       } else {
-        final t? result = await showDialog<t>(context: context, builder: buildDialog);
+        final t? result = await showDialog<t>(
+          context: context,
+          builder: buildDialog,
+          barrierDismissible: !blockTouches,
+        );
         completer.complete(result);
       }
     }
@@ -315,13 +324,24 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
   /// unawaited!
   ///
   /// Optionally a [delay] can also be used which is awaited before scheduling the work for the next frame.
+  ///
+  /// Uses [_OverlayLogger] for logging!
   @override
   Future<void> scheduleUIWork(
     FutureOr<void> Function(BuildContext? context) callback, [
     Duration delay = Duration.zero,
   ]) async {
     // todo: MULTI-WINDOW IN THE FUTURE: should be executed on overlay window
-    // maybe also show toast then for overlay window? (needs scaffold and cant be used on big app)
+    // maybe also show toast then for overlay window? (needs scaffold and cant be used on big app). check active?
+    if (_win == null) {
+      await _OverlayLogger().log(
+        "Trying to schedule ui work while overlay manager was not initialized",
+        LogLevel.WARN,
+        null,
+        null,
+      );
+      return;
+    }
     if (delay > Duration.zero) {
       await Future<void>.delayed(delay);
     }
@@ -342,14 +362,14 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
             done = false;
           }
         } catch (e, s) {
-          Logger.warn("Schedule ui work error:", e, s);
+          _OverlayLogger().log("Schedule ui work error:", LogLevel.WARN, e, s);
           done = true;
           rethrow; // some ui error
         }
       });
       WidgetsBinding.instance.ensureVisualUpdate(); // otherwise no frame would be rebuild
     } catch (e, s) {
-      Logger.warn("Schedule ui work error:", e, s);
+      await _OverlayLogger().log("Schedule ui work error:", LogLevel.WARN, e, s);
       done = true;
       // ui is not available yet, ignore errors which only happen on startup!
     }
@@ -446,3 +466,22 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
 
 /// Typedef for base type
 typedef OverlayManagerBaseType = OverlayManager<GTOverlayState>;
+
+/// Used in [OverlayManager.scheduleUIWork] for logging to not cause stack overflow errors by preventing ui logging!
+final class _OverlayLogger extends CustomLogger {
+  /// Set in constructor and used in [logLevel] and mutable!
+  LogLevel logLevelOverride;
+
+  _OverlayLogger([this.logLevelOverride = LogLevel.SPAM]) : super(sensitiveDataToRemove: <String>[]);
+
+  @override
+  void logToConsole(String logMessage) {
+    debugPrint(logMessage);
+  }
+
+  @override
+  void logToUi(LogMessage logMessage) {}
+
+  @override
+  LogLevel get logLevel => logLevelOverride;
+}
