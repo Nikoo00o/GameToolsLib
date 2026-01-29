@@ -5,7 +5,7 @@ import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 /// Used to create a drop down menu for the type [T] which is mostly used for enums.
 /// You should provide the [initialValue] value and the list of [values] further up in the widget tree and then you
 /// can receive updates when the value changes with [onValueChange]!
-final class SimpleDropDownMenu<T extends Object> extends StatelessWidget with GTBaseWidget {
+final class SimpleDropDownMenu<T extends Object?> extends StatelessWidget with GTBaseWidget {
   /// The list of available drop down options
   final List<T> values;
 
@@ -55,7 +55,7 @@ final class SimpleDropDownMenu<T extends Object> extends StatelessWidget with GT
 
   @override
   Widget build(BuildContext context) {
-    return DropdownMenu<T>(
+    return DropdownMenu<Object>(
       inputDecorationTheme: InputDecorationTheme(
         isDense: true,
         contentPadding: EdgeInsets.symmetric(horizontal: horizontalPadding),
@@ -71,14 +71,20 @@ final class SimpleDropDownMenu<T extends Object> extends StatelessWidget with GT
       initialSelection: initialValue,
       requestFocusOnTap: true,
       label: label == null ? null : Text(label!.tl(context)),
-      onSelected: onValueChange,
-      dropdownMenuEntries: List<DropdownMenuEntry<T>>.generate(
+      onSelected: (Object? newValue) {
+        if (newValue is T) {
+          onValueChange(newValue);
+        } else {
+          onValueChange(null); // if default object is stored, that means null
+        }
+      },
+      dropdownMenuEntries: List<DropdownMenuEntry<Object>>.generate(
         values.length,
         (int index) {
           final T value = values.elementAt(index);
-          return DropdownMenuEntry<T>(
-            value: value,
-            label: translationKeys != null ? translationKeys!.call(value).tl(context) : value.toString(),
+          return DropdownMenuEntry<Object>(
+            value: value as Object? ?? Object(), // null stores default object
+            label: translationKeys != null ? translationKeys!.call(value).tl(context) : (value?.toString() ?? ""),
             style: colourTexts != null ? MenuItemButton.styleFrom(foregroundColor: colourTexts!.call(value)) : null,
           );
         },
