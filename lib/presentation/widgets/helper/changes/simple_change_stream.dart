@@ -16,6 +16,8 @@ import 'package:provider/provider.dart';
 /// The [changeValue] should always be initialized in the constructor of your subclass of this with
 /// [initSimpleChangeStream] to prevent the UI listening to non initialized data!
 ///
+/// Remember to call [disposeStream] when the object is deleted!
+///
 /// In the UI its best to use [SimpleChangeListener] to listen to the changes from this! Just pass [simpleChangeStream]
 /// to its constructor and that's it (or the object itself)!
 ///
@@ -26,11 +28,13 @@ mixin SimpleChangeStream<T> {
   final StreamController<T> _controller = StreamController<T>.broadcast();
 
   /// Important: this must be called in the constructor of the class that is using this interface to initialize the
-  /// value to something (so that it cant happen that the value is used in the ui before it is initialized)
+  /// value to something (so that it cant happen that the value is used in the ui before it is initialized) if the
+  /// type [T] is not nullable!
   void initSimpleChangeStream(T value) {
     _value = value;
   }
 
+  /// Logs an error if [_value] is null but [T] is non nullable
   T get changeValue {
     if (_value is! T) {
       Logger.error("SimpleChangeStream.initSimpleChangeStream was not called in constructor");
@@ -38,8 +42,9 @@ mixin SimpleChangeStream<T> {
     return _value as T;
   }
 
+  /// Sets the [_value] and calls [addEvent]
   set changeValue(T data) {
-    changeValue = data;
+    _value = data;
     addEvent();
   }
 
@@ -59,5 +64,10 @@ mixin SimpleChangeStream<T> {
   /// This is also automatically called when setting the [changeValue]
   void addEvent() {
     _controller.add(changeValue);
+  }
+
+  /// Should be called when disposing the object to stop the stream controller!
+  void disposeStream() {
+    _controller.close();
   }
 }

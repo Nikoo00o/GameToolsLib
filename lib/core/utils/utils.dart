@@ -34,12 +34,13 @@ abstract final class Utils {
   ///
   /// IMPORTANT: you have to create the function pointer for [callback] outside of your loop and you MAY NOT use an
   /// unnamed lambda function!!!!!!!! As a guard an assert is thrown in debug mode if there are more unique [_executors]
-  /// callbacks added than [maxExecutorCountGuard].
+  /// callbacks added than [maxExecutorCountGuard]. But of course you can also use a member function as the callback
+  /// pointer!
   /// Example:
   /// ```dart
   ///     int counter = 0;
   ///     void callback() { counter -= 1; }
-  ///     while(true) { Utils.executePeriodicSync(delay: Duration(milliseconds: 10), callback: callback); }
+  ///     while(true) { Utils.executePeriodicAsync(delay: Duration(milliseconds: 10), callback: callback); }
   /// ```
   static Future<void> executePeriodicAsync({required Duration delay, required Future<void> Function() callback}) async {
     final DateTime now = DateTime.now();
@@ -60,7 +61,8 @@ abstract final class Utils {
   ///
   /// IMPORTANT: you have to create the function pointer for [callback] outside of your loop and you MAY NOT use an
   /// unnamed lambda function!!!!!!!! As a guard an assert is thrown in debug mode if there are more unique [_executors]
-  /// callbacks added than [maxExecutorCountGuard].
+  /// callbacks added than [maxExecutorCountGuard]. But of course you can also use a member function as the callback
+  /// pointer!
   /// Example:
   /// ```dart
   ///     int counter = 0;

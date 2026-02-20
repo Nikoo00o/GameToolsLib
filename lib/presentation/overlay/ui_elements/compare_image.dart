@@ -31,6 +31,9 @@ import 'package:game_tools_lib/presentation/overlay/ui_elements/overlay_element.
 ///
 /// [storedPath] can also be used instead of [unscaledImage.path].
 /// The [buildOverlay] method does nothing here and [clickable] will always be false for this!
+///
+/// Creating an instance of this as a member of a [Module] directly must be done as late final (otherwise throws
+/// exception that game window cannot be accessed)!
 base class CompareImage extends OverlayElement {
   /// Reference to the locally stored image file from which the (not dynamically changing) [ImageAsset.fileName] will
   /// be used as the [identifier] which is also used as a file name to save this compare image to storage!

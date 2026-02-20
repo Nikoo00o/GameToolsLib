@@ -41,10 +41,12 @@ import 'package:game_tools_lib/domain/game/input/log_input_listener.dart';
 import 'package:game_tools_lib/domain/game/states/child_game_state.dart';
 import 'package:game_tools_lib/domain/game/states/game_closed_state.dart';
 import 'package:game_tools_lib/domain/game/web_manager.dart';
+import 'package:game_tools_lib/presentation/base/error_app.dart';
 import 'package:game_tools_lib/presentation/overlay/gt_overlay.dart';
 import 'package:game_tools_lib/presentation/overlay/ui_elements/compare_image.dart';
 import 'package:game_tools_lib/presentation/overlay/ui_elements/helper/overlay_elements_list.dart';
 import 'package:game_tools_lib/presentation/overlay/ui_elements/overlay_element.dart';
+import 'package:game_tools_lib/presentation/pages/settings/gt_settings_page.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/changes/simple_change_notifier.dart';
 import 'package:hive/hive.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -213,6 +215,9 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     } else {
       _gameWindows = gameWindows; // static instance variables that need to be assigned
     }
+    if (GameToolsConfig.baseConfig.staticAssetFolders.isEmpty) {
+      throw const ConfigException(message: "initGameToolsLib called with empty static asset folders list");
+    }
 
     // init others and return if not success
     InitResult result = await _GameToolsLibHelper._initDatabase(isCalledFromTesting: isCalledFromTesting);
@@ -248,7 +253,8 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
   /// Otherwise this should always return true except when [OverlayManager.init] fails!
   ///
   /// [app] can also be null if you don't want any user interface (then [runApp] is not called to run the flutter app
-  /// and [OverlayManager.init] is not called, but this method will still return true).
+  /// and [OverlayManager.init] is not called, but this method will still return true). Depending on the [initResult]
+  /// this may also run the [ErrorApp] instead of the [app].
   ///
   /// But from tests you can also use [app] null and then pass [appWasAlreadyStarted] as true to still call
   /// [OverlayManager.init] even tho there is no app! Otherwise leave it at false!
@@ -267,10 +273,14 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
         Logger.error("initGameToolsLib app was not null, but appWasAlreadyStarted was true!");
         return false;
       }
-      runApp(app);
+      if (initResult.hasError) {
+        runApp(ErrorApp(errorCode: initResult, exception: null));
+      } else {
+        runApp(app);
+      }
       overlayInit = await OverlayManager._instance?.init() ?? false;
       if (overlayInit && initResult == InitResult.LOG_NOT_FOUND) {
-        await _selectFileAfterLogNotFound();
+        await ErrorApp.selectFileAfterLogNotFound();
       }
     } else if (appWasAlreadyStarted) {
       overlayInit = await OverlayManager._instance?.init() ?? false;
@@ -296,26 +306,6 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     await InputIsolate.createIsolate();
     await _GameToolsLibEventLoop._startLoop(baseConfig.fixed.updatesPerSecond);
     return overlayInit;
-  }
-
-  // todo: comment and also implement better when implementing file option
-  static Future<void> _selectFileAfterLogNotFound() async {
-    final FileConfigOption configOption = GameLogWatcher._instance!.customUserPath;
-    await configOption.onInit();
-    await OverlayManager._instance!.showCustomDialog<void>(blockTouches: true, (BuildContext context) {
-      return AlertDialog(
-        title: Text(configOption.title.tl(context)),
-        content: configOption.builder.buildProviderWithContent(context, calledFromInnerGroup: false),
-        actions: <Widget>[
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-            },
-            child: Text(const TS("input.ok").tl(context)),
-          ),
-        ],
-      );
-    });
   }
 
   /// Should be called at the end of your program (and otherwise is used for testing to cleanup all data)
@@ -568,8 +558,12 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     if (!allowMultiInstances) {
       if (instance is MutableConfigOptionGroup) {
         final String groupIdentifier = "group_$identifier";
-        final bool added = _identifiers.add(groupIdentifier);
-        assert(added, "Duplicated group identifier used: $groupIdentifier from $instance");
+        if (identifier.endsWith(GTSettingsPage.otherGroup.identifier)) {
+          Logger.warn("Duplicated other group identifier used (happens on reload): $groupIdentifier from $instance");
+        } else {
+          final bool added = _identifiers.add(groupIdentifier);
+          assert(added, "Duplicated group identifier used: $groupIdentifier from $instance");
+        }
       } else {
         final bool added = _identifiers.add(identifier);
         assert(added, "Duplicated identifier used: $identifier from $instance");
