@@ -22,6 +22,11 @@
 - the default game tools lib only contains one "en.json" with some basic keys that will be merged with your english 
   translation file! (you have to manually copy and translate the keys for other languages!!!!)
 
+### Usage 
+
+- important: make sure to always adhere to the terms of service of the specific game on how far sending inputs and 
+  capturing images is allowed
+
 ## Build
 
 ### Prerequisites 

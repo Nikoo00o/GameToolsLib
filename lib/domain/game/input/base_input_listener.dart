@@ -45,7 +45,13 @@ abstract base class BaseInputListener<DataType> {
   /// The default is [onlyWhenMainWindowHasFocus] to only create events when the main window is open and has focus!
   /// But of course this could also check some sort of ingame state, etc. Of course you could also toggle [isActive]
   /// instead which also disables the spam logs.
-  final bool Function() eventCreateCondition;
+  ///
+  /// In most cases, this should not be an async function! But if it is, it should be fast, because when triggering
+  /// the event multiple times, old pending conditions will just be discarded!
+  ///
+  /// Important: for [MouseInputListener] the default is [MouseInputListener.delayedFocusConditionMainWindow] and
+  /// also read through [MouseInputListener.delayedFocusCondition]!!!
+  final FutureOr<bool> Function() eventCreateCondition;
 
   /// This is the function called internally when this listener is activated to create a new object of any
   /// [GameEvent] subclass (which will then be added to the internal event queue) only if [eventCreateCondition]
@@ -88,8 +94,8 @@ abstract base class BaseInputListener<DataType> {
   /// Initially null until the first [_update] call from the event loop. returns if the key is saved on storage.
   bool? _existsOnStorage;
 
-  /// Stores the last internal key state queried by this
-  bool _isKeyDown = false;
+  /// Flag to not call [InputIsolate.ignoreClicks] too many times!
+  bool _alreadyIgnored = false;
 
   /// used after key change in [_resetLoopState] and [_update]
   static final Duration _delay = Duration(milliseconds: (1000 / FixedConfig.fixedConfig.updatesPerSecond * 5).toInt());
@@ -107,6 +113,9 @@ abstract base class BaseInputListener<DataType> {
 
   /// For [uniqueId]
   static int _identifierCounter = 0;
+
+  /// Needed to handle async events and cancel old addEvent calls
+  Completer<bool>? _lastEventCreateCondition;
 
   BaseInputListener({
     required this.configLabel,
@@ -128,8 +137,28 @@ abstract base class BaseInputListener<DataType> {
     }
   }
 
-  void _addEvent() {
-    if (eventCreateCondition.call()) {
+  Future<void> _addEvent() async {
+    if (_lastEventCreateCondition != null && !_lastEventCreateCondition!.isCompleted) {
+      _lastEventCreateCondition!.complete(false); // cancel previous addEvent call
+    }
+    final FutureOr<bool> future = eventCreateCondition.call();
+    if (future is Future<bool>) {
+      _lastEventCreateCondition = Completer<bool>();
+      unawaited(
+        future.then((bool value) {
+          if (_lastEventCreateCondition?.isCompleted == false) {
+            _lastEventCreateCondition!.complete(value); // execute unawaited
+          }
+        }),
+      );
+      unawaited(_lastEventCreateCondition!.future.then((bool value) => _addEventInternal(value && isActive)));
+    } else {
+      _addEventInternal(future);
+    }
+  }
+
+  void _addEventInternal(bool canExecute) {
+    if (canExecute) {
       if (alwaysCreateNewEvents) {
         final GameEvent? event = createEventCallback.call();
         if (event != null) {
@@ -246,10 +275,11 @@ abstract base class BaseInputListener<DataType> {
   /// Needs to be overridden in the sub classes for keyboard vs mouse to load the [DataType]
   DataType? _stringToKey(String? str);
 
-  /// Needs to be overridden in the sub classes for keyboard vs mouse and return the current state.
+  /// Needs to be overridden in the sub classes for keyboard vs mouse and return the current state on how many times
+  /// the input was clicked since the last call to this.
   ///
   /// Remember the [currentKey] will never be null if this is called, because it will not be called if its null!
-  Future<bool> _getNewKeyState();
+  Future<int> _getNewKeyState();
 
   /// Called in [storeKey] and [deleteKey] automatically to prevent other listeners from firing their events when
   /// keys are modified
@@ -267,22 +297,30 @@ abstract base class BaseInputListener<DataType> {
   /// Called periodically from the internal event loop
   Future<void> _update() async {
     if (isActive == false) {
-      if (_isKeyDown) {
-        _isKeyDown = false;
-      }
+      await _ignoreIfPossible();
       return; // don't update if not active!
     }
     if (_existsOnStorage == null) {
       await _loadKey();
     }
     if (updateChecks()) {
-      final bool newKeyDown = await _getNewKeyState();
-      if (_isKeyDown == false && newKeyDown) {
-        _addEvent();
+      final int clicks = await _getNewKeyState();
+      for (int i = 0; i < clicks; ++i) {
+        await _addEvent(); // add event for each click
       }
-      _isKeyDown = newKeyDown;
+      if (_alreadyIgnored) {
+        _alreadyIgnored = false;
+      }
     } else {
-      _isKeyDown = false;
+      await _ignoreIfPossible();
+    }
+  }
+
+  /// resets the amount of clicks since last call
+  Future<void> _ignoreIfPossible() async {
+    if (!_alreadyIgnored) {
+      _alreadyIgnored = true;
+      await InputIsolate.ignoreClicks(uniqueId);
     }
   }
 

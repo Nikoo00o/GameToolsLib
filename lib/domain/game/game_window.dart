@@ -380,6 +380,8 @@ final class GameWindow with ChangeNotifier {
   ///
   /// Very Important: use at your own risk! some games, or anti cheats may not like forced mouse movements even if they
   /// don't do anything bad and could flag you for using this!
+  ///
+  /// Important: always make sure to read through the terms of service of your game if this is allowed!
   Future<void> moveMouse(
     int x,
     int y, {

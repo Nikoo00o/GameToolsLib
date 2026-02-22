@@ -85,6 +85,8 @@ abstract final class InputManager {
   ///
   /// Very Important: use at your own risk! some games, or anti cheats may not like forced mouse movements even if they
   /// don't do anything bad and could flag you for using this!
+  ///
+  /// Important: always make sure to read through the terms of service of your game if this is allowed!
   static Future<void> moveMouseInWindow(
     Point<int> point,
     GameWindow window, {
@@ -182,12 +184,16 @@ abstract final class InputManager {
   }
 
   /// Clicks the left mouse button down and up.
-  /// [delayBeforeAndBetweenInMS] is awaited in the middle of this and defaults to [FixedConfig.shortDelayMS]
+  /// [delayBeforeAndBetweenInMS] is awaited in the middle of this and defaults to [FixedConfig.shortDelayMS].
+  ///
+  /// Important: always make sure to read through the terms of service of your game if this is allowed!
   static Future<void> leftClick({Point<int>? delayBeforeAndBetweenInMS}) async =>
       _mouseClick(key: MouseKey.LEFT, delayBeforeAndBetweenInMS: delayBeforeAndBetweenInMS);
 
   /// Clicks the right mouse button down and up.
-  /// [delayBeforeAndBetweenInMS] is awaited in the middle of this and defaults to [FixedConfig.shortDelayMS]
+  /// [delayBeforeAndBetweenInMS] is awaited in the middle of this and defaults to [FixedConfig.shortDelayMS].
+  ///
+  /// Important: always make sure to read through the terms of service of your game if this is allowed!
   static Future<void> rightClick({Point<int>? delayBeforeAndBetweenInMS}) async =>
       _mouseClick(key: MouseKey.RIGHT, delayBeforeAndBetweenInMS: delayBeforeAndBetweenInMS);
 
@@ -212,7 +218,9 @@ abstract final class InputManager {
   ///
   /// Otherwise if the [key] was already down, this returns false!
   ///
-  /// [delayBeforeAndBetweenInMS] is awaited in the middle of this and defaults to [FixedConfig.tinyDelayMS]
+  /// [delayBeforeAndBetweenInMS] is awaited in the middle of this and defaults to [FixedConfig.tinyDelayMS].
+  ///
+  /// Important: always make sure to read through the terms of service of your game if this is allowed!
   static Future<bool> keyPress(BoardKey key, {Point<int>? delayBeforeAndBetweenInMS}) async {
     final Duration duration = NumUtils.getRandomDuration(delayBeforeAndBetweenInMS, defaultToTiny: true);
     final List<LogicalKeyboardKey> keyCodes = key.logicalKeysToPress;

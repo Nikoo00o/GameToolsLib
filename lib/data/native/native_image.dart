@@ -306,6 +306,9 @@ final class NativeImage extends BaseNativeImage {
   /// that type directly. Also for the other [subImage] it has to be either [NativeImageType.RGB] or
   /// [NativeImageType.RGBA], but the alpha channel will be ignored!
   ///
+  /// Otherwise for better performance use [NativeImageType.GRAY] for [this] and the [subImage] instead which will
+  /// then be used directly!
+  ///
   /// Also very important: of course if using an asset image it also has to be scaled to the correct size as how it
   /// would look for the current window!!!
   Future<Bounds<int>?> findPositionOfSubImage(
@@ -316,12 +319,14 @@ final class NativeImage extends BaseNativeImage {
     if (_data == null || subImage._data == null || subImage.width >= width || subImage.height >= height) {
       return null;
     }
-    await changeTypeAsync(NativeImageType.RGB); // src image must be RGB!
+    if (type != NativeImageType.GRAY) {
+      await changeTypeAsync(NativeImageType.RGB); // src image must be RGB!
+    }
     cv.Mat? mask;
     final cv.Mat srcImg = _data!;
     late final cv.Mat templateImg;
     cv.Mat? toClean;
-    if (subImage.type == NativeImageType.RGBA) {
+    if (subImage.type == NativeImageType.RGBA && type != NativeImageType.GRAY) {
       final cv.VecMat channels = await cv.splitAsync(subImage._data!);
       // BGR channels
       templateImg = await cv.mergeAsync(cv.VecMat.fromList(<cv.Mat>[channels[0], channels[1], channels[2]]));
@@ -332,6 +337,9 @@ final class NativeImage extends BaseNativeImage {
       toClean = templateImg;
     } else {
       templateImg = subImage._data!;
+      if (type != subImage.type) {
+        throw ImageException(message: "$this had a different type then the subImage to find $subImage");
+      }
     }
 
     final int resultCols = srcImg.cols - templateImg.cols + 1;

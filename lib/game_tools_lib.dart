@@ -325,6 +325,9 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       await _GameToolsLibEventLoop._stopLoop(); // then wait for loop to stop
       await InputIsolate.destroyIsolate();
       if (GameManager._instance != null) {
+        for (final BaseInputListener<dynamic> listener in GameManager._instance!._inputListeners) {
+          listener.isActive = false; // prevent any pending input events from triggering
+        }
         for (final ModuleBaseType module in GameManager._instance!.modules) {
           await module.onStop(); // then stop modules
         }
@@ -559,7 +562,10 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       if (instance is MutableConfigOptionGroup) {
         final String groupIdentifier = "group_$identifier";
         if (identifier.endsWith(GTSettingsPage.otherGroup.identifier)) {
-          Logger.warn("Duplicated other group identifier used (happens on reload): $groupIdentifier from $instance");
+          final bool added = _identifiers.add(groupIdentifier);
+          if (added) {
+            Logger.warn("Duplicated other group identifier used (happens on reload): $groupIdentifier from $instance");
+          }
         } else {
           final bool added = _identifiers.add(groupIdentifier);
           assert(added, "Duplicated group identifier used: $groupIdentifier from $instance");

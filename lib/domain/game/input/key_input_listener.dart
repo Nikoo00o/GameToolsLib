@@ -68,15 +68,15 @@ base class KeyInputListener extends BaseInputListener<BoardKey> {
   }
 
   @override
-  void _addEvent() {
+  Future<void> _addEvent() async {
     if (resetKeysAfter) {
       InputManager.resetKeys(currentKey!);
     }
-    super._addEvent();
+    await super._addEvent();
   }
 
   @override
-  Future<bool> _getNewKeyState() => InputIsolate.isKeyDown(uniqueId, currentKey!);
+  Future<int> _getNewKeyState() => InputIsolate.keyClicked(uniqueId, currentKey!);
 
   @override
   bool isDown() => currentKey != null && InputManager.isKeyDown(currentKey!);

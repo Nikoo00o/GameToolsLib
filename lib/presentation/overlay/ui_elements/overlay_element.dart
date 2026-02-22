@@ -95,6 +95,32 @@ base class OverlayElement with ChangeNotifier implements Model {
   /// This is mutable and may be changed during runtime to toggle the visibility of this element (and rebuild after)!
   bool get visible => _visible;
 
+  bool _wasVisibleBeforeInvisible = false;
+
+  /// This can be used first with [invisible] "true", then wait a while and then [invisible] "false" to hide this
+  /// overlay element for a while.
+  ///
+  /// On the first call with [invisible] "true", the internal [visible] is set to false (if it was true), but it will
+  /// also be cached and then reset to "true" again on the next call with [invisible] "false"! Nothing will be done
+  /// if the internal [visible] was already false.
+  ///
+  /// This is used to only disable a specific overlay for a time while trying not to impact the internal overlay logic!
+  void setInvisibleTemporary({required bool invisible}) {
+    if (invisible) {
+      _wasVisibleBeforeInvisible = _visible;
+      if (_visible) {
+        _visible = false;
+        notifyListeners();
+      }
+    } else {
+      if (!_visible && _wasVisibleBeforeInvisible) {
+        _visible = true;
+        _wasVisibleBeforeInvisible = false;
+        notifyListeners();
+      }
+    }
+  }
+
   /// Controls if this [buildOverlay] is called or an empty sized box is displayed instead.
   ///
   /// But unrelated to this, this overlay element will only be shown if [OverlayManager.overlayMode] is

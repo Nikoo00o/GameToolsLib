@@ -7,12 +7,14 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 ///
 /// Also important: this is also affected by [OverlayManager.isOverlayFocused] and will never return true that the
 /// key is down in that case if the overlay is focused!!
+///
+/// Also read through [delayedFocusCondition] for clicking back into the window after tabbing out!
 base class MouseInputListener extends BaseInputListener<MouseKey> {
   /// Optionally you can also use the [MouseInputListener.instant] constructor instead!
   MouseInputListener({
     required super.configLabel,
     super.configLabelDescription,
-    super.eventCreateCondition,
+    super.eventCreateCondition = delayedFocusConditionMainWindow,
     required super.createEventCallback,
     required super.alwaysCreateNewEvents,
     required super.defaultKey,
@@ -25,7 +27,7 @@ base class MouseInputListener extends BaseInputListener<MouseKey> {
   MouseInputListener.instant({
     required super.configLabel,
     super.configLabelDescription,
-    super.eventCreateCondition,
+    super.eventCreateCondition = delayedFocusConditionMainWindow,
     required void Function() quickAction,
     required super.defaultKey,
     super.configGroupLabel,
@@ -38,6 +40,23 @@ base class MouseInputListener extends BaseInputListener<MouseKey> {
          },
          alwaysCreateNewEvents: true,
        );
+
+  /// This will wait 250 milliseconds and then update and check the focus of the [gameWindow] again if it did not
+  /// have focus before discarding the event. The reason is that when tabbing out and then clicking on the main
+  /// window again, it would otherwise not receive focus fast enough and discard the click which may be very bad for
+  /// [MouseKey.LEFT] or [MouseKey.RIGHT] clicks! So always use this instead of just checking the focus of the window
+  /// normally! For usage, see [delayedFocusConditionMainWindow] for example which is the default.
+  static Future<bool> delayedFocusCondition(GameWindow gameWindow) async {
+    if (!gameWindow.hasFocus) {
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      return gameWindow.updateAndGetFocus();
+    } else {
+      return true;
+    }
+  }
+
+  /// Same as [delayedFocusCondition], but with [GameToolsLib.mainGameWindow]
+  static Future<bool> delayedFocusConditionMainWindow() => delayedFocusCondition(GameToolsLib.mainGameWindow);
 
   static final SpamIdentifier _instantLog = SpamIdentifier();
 
@@ -59,7 +78,7 @@ base class MouseInputListener extends BaseInputListener<MouseKey> {
   }
 
   @override
-  Future<bool> _getNewKeyState() => InputIsolate.isMouseDown(uniqueId, currentKey!);
+  Future<int> _getNewKeyState() => InputIsolate.mouseClicked(uniqueId, currentKey!);
 
   @override
   bool isDown() => currentKey != null && InputManager.isMouseDown(currentKey!);
