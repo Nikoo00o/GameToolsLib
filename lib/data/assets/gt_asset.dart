@@ -66,6 +66,9 @@ abstract base class GTAsset<T> {
   /// files for the current language were not found. Otherwise if this is false, then no language string will be
   /// inserted!
   /// So for example "_en", or "_de" will be inserted if true depending on the language. If false "" as nothing.
+  ///
+  /// Important, this can also react to game language changes and load the content again when accessing [content] by
+  /// caching the last language used with this in [_lastLanguageUsed] (see [usedDifferentLangThanCurrent])!
   final bool isMultiLanguage;
 
   /// The file ending after the [fileName], for example "json" for [JsonAsset]. Important: don't add the dot (".")!
@@ -82,11 +85,18 @@ abstract base class GTAsset<T> {
   /// project last) in the parent folder [GameToolsConfig.staticAssetFolders] and with the file names
   /// [possibleFileNames] (look at other docs!). How newer files replace the [_loadedContent] is defined in the sub
   /// classes with [loadFromFile]!
-
-  T? get content => _loadedContent;
+  T? get content {
+    if (usedDifferentLangThanCurrent(updateCachedLang: true)) {
+      _loadedContent = loadContent();
+    }
+    return _loadedContent;
+  }
 
   /// Will be set to cache results of [loadContent]
   late T? _loadedContent = loadContent();
+
+  /// Only used if [isMultiLanguage] is true!
+  String? _lastLanguageUsed;
 
   GTAsset._({
     required this.subFolderPath,
@@ -139,7 +149,7 @@ abstract base class GTAsset<T> {
       return ("$fileName.$fileEnding", "");
     } else {
       return (
-        "${fileName}_${GameToolsLib.gameLanguage.languageCode}.$fileEnding",
+        "${fileName}_$_gameLang.$fileEnding",
         "${fileName}_${FixedConfig.fixedConfig.supportedLocales.first!.languageCode}.$fileEnding",
       );
     }
@@ -180,7 +190,8 @@ abstract base class GTAsset<T> {
   /// This is used to decide in [loadContent] if the second path of [possibleFileNames] should also be loaded and per
   /// default only returns true if the second fileName is not empty and the content is still null. But of course may
   /// be overridden in sub classes
-  bool _alsoLoadSecondPath(String secondFileName) => _loadedContent == null && secondFileName.isNotEmpty;
+  bool _alsoLoadSecondPath(String? firstPath, String secondFileName) =>
+      _loadedContent == null && firstPath == null && secondFileName.isNotEmpty;
 
   /// Overridden in [LocaleAsset]!
   /// Used in [_loadFilesFromFolders] to either try to load a file with the [fileName] or if this method returns true
@@ -189,32 +200,39 @@ abstract base class GTAsset<T> {
   bool _checkAllFilesInDirectory() => fileName.isEmpty;
 
   /// used in [_loadFilesFromFolders] to call [loadFromFile]
-  void _loadFile(String fullPath) {
+  String? _loadFile(String fullPath) {
     if (FileUtils.fileExists(fullPath) || FileUtils.dirExists(fullPath)) {
       loadFromFile(fullPath);
       Logger.spam(runtimeType, " loaded from: ", fullPath);
+      return fullPath;
     } else {
       Logger.spam(runtimeType, " could not find: ", fullPath);
+      return null;
     }
   }
 
   /// Used by [loadContent] to call [_loadFilesFromFolders]. Loads all files if [_checkAllFilesInDirectory] returns
-  /// true and otherwise only the [filePath]
-  void _loadFilesFromFolders(List<String> folders, String filePath) {
+  /// true and otherwise only the [filePath]. optionally returns loaded path if something was found and otherwise null.
+  String? _loadFilesFromFolders(List<String> folders, String filePath) {
+    String? outputPath;
     for (final String parentPath in folders) {
       if (filePath.isEmpty) {
-        _loadFile(parentPath);
+        final String? path = _loadFile(parentPath);
+        outputPath ??= path;
       } else if (_checkAllFilesInDirectory()) {
         final List<String> files = FileUtils.getFilesInDirectorySync(parentPath, skipDirectories: true);
         for (final String fullPath in files) {
           if (fullPath.endsWith(filePath)) {
-            _loadFile(fullPath); // special case, check all files that end with same ending filePath
+            final String? path = _loadFile(fullPath);
+            outputPath ??= path; // special case,check all files that end with same ending filePath
           }
         }
       } else {
-        _loadFile(FileUtils.combinePath(<String>[parentPath, filePath])); // only load the one target file
+        final String? path = _loadFile(FileUtils.combinePath(<String>[parentPath, filePath]));
+        outputPath ??= path; // only load the one target file
       }
     }
+    return outputPath;
   }
 
   /// This is called the first time the [content] is accessed automatically internally to load the data from the
@@ -230,11 +248,29 @@ abstract base class GTAsset<T> {
     _loadedContent = null;
     final List<String> folders = possibleFolders;
     final (String first, String second) = possibleFileNames;
-    _loadFilesFromFolders(folders, first); // first load first file name
-    if (_alsoLoadSecondPath(second)) {
-      _loadFilesFromFolders(folders, second); // also load second fallback if method returns true
+    final String? firstPath = _loadFilesFromFolders(folders, first); // first load first file name
+    if (_alsoLoadSecondPath(firstPath, second)) {
+      final String? path = _loadFilesFromFolders(folders, second); // also load second fallback if method returns true
+      if (firstPath == null) {
+        Logger.warn("Could not find language specific file $first next to $path");
+      }
     }
     initContentIfNeeded(_loadedContent); // also prints success logs or warning logs
     return _loadedContent;
   }
+
+  /// Only used if [isMultiLanguage] is true, otherwise always returns false! Checks the [GameToolsLib.gameLanguage].
+  bool usedDifferentLangThanCurrent({required bool updateCachedLang}) {
+    if (!isMultiLanguage) {
+      return false;
+    }
+    final String newLang = _gameLang;
+    final bool wasChanged = _lastLanguageUsed != null && _lastLanguageUsed != newLang;
+    if (updateCachedLang) {
+      _lastLanguageUsed = newLang;
+    }
+    return wasChanged;
+  }
+
+  String get _gameLang => GameToolsLib.gameLanguage.languageCode;
 }

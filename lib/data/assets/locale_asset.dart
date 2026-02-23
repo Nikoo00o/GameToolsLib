@@ -47,9 +47,9 @@ base class LocaleAsset extends GTAsset<Map<String, String>> {
 
   /// Overridden to always return true
   @override
-  bool _alsoLoadSecondPath(String secondFileName) {
+  bool _alsoLoadSecondPath(String? firstPath, String secondFileName) {
     _checkAllFilesSwitcher = true;
-    return true;
+    return true; // should not be called here tho, because never multi language
   }
 
   /// Used as a toggle which is set in [possibleFileNames] to false and in  [_alsoLoadSecondPath] to true to only

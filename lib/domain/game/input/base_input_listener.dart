@@ -227,7 +227,7 @@ abstract base class BaseInputListener<DataType> {
   /// If [newKey] is null, then this will mark this hotkey as being unset / not set and after this [currentKey] will
   /// return null as well!
   ///
-  /// Only saves to story if [isConfigurable] is true!
+  /// Only saves to storage if [isConfigurable] is true!
   Future<void> storeKey(DataType? newKey) async {
     Logger.verbose("Storing new hotkey $newKey for $this");
     _key = newKey;

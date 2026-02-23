@@ -408,46 +408,68 @@ abstract final class InputManager {
   /// stored text (it will await 1 additional which may be overridden with the delay or medium optionally)!
   ///
   /// Per default this always returns true, but if you pass the [cancelOn] callback and if that one returns true,
-  /// then this method will stop and return with false (will be checked after every long delay).
+  /// then this method will stop and return with false (will be checked after every long delay). Important: if the
+  /// callback needs to be async, then don't await any long timeouts inside of it!
   ///
-  /// [isChatAlreadyOpen] can also be used to prevent the first enter press!
+  /// Important: this can also be used to enter messages in other inputs and will not press enter first+last if the
+  /// [GameManager.isAnyInputFocused] returns true (which should be overridden to also handling setting input to true
+  /// for a chat window)! Important: [GameManager.setInputtingForChatWindow] will otherwise also be called when pressing
+  /// enter!
   static Future<bool> sendChatMessage(
     String text, {
     Point<int>? delay,
     bool clearFirst = false,
-    bool Function()? cancelOn,
-    bool isChatAlreadyOpen = false,
+    FutureOr<bool> Function()? cancelOn,
   }) async {
     Logger.verbose("Sending chat message...: $text");
     final String oldData = await getClipboard(delayBeforeAndAfter: delay);
     await setClipboard(text, delayBeforeAndAfter: delay);
     await Utils.delay(NumUtils.getRandomDuration(delay ?? FixedConfig.fixedConfig.mediumDelayMS));
-    if (cancelOn?.call() ?? false) {
+    if (await _needCancel(cancelOn)) {
       await setClipboard(oldData, delayBeforeAndAfter: delay);
+      Logger.verbose("Cancelled sending chat message 1");
       return false;
     }
-    if (!isChatAlreadyOpen) {
+    final GameManagerBaseType gameManager = gm();
+    final bool shouldOpenAndCloseChat = !(await gameManager.isAnyInputFocused());
+    if (shouldOpenAndCloseChat) {
       await keyPress(BoardKey.enter); // additional 2 smaller delays
       await Utils.delay(NumUtils.getRandomDuration(delay ?? FixedConfig.fixedConfig.longDelayMS));
+      await gameManager.setInputtingForChatWindow(inputting: true);
     }
-    if (!isChatAlreadyOpen && (cancelOn?.call() ?? false)) {
+    if (!(await gameManager.isAnyInputFocused()) || (await _needCancel(cancelOn))) {
       await setClipboard(oldData, delayBeforeAndAfter: delay);
+      Logger.verbose("Cancelled sending chat message 2");
       return false;
     }
     if (clearFirst) {
       await selectText(delayBeforeAndAfter: delay);
-      if (cancelOn?.call() ?? false) {
+      if (!(await gameManager.isAnyInputFocused()) || (await _needCancel(cancelOn))) {
         await setClipboard(oldData, delayBeforeAndAfter: delay);
+        Logger.verbose("Cancelled sending chat message 3");
         return false;
       }
     }
     await pasteClipboard(delayBeforeAndAfter: delay);
-    if (cancelOn?.call() ?? false) {
-      await setClipboard(oldData, delayBeforeAndAfter: delay);
-      return false;
+    if (shouldOpenAndCloseChat) {
+      if (!(await gameManager.isAnyInputFocused()) || (await _needCancel(cancelOn))) {
+        await setClipboard(oldData, delayBeforeAndAfter: delay);
+        Logger.verbose("Cancelled sending chat message 4");
+        return false;
+      }
+      await keyPress(BoardKey.enter); // additional 2 smaller delays
+      await gameManager.setInputtingForChatWindow(inputting: false);
     }
-    await keyPress(BoardKey.enter); // additional 2 smaller delays
     await setClipboard(oldData, delayBeforeAndAfter: delay);
+    Logger.verbose("Done sending chat message, needed to open+close chat window: $shouldOpenAndCloseChat");
     return true;
+  }
+
+  static Future<bool> _needCancel(FutureOr<bool> Function()? cancelOn) async {
+    if (cancelOn == null) {
+      return false;
+    } else {
+      return cancelOn.call();
+    }
   }
 }

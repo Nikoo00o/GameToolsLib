@@ -26,4 +26,10 @@ final class ExampleGameManager extends GameManager<ExampleGameToolsConfig> {
 
   @override
   Future<void> onUpdate() async => updateCounter++;
+
+  @override
+  Future<bool> isAnyInputFocused() async => false;
+
+  @override
+  Future<void> setInputtingForChatWindow({required bool inputting}) async {}
 }

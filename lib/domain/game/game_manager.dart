@@ -31,7 +31,8 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// You have to override [onStart], [onStop], [onUpdate], [onOpenChange], [onFocusChange], [onStateChange] to react
 /// to changes! But you can also override [moduleConfiguration] to split the code into different [Module]'s that
 /// instead react to those changes (look at the docs there for more info. They can also contain mutable config
-/// options and input listener and are retrieved with [modules], or per name with [getModule]!).
+/// options and input listener and are retrieved with [modules], or per name with [getModule]!). Additionally also
+/// override [isAnyInputFocused] and [setInputtingForChatWindow]!
 ///
 /// Don't initialize anything in the constructor of your sub classes of this and everything else and instead use
 /// something like [onStart] which is called after [GameToolsLib.initGameToolsLib] so that you can also access the
@@ -101,6 +102,22 @@ abstract base class GameManager<ConfigType extends GameToolsConfigBaseType> {
   /// always be [GameClosedState] and this callback will only be called after the initial state is set, so [oldState]
   /// will never be null (but the callback will also be called at the end)!
   Future<void> onStateChange(GameState oldState, GameState newState);
+
+  /// Should be overridden to check if any field of the game is currently receiving input so that
+  /// [InputManager.sendChatMessage] sends the input there and does not open+close the chat with enter!
+  ///
+  /// Important: [setInputtingForChatWindow] will also be called and needs to be overridden!
+  ///
+  /// Important: don't await any long timeouts inside of this!!!
+  Future<bool> isAnyInputFocused();
+
+  /// Should also be overridden in addition to [isAnyInputFocused] for an internal chat window object set the receiving
+  /// input to true (because enter will be pressed in the [InputManager.sendChatMessage] if no input was open and
+  /// then this will be called with [inputting] true and at the end again with false)!
+  ///
+  /// Important: don't await any long timeouts inside of this!!! Also in this first check if your chat window already
+  /// recognized the enter press and only set the status to open otherwise!
+  Future<void> setInputtingForChatWindow({required bool inputting});
 
   /// Returns a reference to [GameToolsLib.config] with the [ConfigType]
   ConfigType get config => GameToolsLib.config<ConfigType>();

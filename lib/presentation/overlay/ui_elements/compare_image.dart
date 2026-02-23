@@ -32,6 +32,9 @@ import 'package:game_tools_lib/presentation/overlay/ui_elements/overlay_element.
 /// [storedPath] can also be used instead of [unscaledImage.path].
 /// The [buildOverlay] method does nothing here and [clickable] will always be false for this!
 ///
+/// You can also use multi language file names in the constructor which relates to [ImageAsset.isMultiLanguage]. If
+/// true, then this automatically reloads the [scaledImage] after the language changed!
+///
 /// Creating an instance of this as a member of a [Module] directly must be done as late final (otherwise throws
 /// exception that game window cannot be accessed)!
 base class CompareImage extends OverlayElement {
@@ -201,6 +204,10 @@ base class CompareImage extends OverlayElement {
   /// [AssetException] if the file was not found at all may also be thrown!
   Future<NativeImage> get scaledImage async {
     final Bounds<int> bounds = this.bounds.scaledBounds;
+    if (_scaledImageCache != null && unscaledImage.usedDifferentLangThanCurrent(updateCachedLang: false)) {
+      _scaledImageCache!.cleanupMemory();
+      _scaledImageCache = null;
+    }
     NativeImage? img = _scaledImageCache;
     if (img == null) {
       img = _scaledImageCache = await unscaledImage.validContent.clone(); // first load clone

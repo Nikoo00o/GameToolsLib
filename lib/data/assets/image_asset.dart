@@ -63,6 +63,7 @@ base class ImageAsset extends GTAsset<NativeImage> {
   /// Overridden to replace paths at first and only load the image at the end in [initContentIfNeeded] with the most
   /// recent path!
   @override
+  @protected
   void loadFromFile(String absolutePath) {
     _path = absolutePath;
   }
@@ -85,6 +86,7 @@ base class ImageAsset extends GTAsset<NativeImage> {
   /// Overridden to perform loading of the image only at the end with the most recent path and using that as loaded
   /// content. This might throw an exception for corrupted images!
   @override
+  @protected
   void initContentIfNeeded(NativeImage? _) {
     if (_path != null) {
       _loadedContent = NativeImage.readSync(path: _path!, type: type);

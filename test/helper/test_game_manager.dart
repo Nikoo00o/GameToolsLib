@@ -24,4 +24,10 @@ final class TestGameManager extends GameManager<GameToolsConfigBaseType> {
 
   @override
   Future<void> onStateChange(GameState oldState, GameState newState) async {}
+
+  @override
+  Future<bool> isAnyInputFocused() async => false;
+
+  @override
+  Future<void> setInputtingForChatWindow({required bool inputting}) async {}
 }

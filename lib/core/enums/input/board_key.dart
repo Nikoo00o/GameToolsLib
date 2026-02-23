@@ -178,6 +178,9 @@ final class BoardKey implements Model {
   /// Important: this is non restrictive (it would also trigger if shift, or alt would be down as well)
   static const BoardKey ctrlA = BoardKey(LogicalKeyboardKey.keyA, withControl: true);
 
+  /// Important: this is non restrictive (it would also trigger if shift, or alt would be down as well)
+  static const BoardKey ctrlF = BoardKey(LogicalKeyboardKey.keyF, withControl: true);
+
   /// Modifier keys themself (don't use the general modifier key to press it manually!)
   static const BoardKey shiftLeft = BoardKey(LogicalKeyboardKey.shiftLeft);
   static const BoardKey shiftRight = BoardKey(LogicalKeyboardKey.shiftRight);
