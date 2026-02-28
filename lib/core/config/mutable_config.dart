@@ -116,8 +116,10 @@ base class MutableConfig {
   /// You can override this to return references to those config options you want to be able to modify in the UI!
   ///
   /// Important: you can group your config options except [ModelConfigOption] and [CustomConfigOption] with
-  /// [MutableConfigOptionGroup] and only use those inside of them! If you use any other config option except model
-  /// and custom outside of a group, they will automatically be put in the group "Other"!
+  /// [MutableConfigOptionGroup] and only use those inside of them (model and custom config options should mostly be
+  /// used outside of groups so that they get their own navigation rail entry) ! If you use any other config option
+  /// except model and custom outside of a group, they will automatically be put in the group "Other"! Those groups
+  /// will then be displayed on the navigation rail of the settings menu!
   ///
   /// Remember to also add the config options from here if you want to by calling the super method and then add your
   /// own config options like for example:
@@ -133,6 +135,8 @@ base class MutableConfig {
   ///
   /// For all config options contained here the [MutableConfigOption.cachedValue] can directly be called after
   /// [GameToolsLib.initGameToolsLib], because they will already be loaded into memory!
+  ///
+  /// Config options may instead also be added inside of [Module.getConfigurableOptions].
   List<MutableConfigOption<dynamic>> getConfigurableOptions() => <MutableConfigOption<dynamic>>[
     MutableConfigOptionGroup(
       title: const TS("page.settings.group.general"),
@@ -151,7 +155,7 @@ base class MutableConfig {
     return UnmodifiableListView<MutableConfigOption<dynamic>>(_configurableOptions!);
   }
 
-  /// Cache for [getConfigurableOptions]
+  /// Cache for [getConfigurableOptions]. See [configurableOptions]
   List<MutableConfigOption<dynamic>>? _configurableOptions;
 
   /// This will be called automatically at the end of [GameToolsLib.initGameToolsLib] to load all

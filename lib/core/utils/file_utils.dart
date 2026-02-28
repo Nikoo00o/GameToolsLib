@@ -171,6 +171,13 @@ abstract final class FileUtils {
     return file;
   }
 
+  /// Timestamp when the file at [path] was modified (null if not exists)
+  static DateTime? lastModified(String path) {
+    final File file = File(path);
+    if (!file.existsSync()) return null;
+    return File(path).lastModifiedSync();
+  }
+
   /// Read the utf8/utf16 content of the file as string.
   ///
   /// Important: the [encoding] should either be [utf8], or [utf16]! Default is [utf8] which is mostly used!
@@ -183,7 +190,7 @@ abstract final class FileUtils {
   static Future<String> readFile(String path, {Encoding encoding = utf8}) async {
     final File file = File(path);
     assert(file.existsSync(), "error, file $path does not exist");
-    return File(path).readAsString(encoding: encoding);
+    return file.readAsString(encoding: encoding);
   }
 
   /// Write the utf8/utf16 [content] as a file at the [path] and also creates the parent directories.

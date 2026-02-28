@@ -4,6 +4,13 @@
 - These should only access the Game in a legal/allowed way via image recognition and reading log files 
   - No memory reading, or writing should be done, because accessing memory is not welcome by most publishers  
 
+## Usage
+
+### Flickering Overlay 
+
+- overlay elements may be moved over areas also used for screen capture which then leads to flickering 
+- to fix this, just move them somewhere else! 
+
 ## Supported Platforms
 
 - IMPORTANT: currently only **windows** is supported and no other platform! 

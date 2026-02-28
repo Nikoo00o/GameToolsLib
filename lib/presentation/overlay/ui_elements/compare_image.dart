@@ -355,7 +355,7 @@ base class CompareImage extends OverlayElement {
         _scaledImageCache!.cleanupMemory();
       }
       _scaledImageCache = await newImage.clone();
-      bounds.move(scaledBounds);
+      bounds.changeUnscaledBounds(scaledBounds);
       unscaledImage.saveToFile(replaceWith: newImage);
       saveToStorage();
     }

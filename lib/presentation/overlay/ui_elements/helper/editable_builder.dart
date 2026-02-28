@@ -89,7 +89,7 @@ class _EditableBuilderState extends State<EditableBuilder> {
         _initBounds();
       });
     } else {
-      widget.overlayElement.bounds = scaledBounds.move(bounds);
+      widget.overlayElement.bounds = scaledBounds.changeUnscaledBounds(bounds);
     }
   }
 

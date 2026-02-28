@@ -141,8 +141,6 @@ base mixin DelayedOverlayChecks<OverlayStateType extends GTOverlayState> {
     }
   }
 
-
-
   /// Important: this can be used manually (and may be used in [CompareImage]) to return a screenshot of the game
   /// window without the overlay.
   ///

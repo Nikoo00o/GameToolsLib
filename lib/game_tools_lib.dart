@@ -490,10 +490,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     final List<MutableConfigOption<dynamic>> options = <MutableConfigOption<dynamic>>[];
     options.addAll(MutableConfig.mutableConfig.configurableOptions);
     for (final ModuleBaseType module in gameManager().modules) {
-      final MutableConfigOptionGroup additional = module.configurableOptions;
-      if (additional.children.isNotEmpty) {
-        options.add(additional);
-      }
+      options.addAll(module.configurableOptions);
     }
     if (GameLogWatcher._instance?.isEmpty == false) {
       options.add(GameLogWatcher._instance!.customUserPath);
@@ -563,7 +560,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
         final String groupIdentifier = "group_$identifier";
         if (identifier.endsWith(GTSettingsPage.otherGroup.identifier)) {
           final bool added = _identifiers.add(groupIdentifier);
-          if (added) {
+          if (!added) {
             Logger.warn("Duplicated other group identifier used (happens on reload): $groupIdentifier from $instance");
           }
         } else {

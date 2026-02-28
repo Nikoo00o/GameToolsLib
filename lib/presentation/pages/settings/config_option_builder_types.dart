@@ -25,7 +25,11 @@ import 'package:game_tools_lib/presentation/widgets/helper/simple_text_field.dar
 /// the title!
 ///
 /// If this is build inside of a [ConfigOptionBuilderGroup] then the [buildContent] of this will be shown on a new
-/// page and a config entry for this name is build that can navigate to that new page!
+/// page and a config entry for this name is build that can navigate to that new page! Therefor you might want to
+/// check the [calledFromInnerGroup] inside of [buildContent] and only build a title if that is true (when building
+/// as entry of navigation rail instead of pushing a new page which already contains title in app bar on top!).
+///
+/// Remember building from navigation rail is only true when the config option was not inside of a config option group!
 abstract base class ConfigOptionBuilderModel<T extends Model?> extends MultiConfigOptionBuilder<T> {
   const ConfigOptionBuilderModel({
     required ModelConfigOption<T> configOption,
@@ -39,13 +43,19 @@ abstract base class ConfigOptionBuilderModel<T extends Model?> extends MultiConf
 /// [SimpleCard]'s in a column, because you have the whole right side of the page available. For multiple inner options
 /// [buildMultiOptionsWithTitle] should be build around and then [buildIntOption], etc can be  used inside.
 ///
-/// Also look at [containsSearchCallback].
+/// Also look at [containsSearchCallback]. And read through doc comments of [buildContentCallback]!
 ///
 /// If this is build inside of a [ConfigOptionBuilderGroup] then the [buildContent] of this will be shown on a new
 /// page and a config entry for this name is build that can navigate to that new page!
 final class ConfigOptionBuilderCustom<T> extends MultiConfigOptionBuilder<T> {
   /// This is the [CustomConfigOption.buildCustomContentWidget] to build the ui which is shown in [buildContent]
-  /// right side of this config option (or new page)
+  /// right side of this config option (or new page).
+  ///
+  /// Important: the [calledFromInnerGroup] is only true when the config option was built as a part of the navigation
+  /// rail and then a title should be displayed at the top of the page. Otherwise if false then this is built as a
+  /// new pushed page when the entry is clicked and the title was already built in the app bar!
+  ///
+  /// Remember building from navigation rail is only true when the config option was not inside of a config option group!
   final Widget Function(
     BuildContext context,
     T customData,

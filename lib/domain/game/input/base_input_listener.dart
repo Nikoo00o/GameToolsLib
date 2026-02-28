@@ -190,7 +190,9 @@ abstract base class BaseInputListener<DataType> {
     return defaultKey;
   }
 
-  /// If this is modifiable in the ui and if this is stored on storage (depends if config label is not empty)
+  /// If this is modifiable in the ui and if this is stored on storage (depends if config label is not empty).
+  ///
+  /// Otherwise the [_key] is only cached internally in [storeKey] / [deleteKey] and [_loadKey]
   bool get isConfigurable => configLabel.identifier.isNotEmpty;
 
   /// This is called internally in [_update] only once at the first event loop run, so from the outside the sync
@@ -199,11 +201,12 @@ abstract base class BaseInputListener<DataType> {
   /// This it loads the key from storage and caches it if [_existsOnStorage] is true and then it just returns
   /// [currentKey]. And it also sets the exists on storage flag internally
   Future<DataType?> _loadKey() async {
+    if (isConfigurable == false) {
+      _existsOnStorage ??= (_key != null);
+      return currentKey;
+    }
     if (_key != null) {
       Logger.warn("The key of $this was already set which should not happen");
-    }
-    if (isConfigurable == false) {
-      return defaultKey;
     }
     _existsOnStorage = await GameToolsLib.database.existsInHive(
       key: _transformedKey,
@@ -231,7 +234,7 @@ abstract base class BaseInputListener<DataType> {
   Future<void> storeKey(DataType? newKey) async {
     Logger.verbose("Storing new hotkey $newKey for $this");
     _key = newKey;
-    if (isConfigurable) _existsOnStorage = true;
+    _existsOnStorage = true;
     _resetLoopState();
     if (isConfigurable) {
       await GameToolsLib.database.writeToHive(
@@ -243,7 +246,7 @@ abstract base class BaseInputListener<DataType> {
   }
 
   /// Deletes the current hotkey back to the default value and also clears the [_key].
-  /// So after this [currentKey] will return [defaultKey]
+  /// So after this [currentKey] will return [defaultKey]. Only deletes from storage if [isConfigurable] is true!
   Future<void> deleteKey() async {
     final DataType? oldKey = _key;
     _key = null;

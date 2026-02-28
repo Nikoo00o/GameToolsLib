@@ -26,8 +26,8 @@ abstract base class Module<GameManagerType extends GameManagerBaseType> {
   /// variable for performance reasons)!
   TranslationString get moduleName;
 
-  /// Cache for [getConfigurableOptions]
-  MutableConfigOptionGroup? _configurableOptions;
+  /// Cache for [getConfigurableOptions]. See [configurableOptions]
+  List<MutableConfigOption<dynamic>>? _configurableOptions;
 
   /// Just for logging / debugging
   Module() {
@@ -50,6 +50,8 @@ abstract base class Module<GameManagerType extends GameManagerBaseType> {
 
   /// This can optionally also be overridden and it is called at the end of [OverlayManager.executeDelayedUpdates] every
   /// [FixedConfig.overlayRefreshTicks] normal update ticks only if the overlay is active (so its a slower update).
+  ///
+  /// Important: this will only be called if [OverlayManager.active] is true!
   Future<void> onDelayedOverlayUpdate() async {}
 
   /// Is called when the open status changes for [window]. This will also be called when it opens for the first time!
@@ -95,14 +97,29 @@ abstract base class Module<GameManagerType extends GameManagerBaseType> {
     Logger.verbose(msg);
   }
 
-  /// Similar to [MutableConfig.getConfigurableOptions] this can be overridden to provide additional
-  /// [MutableConfigOption]'s, but you may not use any [MutableConfigOptionGroup] inside of this, because one will be
-  /// created automatically with the [moduleName] to group those together!
+  /// Similar to [MutableConfig.getConfigurableOptions] (IMPORTANT: READ THE DOC COMMENTS THERE FIRST!!!) this can be
+  /// overridden to provide additional [MutableConfigOption]'s, but you may not use any [MutableConfigOptionGroup]
+  /// inside of this, because one will be created automatically with the [moduleName] to group those together!
+  /// EXCEPT if you only return one [CustomConfigOption] or [ModelConfigOption], then those will directly be returned
+  /// to be a part of the navigation rail without wrapping it with the a module name group!
   List<MutableConfigOption<dynamic>> getConfigurableOptions() => <MutableConfigOption<dynamic>>[];
 
   /// Used to return the cached [getConfigurableOptions] wrapped with the [moduleName] as a [MutableConfigOptionGroup]
-  MutableConfigOptionGroup get configurableOptions {
-    _configurableOptions ??= MutableConfigOptionGroup(title: moduleName, configOptions: getConfigurableOptions());
+  /// except if there is only one of either [CustomConfigOption] or [ModelConfigOption] (those would be returned
+  /// directly)! If this contains no config options, then an empty list will be returned instead!
+  List<MutableConfigOption<dynamic>> get configurableOptions {
+    if (_configurableOptions == null) {
+      final List<MutableConfigOption<dynamic>> options = getConfigurableOptions();
+      if (options.isEmpty) {
+        _configurableOptions = <MutableConfigOption<dynamic>>[];
+      } else if (options.length == 1 && (options.first is CustomConfigOption || options.first is ModelConfigOption)) {
+        _configurableOptions = options;
+      } else {
+        _configurableOptions = <MutableConfigOption<dynamic>>[
+          MutableConfigOptionGroup(title: moduleName, configOptions: options),
+        ];
+      }
+    }
     return _configurableOptions!;
   }
 
@@ -110,12 +127,14 @@ abstract base class Module<GameManagerType extends GameManagerBaseType> {
   /// [getConfigurableOptions] by loading their values without updating listeners and calling [MutableConfigOption.onInit]
   /// on them similar to [MutableConfig.loadAllConfigurableOptions]
   Future<void> loadAllConfigurableOptions() async {
-    if (configurableOptions.children.isNotEmpty) {
-      await configurableOptions.getValue(updateListeners: false);
-      await configurableOptions.onInit();
-      Logger.verbose("Loaded $runtimeType configurable option $configurableOptions");
-    } else {
+    for (final MutableConfigOption<dynamic> option in configurableOptions) {
+      await option.getValue(updateListeners: false);
+      await option.onInit();
+    }
+    if (configurableOptions.isEmpty) {
       Logger.spam(runtimeType, " did not contain any configurable options");
+    } else {
+      Logger.verbose("Loaded $runtimeType configurable option $configurableOptions");
     }
   }
 

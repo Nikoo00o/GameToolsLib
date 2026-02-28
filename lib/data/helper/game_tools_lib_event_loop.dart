@@ -103,6 +103,7 @@ mixin _GameToolsLibEventLoop on _GameToolsLibHelper {
   /// This is not awaited
   static Future<void> _updateManagerAndState() async {
     try {
+      await GameConfigLoader._instance?.reloadConfigIfChanged();
       await OverlayManager._instance!.onUpdate();
       if (GameManager._instance != null) {
         await GameManager._instance!.onUpdate();

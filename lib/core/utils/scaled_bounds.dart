@@ -18,7 +18,7 @@ export 'package:game_tools_lib/core/utils/bounds.dart';
 /// the [unscaledBounds] pos (10, 10) with size (20, 20) and the resolution of the [gameWindow] changes to 1280x720,
 /// then [x] / [y] would return 5 and [width] / [height] would return 10!
 ///
-/// Instead of all the operators and methods for modifying bounds, here only [move] is given!
+/// Instead of all the operators and methods for modifying bounds, here only [changeUnscaledBounds] is given!
 /// The [gameWindow] is not used in comparison and also not in json conversion!
 final class ScaledBounds<T extends num> implements Model {
   /// The initial unscaled bounds that should be used as a baseline for scaling with the initial [creationWidth] and
@@ -167,9 +167,35 @@ final class ScaledBounds<T extends num> implements Model {
   Point<T> get middlePos => scaledBounds.middlePos;
 
   /// This will modify the [unscaledBounds] to set them to [newPos], but it will also set [creationWidth] and
-  /// [creationHeight] to the current [GameWindow.size] of the current [gameWindow]!
-  ScaledBounds<T> move(Bounds<T> newPos) => ScaledBounds<T>(
+  /// [creationHeight] to the current [GameWindow.size] of the current [gameWindow]! Important: remember this does not
+  /// change the internal object, but return a new one! You can also use the shortcut methods [changeUnscaledPos] or
+  /// [changeUnscaledSize] instead!
+  ScaledBounds<T> changeUnscaledBounds(Bounds<T> newPos) => ScaledBounds<T>(
     newPos,
+    creationWidth: gameWindow.width,
+    creationHeight: gameWindow.height,
+    gameWindow: gameWindow,
+  );
+
+  /// Shortcut to only change the position of [changeUnscaledBounds]. Remember this does not change the internal
+  /// object, but return a new one!
+  ScaledBounds<T> changeUnscaledPos({T? x, T? y}) => ScaledBounds<T>(
+    Bounds<T>.pos(
+      pos: Point<T>(x ?? unscaledBounds.x, y ?? unscaledBounds.y),
+      size: unscaledBounds.size,
+    ),
+    creationWidth: gameWindow.width,
+    creationHeight: gameWindow.height,
+    gameWindow: gameWindow,
+  );
+
+  /// Shortcut to only change the size of [changeUnscaledBounds].  Remember this does not change the internal
+  /// object, but return a new one!
+  ScaledBounds<T> changeUnscaledSize({T? width, T? height}) => ScaledBounds<T>(
+    Bounds<T>.pos(
+      pos: unscaledBounds.pos,
+      size: Point<T>(width ?? unscaledBounds.width, height ?? unscaledBounds.height),
+    ),
     creationWidth: gameWindow.width,
     creationHeight: gameWindow.height,
     gameWindow: gameWindow,

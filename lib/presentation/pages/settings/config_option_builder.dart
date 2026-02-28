@@ -51,7 +51,8 @@ abstract base class ConfigOptionBuilder<T> with GTBaseWidget {
   /// For example look at [ConfigOptionHelperMixin.defaultContentTile]
   ///
   /// [value] is the current data of the [MutableConfigOption] of type [T] and [calledFromInnerGroup] can be used to
-  /// decide if a title should be build on the page itself, or if its in the app bar instead!
+  /// decide if a title should be build on the page itself, or if its in the app bar instead (built as part of nav
+  /// rail vs built as pushed page on top of app)!
   Widget buildContent(BuildContext context, T value, {required bool calledFromInnerGroup});
 
   /// Returns the cached value of the [configOption]

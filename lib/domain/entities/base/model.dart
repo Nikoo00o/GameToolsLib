@@ -5,9 +5,40 @@ import 'entity.dart';
 /// This can, but does not have to be used with [Entity]!
 ///
 /// The fromJson factory constructor must be provided as well in sub classes, but it can not be provided with an interface!
+///
+/// When converting from json, this also offers the helper functions [getModelListFromJson] and [getModelMapFromJson]!
 abstract interface class Model {
   /// Create JSON Map from model
   Map<String, dynamic> toJson();
+
+  /// Helper to get a dynamic list of [json] with the [key] and then convert it into a list of [EntryType] with the
+  /// [convertEntry] callback!
+  ///
+  /// Remember that for lists of primitive data types you can just call `List<int>.from(json[key] as List<dynamic>)`!
+  static List<EntryType> getModelListFromJson<EntryType>(
+    Map<String, dynamic> json,
+    String key,
+    EntryType Function(Map<String, dynamic> innerJson) convertEntry,
+  ) {
+    final List<dynamic> dynList = json[key] as List<dynamic>;
+    return dynList.map<EntryType>((dynamic map) => convertEntry.call(map as Map<String, dynamic>)).toList();
+  }
+
+  /// Helper to get a dynamic map of [json] with the [key] and then convert it into a map of [ValueType] with the
+  /// [convertEntry] callback!
+  ///
+  /// Remember that for maps of primitive data types you can just call
+  /// `Map<String, int>.from(json[key] as Map<String, dynamic>)`!
+  static Map<String, ValueType> getModelMapFromJson<ValueType>(
+    Map<String, dynamic> json,
+    String key,
+    ValueType Function(Map<String, dynamic> innerJson) convertEntry,
+  ) {
+    final Map<String, dynamic> dynMap = json[key] as Map<String, dynamic>;
+    return dynMap.map(
+      (String key, dynamic value) => MapEntry<String, ValueType>(key, convertEntry.call(value as Map<String, dynamic>)),
+    );
+  }
 }
 
 /// Example Model class that extends from [ExampleEntity] and implements [Model]
@@ -54,10 +85,15 @@ final class ExampleModel extends ExampleEntity implements Model {
     final List<ExampleModel> modifiableDataList = modifiableDataDynList
         .map<ExampleModel>((dynamic map) => ExampleModel.fromJson(map as Map<String, dynamic>))
         .toList();
-
     return ExampleModel(
       someData: json[JSON_SOME_DATA] as int?,
       modifiableData: modifiableDataList,
+      /// Below would be an example with the helper method from [Model]!
+      // modifiableData: Model.getModelListFromJson(
+      //   json,
+      //   JSON_MODIFIABLE_DATA,
+      //   (Map<String, dynamic> json) => ExampleModel.fromJson(json),
+      // ),
     );
   }
 }

@@ -55,7 +55,8 @@ base class OverlayManager<OverlayStateType extends GTOverlayState> with DelayedO
   /// Internal debug check between [onCreate] and [onDispose] checked in [changeMode] first!
   bool _active = false;
 
-  /// If this overlay manager is active and running (as in an app ui was created at all)!
+  /// If this overlay manager is active and running (as in an app ui was created at all)! This is different from the
+  /// [overlayMode]!
   @override
   bool get active => _active;
 
