@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:game_tools_lib/core/utils/translation_string.dart';
+import 'package:game_tools_lib/core/utils/utils.dart';
 import 'package:game_tools_lib/presentation/base/gt_base_widget.dart';
 import 'package:game_tools_lib/presentation/pages/settings/config_option_builder.dart';
 import 'package:game_tools_lib/presentation/widgets/helper/simple_text_field.dart';
@@ -284,6 +285,9 @@ base class _GTListEditorState<T> extends State<GTListEditor<T>> with GTBaseWidge
     return Card(
       key: ValueKey<String>(widget.title.identifier),
       child: ExpansionTile(
+        collapsedBackgroundColor: widget.elements.isEmpty
+            ? null
+            : colorSurfaceContainer(context).blend(colorPrimaryContainer(context), 0.15),
         collapsedShape: const ContinuousRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
         shape: const ContinuousRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
         childrenPadding: const EdgeInsets.fromLTRB(10, 5, 10, 10),

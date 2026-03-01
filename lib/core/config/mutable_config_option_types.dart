@@ -1,5 +1,7 @@
 part of 'package:game_tools_lib/core/config/mutable_config.dart';
 
+/// First look at general doc comments of [MutableConfigOption]!
+///
 /// Wrapper for primitive types as config options. Use the following typedefs instead [BoolConfigOption],
 /// [IntConfigOption], [DoubleConfigOption], [StringConfigOption] and don't use this with any other type [T]!
 final class TypeConfigOption<T> extends MutableConfigOption<T> {
@@ -42,6 +44,8 @@ base class FileConfigOption extends TypeConfigOption<String> {
   ConfigOptionBuilder<String> get builder => FileConfigOptionBuilder(configOption: this);
 }
 
+/// First look at general doc comments of [MutableConfigOption]!
+///
 /// This can be used with [EnumType] being any [enum] by just converting them to string and then to convert them back
 /// to an object [availableOptions] needs to be supplied with the enum values which will be compared as string!
 ///
@@ -90,6 +94,10 @@ base class EnumConfigOption<EnumType> extends MutableConfigOption<EnumType> {
   ConfigOptionBuilder<EnumType> get builder => ConfigOptionBuilderEnum<EnumType>(configOption: this);
 }
 
+/// First look at general doc comments of [MutableConfigOption]! important: the model configs will be saved into
+/// their own json files with [title] inside of [GameToolsConfig.dynamicDataFolder] so here the title must only be
+/// unique across all other model config options!
+///
 /// Used to store an entity/object implementing the [Model] interface and supporting to/from json conversion!
 ///
 /// Important: you need to supply a [_createNewModelInstance] function that creates a new instance of your specific
@@ -234,6 +242,8 @@ base class ModelConfigOption<T extends Model?> extends MutableConfigOption<T> {
   }
 }
 
+/// First look at general doc comments of [MutableConfigOption]!
+///
 /// Custom Config option where you have the freedom of deciding how to convert a string into your data of type [T] by
 /// using the [createNewInstance] callback. The other way around is optional with [convertInstanceToString] or
 /// otherwise [toString] will just be called on the object of type [T].
@@ -312,6 +322,8 @@ base class CustomConfigOption<T> extends MutableConfigOption<T> {
         );
 }
 
+/// First look at general doc comments of [EnumConfigOption]!
+///
 /// Special case: [LogLevel] as a enum config option.
 final class LogLevelConfigOption extends EnumConfigOption<LogLevel> {
   /// For [defaultValue] look at [MutableConfigOption.defaultValue]!

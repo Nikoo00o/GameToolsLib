@@ -26,7 +26,8 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 /// For very quick non-async actions that need no event, use [KeyInputListener.instant] and
 /// [MouseInputListener.instant] instead of a [GameEvent] with [GameEventPriority.INSTANT]!
 ///
-/// For example you could also set [isActive] to false and then check [isDown] manually periodically, etc.
+/// For example you could also set [isActive] to false and then check [isDown] manually periodically, etc. And you
+/// can also use [pressManually].
 ///
 /// Internally this will use a different isolate [InputIsolate] to poll the events!
 abstract base class BaseInputListener<DataType> {
@@ -264,6 +265,9 @@ abstract base class BaseInputListener<DataType> {
   /// Manually checks if the key is currently pressed down (this should only be used in a loop if you don't use the
   /// callback!)
   bool isDown();
+
+  /// Sends the input currently associated to this listener!
+  Future<void> pressManually();
 
   @override
   String toString() {

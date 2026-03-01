@@ -1,6 +1,8 @@
 part of 'package:game_tools_lib/core/config/mutable_config.dart';
 
-/// Config option that is stored in a file for usage in [MutableConfig]
+/// Config option that is stored in a file for usage in [MutableConfig]. All config options except [ModelConfigOption]
+/// are just saved in the hive [GameToolsLib.database] with their [title] identifier. Model config options are saved
+/// in their own json files in the folder!
 ///
 /// Important: if [T] is not nullable ("[T]?"), then [setValue] can not be used with [null] and [defaultValue] may
 /// not be [null]!
@@ -25,8 +27,8 @@ part of 'package:game_tools_lib/core/config/mutable_config.dart';
 /// this option is included in [MutableConfig.getConfigurableOptions]!
 sealed class MutableConfigOption<T> with ChangeNotifier {
   /// The [TranslationString.identifier] is used to locate this saved value in the database (must be a unique
-  /// identifier string). But this translation string is also used as the identifier label text (or translation
-  /// key) for the ui (if this config option / is editable in ui)
+  /// identifier string ACROSS ALL CONFIG OPTIONS!). But this translation string is also used as the identifier label
+  /// text (or translation key) for the ui (if this config option / is editable in ui)
   final TranslationString title;
 
   /// Optional description text for the ui to display in addition to the [title]

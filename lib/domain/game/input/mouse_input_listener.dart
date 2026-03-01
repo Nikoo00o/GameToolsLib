@@ -82,4 +82,11 @@ base class MouseInputListener extends BaseInputListener<MouseKey> {
 
   @override
   bool isDown() => currentKey != null && InputManager.isMouseDown(currentKey!);
+
+  @override
+  Future<void> pressManually() async {
+    if (currentKey != null) {
+      await InputManager.mouseClick(key: currentKey!, delayBeforeAndBetweenInMS: null);
+    }
+  }
 }

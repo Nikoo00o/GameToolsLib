@@ -80,4 +80,11 @@ base class KeyInputListener extends BaseInputListener<BoardKey> {
 
   @override
   bool isDown() => currentKey != null && InputManager.isKeyDown(currentKey!);
+
+  @override
+  Future<void> pressManually() async {
+    if (currentKey != null) {
+      await InputManager.keyPress(currentKey!);
+    }
+  }
 }

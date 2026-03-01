@@ -174,8 +174,8 @@ abstract final class InputManager {
     _ => throw UnimplementedError(),
   });
 
-  /// helper method used internally
-  static Future<void> _mouseClick({required MouseKey key, required Point<int>? delayBeforeAndBetweenInMS}) async {
+  /// Helper method mostly used internally. [delayBeforeAndBetweenInMS] may be null!
+  static Future<void> mouseClick({required MouseKey key, required Point<int>? delayBeforeAndBetweenInMS}) async {
     final Duration duration = NumUtils.getRandomDuration(delayBeforeAndBetweenInMS);
     mouseDown(key);
     await Utils.delay(duration);
@@ -188,19 +188,19 @@ abstract final class InputManager {
   ///
   /// Important: always make sure to read through the terms of service of your game if this is allowed!
   static Future<void> leftClick({Point<int>? delayBeforeAndBetweenInMS}) async =>
-      _mouseClick(key: MouseKey.LEFT, delayBeforeAndBetweenInMS: delayBeforeAndBetweenInMS);
+      mouseClick(key: MouseKey.LEFT, delayBeforeAndBetweenInMS: delayBeforeAndBetweenInMS);
 
   /// Clicks the right mouse button down and up.
   /// [delayBeforeAndBetweenInMS] is awaited in the middle of this and defaults to [FixedConfig.shortDelayMS].
   ///
   /// Important: always make sure to read through the terms of service of your game if this is allowed!
   static Future<void> rightClick({Point<int>? delayBeforeAndBetweenInMS}) async =>
-      _mouseClick(key: MouseKey.RIGHT, delayBeforeAndBetweenInMS: delayBeforeAndBetweenInMS);
+      mouseClick(key: MouseKey.RIGHT, delayBeforeAndBetweenInMS: delayBeforeAndBetweenInMS);
 
   /// Clicks the middle mouse button down and up.
   /// [delayBeforeAndBetweenInMS] is awaited in the middle of this and defaults to [FixedConfig.shortDelayMS]
   static Future<void> middleMouseClick({Point<int>? delayBeforeAndBetweenInMS}) async =>
-      _mouseClick(key: MouseKey.MIDDLE, delayBeforeAndBetweenInMS: delayBeforeAndBetweenInMS);
+      mouseClick(key: MouseKey.MIDDLE, delayBeforeAndBetweenInMS: delayBeforeAndBetweenInMS);
 
   /// Manually Presses a keyboard key down (with the virtual [keyCode]). used in [keyPress]
   static void keyDown(LogicalKeyboardKey keyCode) => _nativeWindow.sendKeyEvent(keyUp: false, keyCode: keyCode);
