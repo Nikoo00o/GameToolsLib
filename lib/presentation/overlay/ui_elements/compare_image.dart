@@ -294,6 +294,10 @@ base class CompareImage extends OverlayElement {
   /// You can use the different opencv template matching modes TM_SQDIFF = 0, TM_SQDIFF_NORMED = 1, TM_CCORR = 2,
   /// TM_CCORR_NORMED = 3, TM_CCOEFF =4, TM_CCOEFF_NORMED = 5.
   ///
+  /// If the the other is rgba (contains alpha), then TM_SQDIFF_NORMED = 1 WILL AUTOMATICALLY BE USED FOR
+  /// MATCHING!!!!
+  /// Otherwise TM_CCOEFF_NORMED = 5 should be the safest choice for matching!
+  ///
   /// IMPORTANT: remember to get the global position add [targetBounds] x and y to the returned bounds!!! (or for
   /// example the middle pos).
   ///

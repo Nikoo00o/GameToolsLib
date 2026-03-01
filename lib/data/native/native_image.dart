@@ -300,14 +300,21 @@ final class NativeImage extends BaseNativeImage {
   /// You can use the different opencv template matching modes TM_SQDIFF = 0, TM_SQDIFF_NORMED = 1, TM_CCORR = 2,
   /// TM_CCORR_NORMED = 3, TM_CCOEFF =4, TM_CCOEFF_NORMED = 5.
   ///
-  /// Th [threshold] can also be customized on how much the search has to match (higher is stricter).
+  /// If the the other is rgba (contains alpha), then [cv.TM_SQDIFF_NORMED] (1) WILL AUTOMATICALLY BE USED FOR
+  /// MATCHING!!!!
+  /// Otherwise [cv.TM_CCOEFF_NORMED] (5) should be the safest choice for matching!
+  ///
+  /// The [threshold] can also be customized on how much the search has to match (higher is stricter).
   ///
   /// Important: this image will be cloned to [NativeImageType.RGB] if it has a different type, so it's best to use
   /// that type directly. Also for the other [subImage] it has to be either [NativeImageType.RGB] or
   /// [NativeImageType.RGBA], but the alpha channel will be ignored!
   ///
-  /// Otherwise for better performance use [NativeImageType.GRAY] for [this] and the [subImage] instead which will
-  /// then be used directly!
+  /// Otherwise for better performance convert [this] to [NativeImageType.GRAY] before calling this method. And then
+  /// the [subImage] will be converted from RGBA to GRAY automatically if you need alpha. Otherwise without alpha you
+  /// should also convert the other image to GRAY!
+  ///
+  /// So this can compare the following: gray to gray, gray to rgba, rgb to rgb, rgb to rgba
   ///
   /// Also very important: of course if using an asset image it also has to be scaled to the correct size as how it
   /// would look for the current window!!!
@@ -326,13 +333,21 @@ final class NativeImage extends BaseNativeImage {
     final cv.Mat srcImg = _data!;
     late final cv.Mat templateImg;
     cv.Mat? toClean;
-    if (subImage.type == NativeImageType.RGBA && type != NativeImageType.GRAY) {
-      final cv.VecMat channels = await cv.splitAsync(subImage._data!);
-      // BGR channels
-      templateImg = await cv.mergeAsync(cv.VecMat.fromList(<cv.Mat>[channels[0], channels[1], channels[2]]));
-      final (double val, cv.Mat newMask) = await cv.thresholdAsync(channels[3], 1, 255, cv.THRESH_BINARY); // ignore
-      // alpha channel!
-      channels.dispose();
+    if (subImage.type == NativeImageType.RGBA) {
+      // ignore: parameter_assignments
+      matchMethod = cv.TM_SQDIFF_NORMED; // IMPORTANT: reset mode for alpha, because not supported for all!
+      if (type == NativeImageType.GRAY) {
+        templateImg = await cv.cvtColorAsync(subImage._data!, cv.COLOR_BGRA2GRAY); // GRAY
+      } else {
+        templateImg = await cv.cvtColorAsync(subImage._data!, cv.COLOR_BGRA2BGR); // BGR
+      }
+      // ignore alpha channel with mask !
+      final (double val, cv.Mat newMask) = await cv.thresholdAsync(
+        await cv.extractChannelAsync(subImage._data!, 3),
+        200,
+        255,
+        cv.THRESH_BINARY,
+      );
       mask = newMask;
       toClean = templateImg;
     } else {

@@ -26,6 +26,7 @@ import 'package:game_tools_lib/game_tools_lib.dart';
 /// Important: of course [GameToolsLib.initGameToolsLib] must be called before accessing any member of this!
 ///
 /// This can also be used as a change notifier and [save] will call [notifyListeners]!
+/// Optionally [migrationOnFirstLoad] can be overridden for migration!
 base class CachedData<T> with ChangeNotifier {
   /// The base folder where all the cache files with [identifier].json are stored under!
   static String get cacheFolder =>
@@ -44,6 +45,10 @@ base class CachedData<T> with ChangeNotifier {
   /// The path to this file
   String get path => FileUtils.combinePath(<String>[cacheFolder, "$identifier.json"]);
 
+  @protected
+  /// Can be overridden to perform migration for some data after [_json] was loaded from file for the first time!
+  void migrationOnFirstLoad() {}
+
   Map<String, dynamic> _getJson() {
     if (_json == null) {
       _json = HiveDatabase.database.readJson(absoluteFilePath: path);
@@ -52,6 +57,7 @@ base class CachedData<T> with ChangeNotifier {
         Logger.spam("CachedData ", identifier, " was not stored yet");
       } else {
         Logger.spam("CachedData ", identifier, " loaded from storage for the first time: ", _json);
+        migrationOnFirstLoad();
       }
     }
     return _json!;
