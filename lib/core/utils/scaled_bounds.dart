@@ -42,6 +42,9 @@ final class ScaledBounds<T extends num> implements Model {
   /// [creationWidth] and [creationHeight] may be null and then the size will be taken from the [gameWindow].
   ///
   /// This throws a [ConfigException] if [creationWidth] or [creationHeight] are explicit 0!
+  ///
+  /// Important: this constructor may be used with dynamic positions searched and taken from the game (or already
+  /// scaled bounds)!
   ScaledBounds(
     this.unscaledBounds, {
     required int? creationWidth,
@@ -55,7 +58,9 @@ final class ScaledBounds<T extends num> implements Model {
     }
   }
 
-  /// Shortcut constructor
+  /// Shortcut constructor. Important: remember to only use this constructor with hardcoded values related to the
+  /// size (2560x1440) AND NOT FOR ANY POSITIONS ALREADY SEARCHED AND TAKEN FROM THE GAME (or any already scaled
+  /// bounds)!
   factory ScaledBounds.defaultBounds({
     required T x,
     required T y,
@@ -71,7 +76,9 @@ final class ScaledBounds<T extends num> implements Model {
     );
   }
 
-  /// Shortcut constructor
+  /// Shortcut constructor. Important: remember to only use this constructor with hardcoded values related to the
+  /// size (2560x1440) AND NOT FOR ANY POSITIONS ALREADY SEARCHED AND TAKEN FROM THE GAME (or any already scaled
+  /// bounds)!
   factory ScaledBounds.defaultFromUnscaled(Bounds<T> unscaled, {GameWindow? gameWindow}) {
     return ScaledBounds<T>(
       unscaled,

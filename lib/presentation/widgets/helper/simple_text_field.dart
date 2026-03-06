@@ -11,6 +11,8 @@ final class SimpleTextField<T> extends StatefulWidget {
   final String initialValue;
   final void Function(String) onChanged;
   final bool autofocus;
+  final String? customHint;
+  final List<TextInputFormatter>? customInputFormatters;
 
   const SimpleTextField({
     required this.width,
@@ -18,6 +20,8 @@ final class SimpleTextField<T> extends StatefulWidget {
     required this.initialValue,
     required this.onChanged,
     this.autofocus = false,
+    this.customHint,
+    this.customInputFormatters,
   });
 
   @override
@@ -44,15 +48,17 @@ final class _SimpleTextFieldState<T> extends State<SimpleTextField<T>> with GTBa
         controller: _controller,
         maxLines: 1,
         keyboardType: T == String ? null : TextInputType.number,
-        inputFormatters: T == String
-            ? null
-            : <TextInputFormatter>[
-                if (T == double) FilteringTextInputFormatter.allow(RegExp(r"(^-?\d*[.,]?\d*)")),
-                if (T == int) FilteringTextInputFormatter.allow(RegExp(r"(^-?\d*)")),
-              ],
+        inputFormatters:
+            widget.customInputFormatters ??
+            (T == String
+                ? null
+                : <TextInputFormatter>[
+                    if (T == double) FilteringTextInputFormatter.allow(RegExp(r"(^-?\d*[.,]?\d*)")),
+                    if (T == int) FilteringTextInputFormatter.allow(RegExp(r"(^-?\d*)")),
+                  ]),
         onChanged: widget.onChanged,
         decoration: InputDecoration(
-          hintText: TranslationString(hintKey).tl(context),
+          hintText: widget.customHint ?? TranslationString(hintKey).tl(context),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           isDense: true,
           filled: true,

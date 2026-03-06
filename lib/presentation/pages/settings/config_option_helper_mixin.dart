@@ -227,7 +227,8 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
   /// still include add and delete buttons).
   ///
   ///
-  /// Currently the [buildTopActions] can only be used when using not a default type.
+  /// Currently the [buildTopActions] can only be used when using not a default type to build something in addition
+  /// to the default [buildAddButton].
   Widget buildListOption<LT>({
     required TranslationString title,
     TranslationString? description,
@@ -245,6 +246,7 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
     double? maxHeight,
     // ignore: avoid_positional_boolean_parameters
     List<Widget>? Function(BuildContext context, bool isExpanded, VoidCallback rebuild)? buildTopActions,
+    bool buildAddButton = true,
   }) {
     if (buildCreateOrEditDialog == null) {
       if (buildElement != null) {
@@ -287,6 +289,7 @@ base mixin ConfigOptionHelperMixin<T> on ConfigOptionBuilder<T> {
       buildCreateOrEditDialog: buildCreateOrEditDialog,
       maxHeight: maxHeight,
       buildTopActions: buildTopActions,
+      buildAddButton: buildAddButton,
     );
   }
 

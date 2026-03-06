@@ -2,8 +2,8 @@ part of 'package:game_tools_lib/game_tools_lib.dart';
 
 /// This, or a subclass from this (with overridden [parseUnknownConfig]) can be used to load config values from the
 /// config file of the game itself if needed. [readConfig] is called automatically in [GameToolsLib.initGameToolsLib]
-/// and then afterwards you can access the config values with [value] or [hotkey]. Also periodically
-/// [reloadConfigIfChanged] is automatically called from [GameToolsLib.runLoop]!
+/// and then afterwards you can access the config values with [value] or [hotkey] (or [valueNullable]). Also
+/// periodically [reloadConfigIfChanged] is automatically called from [GameToolsLib.runLoop]!
 ///
 /// Of course sub classes can also define getter methods for config values with static identifier key strings!
 ///
@@ -118,7 +118,8 @@ base class GameConfigLoader {
   }
 
   /// Returns the config value for the [key] identifier of the config file. If it is not found, a [ConfigException]
-  /// is thrown! You might need to parse this to your expected data type! For hotkeys use [hotkey]!
+  /// is thrown! You might need to parse this to your expected data type! For hotkeys use [hotkey]! If you don't want
+  /// this, use [valueNullable] instead!
   ///
   /// Optionally you can also pass a [updateListener] which will be called if the value changes (on config reload).
   /// IMPORTANT: only use an unnamed lambda callback function if you use this during the constructor of a long lived
@@ -130,6 +131,16 @@ base class GameConfigLoader {
     if (value == null) {
       throw ConfigException(message: "Game config value for identifier $key not found in $filePath");
     }
+    if (updateListener != null) {
+      _updateListeners.add((key, updateListener));
+    }
+    return value;
+  }
+
+  /// Just a wrapper around [value] which returns null if the [key] was not found instead of throwing an exception!
+  /// This will always add the [updateListener] even if nothing was found!
+  String? valueNullable(String key, {void Function()? updateListener}) {
+    final String? value = _entries[key];
     if (updateListener != null) {
       _updateListeners.add((key, updateListener));
     }
@@ -152,7 +163,11 @@ base class GameConfigLoader {
   ///
   /// This uses both [parseHotkeyFromInt] and [parseHotkeyFromString] which may be overridden.
   BoardKey? hotkey(String key, {void Function()? updateListener}) {
-    final String value = this.value(key);
+    final String? value = valueNullable(key);
+    if (value == null) {
+      Logger.warn("Could not parse config hotkey from $key");
+      return null;
+    }
     final List<String> split = <String>[];
     if (value.length > 1) {
       _splitAtChar("+", split, value);

@@ -121,6 +121,26 @@ abstract final class Utils {
     return change.isLessOrEqualThan(pixelMultiplier * pixelValueThreshold);
   }
 
+  /// Similar to [colorEquals], but uses the [pixelValueThreshold] for the individual r g b parts of the pixel!
+  static bool colorEqualsParts(Color? color1, Color? color2, {bool skipAlpha = true, int pixelValueThreshold = 1}) {
+    if (color1 == color2) {
+      return true; // same reference (or both null)
+    }
+    if (color1 == null || color2 == null) {
+      return false;
+    }
+    const double pixelMultiplier = 1.0 / 255.0;
+    if (color1.r.diff(color2.r).isMoreThan(pixelMultiplier * pixelValueThreshold) ||
+        color1.g.diff(color2.g).isMoreThan(pixelMultiplier * pixelValueThreshold) ||
+        color1.b.diff(color2.b).isMoreThan(pixelMultiplier * pixelValueThreshold)) {
+      return false;
+    }
+    if (!skipAlpha && color1.a.diff(color2.a).isMoreThan(pixelMultiplier * pixelValueThreshold)) {
+      return false;
+    }
+    return true;
+  }
+
   /// Returns if [S] is a subtype of [T] (has to be used in generic methods, because the "is" operator does not work on
   /// template types! Use it with your generic type as [S] and then test against different parent types with [T].
   static bool isSubtype<S, T>() => <S>[] is List<T>;
@@ -140,9 +160,13 @@ abstract final class Utils {
 extension ColorExtension on Color {
   /// Returns if this is equal to [other] by using [Utils.colorEquals].
   /// The default for [skipAlpha] is true, so that alpha will not be compared.
-  /// Per default this still returns true if the pixel has a difference of 1 (see [pixelValueThreshold])
+  /// Per default this still returns true if the pixel has a combined difference of 1 (see [pixelValueThreshold])
   bool equals(Color? other, {bool skipAlpha = true, int pixelValueThreshold = 1}) =>
       Utils.colorEquals(this, other, skipAlpha: skipAlpha, pixelValueThreshold: pixelValueThreshold);
+
+  /// Similar to [equals], but uses the [pixelValueThreshold] for the individual r g b parts of the pixel!
+  bool equalsParts(Color? other, {bool skipAlpha = true, int pixelValueThreshold = 1}) =>
+      Utils.colorEqualsParts(this, other, skipAlpha: skipAlpha, pixelValueThreshold: pixelValueThreshold);
 
   /// String representation of this color with rgba values!
   String get rgb => "Color(r=$redI, g=$greenI, b=$blueI, a=$alphaI)";
