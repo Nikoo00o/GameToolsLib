@@ -4,29 +4,29 @@ publish_to: 'none'
 version: 1.0.0
 
 environment:
-  sdk: '>=3.10.0 <4.0.0'
-  flutter: ^3.38.8
+  sdk: '>=3.12.2 <4.0.0'
+  flutter: ^3.44.2
 
 dependencies:
   flutter:
     sdk: flutter
   intl: any # dates
-  cupertino_icons: ^1.0.8 # default icons
-  ffi: 2.1.5 # native c/c++ code
+  cupertino_icons: ^1.0.9 # default icons
+  ffi: 2.2.0 # native c/c++ code
   plugin_platform_interface: ^2.1.4 # plugin platform interface (not needed currently, maybe later for overlay)
   collection: ^1.19.1
   equatable: 2.0.8 # for entities
   path: ^1.9.1 # files
-  path_provider: ^2.1.5
+  path_provider: ^2.1.6
   provider: ^6.1.5 # provider/consumer
-  synchronized: 3.4.0 # logging
-  package_info_plus: 9.0.0 # get version for auto update
+  synchronized: 3.4.1 # logging
+  package_info_plus: 10.1.0 # get version for auto update
   url_launcher: 6.3.2 # open download link
   hive: 2.2.3 # database
   http: ^1.6.0 # web manager
-  opencv_dart: 2.1.0 # image processing (IMPORTANT: when updating, rebuild libs in "build/test" folder!)
+  opencv_dart: 2.2.1+4 # image processing (IMPORTANT: when updating, rebuild libs in "build/test" folder!)
   flutter_colorpicker: 1.1.0 # color pick dialog
-  archive: 4.0.7 # extract zip after download
+  archive: 4.0.9 # extract zip after download
   window_manager: 0.5.1 # for switching overlay modes (make flutter app maximized with transparent background)
 
   flutter_localizations:
