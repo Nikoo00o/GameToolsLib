@@ -396,7 +396,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
     final GameToolsConfigBaseType baseAccess = GameToolsLib.baseConfig; // using base type
     final ExampleModel? newValue = await mutableConfig.somethingNew.valueNotNull();
     final bool error =
-        !fixedConfig.logIntoStorage && (newValue?.someData ?? 1) >= 0 && !baseAccess.fixed.logIntoStorage;
+        !(!fixedConfig.logIntoStorage && (newValue?.someData ?? 1) >= 0 && !baseAccess.fixed.logIntoStorage);
     return error ? InitResult.DATABASE_ERROR : InitResult.SUCCESS;
   }
 

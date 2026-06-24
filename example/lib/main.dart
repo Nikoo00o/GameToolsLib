@@ -154,7 +154,7 @@ Future<void> main() async {
     windowName: "Snipping Tool",
   );
   if (init.hasError) {
-    Logger.error("Could not init lib");
+    Logger.error("Could not init lib: $init");
     return; // todo: show some error ui?
   }
   GameToolsLib.gameManager().addInputListener(
