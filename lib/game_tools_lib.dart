@@ -276,7 +276,7 @@ final class GameToolsLib extends _GameToolsLibHelper with _GameToolsLibEventLoop
       if (initResult.hasError) {
         runApp(ErrorApp(errorCode: initResult, exception: null));
       } else {
-        runApp(app);
+        runZonedGuarded(() => runApp(app), _GameToolsLibHelper._handleError); // needed to catch some web errors
       }
       overlayInit = await OverlayManager._instance?.init() ?? false;
       if (overlayInit && initResult == InitResult.LOG_NOT_FOUND) {

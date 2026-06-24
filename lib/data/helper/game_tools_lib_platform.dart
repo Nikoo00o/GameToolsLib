@@ -21,15 +21,33 @@ sealed class _GameToolsLibHelper extends GameToolsLibPlatform {
     }
     GameToolsConfig._instance = config;
     FlutterError.onError = (FlutterErrorDetails details) {
-      Logger.error("Uncaught exception", details.exception, details.stack);
+      FlutterError.presentError(details);
+      _handleError(details.exception, details.stack ?? StackTrace.current);
     };
     PlatformDispatcher.instance.onError = (Object error, StackTrace trace) {
-      Logger.error("Uncaught exception", error, trace);
-      return true; // also handles the zone errors
+      try {
+        _handleError(error, trace);
+        return true; // also handles zone errors
+      } catch (_) {
+        return false;
+      }
     };
     if (config.fixed.logIntoUI == false && config.fixed.logIntoStorage == false) {
       Logger.warn("Logging to neither storage nor UI");
     }
+  }
+
+  static Object? _lastError;
+  static StackTrace? _lastTrace;
+
+  /// Called for top level uncaught exceptions
+  static void _handleError(Object error, StackTrace trace) {
+    if (error == _lastError && trace == _lastTrace) {
+      return; // on desktop errors may trigger twice
+    }
+    _lastError = error;
+    _lastTrace = trace;
+    Logger.error("Uncaught exception", error, trace);
   }
 
   /// This is called from [GameToolsLib.initGameToolsLib] after setting the important base classes to init local storage
