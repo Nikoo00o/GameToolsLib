@@ -34,7 +34,7 @@ final class ExampleMutableConfig extends MutableConfig {
 
   /// New option used above in [ExampleFixedConfig] to override the long periodic spam delay and set it to 0 per
   /// default (so all periodic spam logs are always logged)
-  IntConfigOption get mutableDelay => IntConfigOption(title: TS.raw("Mutable Delay"), defaultValue: 0);
+  final IntConfigOption mutableDelay = IntConfigOption(title: TS.raw("Mutable Delay"), defaultValue: 0);
 
   @override
   @protected

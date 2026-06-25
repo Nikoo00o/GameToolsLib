@@ -53,6 +53,9 @@ final class SimpleDropDownMenu<T extends Object?> extends StatelessWidget with G
     this.horizontalPadding = 16,
   });
 
+  /// Used for internal management of null values
+  static const Object _defaultObject = Object();
+
   @override
   Widget build(BuildContext context) {
     return DropdownMenu<Object>(
@@ -68,7 +71,7 @@ final class SimpleDropDownMenu<T extends Object?> extends StatelessWidget with G
         offset: Offset(0, (height - defaultHeight) / 2 + 4),
         child: const Icon(Icons.arrow_drop_down),
       ),
-      initialSelection: initialValue,
+      initialSelection: initialValue as Object? ?? _defaultObject,
       requestFocusOnTap: true,
       label: label == null ? null : Text(label!.tl(context)),
       onSelected: (Object? newValue) {
@@ -83,7 +86,7 @@ final class SimpleDropDownMenu<T extends Object?> extends StatelessWidget with G
         (int index) {
           final T value = values.elementAt(index);
           return DropdownMenuEntry<Object>(
-            value: value as Object? ?? Object(), // null stores default object
+            value: value as Object? ?? _defaultObject, // null stores default object
             label: translationKeys != null ? translationKeys!.call(value).tl(context) : (value?.toString() ?? ""),
             style: colourTexts != null ? MenuItemButton.styleFrom(foregroundColor: colourTexts!.call(value)) : null,
           );

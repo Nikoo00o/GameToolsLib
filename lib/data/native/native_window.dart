@@ -19,7 +19,7 @@ import 'package:opencv_dart/opencv.dart' as cv;
 
 /// Simple integer to detect dll library mismatches. Has to be incremented when native code is modified!
 /// Also Modify the version in native_window.h
-const int _nativeCodeVersion = 9;
+const int _nativeCodeVersion = 10;
 
 /// First local conversions of classes/structs from c code that are used in the functions below
 final class _Rect extends Struct {
