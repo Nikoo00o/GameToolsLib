@@ -14,9 +14,15 @@ import 'package:opencv_dart/opencv.dart' as cv;
 import 'test_widgets.dart';
 
 /// This just calls [TestHelper.testDefault] and should be used with [TestHelper.runDefaultTests]!
-void testD(String name, Future<void> Function() callback) => TestHelper.testDefault(name, callback);
+/// Per default [initDefaultGameToolsLib] is false.
+void testD(
+  String name,
+  Future<void> Function() callback, {
+  bool initDefaultGameToolsLib = false,
+}) => TestHelper.testDefault(name, callback, initGameToolsLib: initDefaultGameToolsLib);
 
-/// This just calls [TestHelper.testOrdered] and should be used with [TestHelper.runOrderedTests]
+/// This just calls [TestHelper.testOrdered] and should be used with [TestHelper.runOrderedTests]!
+/// Per default [initDefaultGameToolsLib] is true.
 void testO(
   String name,
   InnerTestCallback callback, {
@@ -74,13 +80,25 @@ abstract final class TestHelper {
   }
 
   /// Test multiple tests at the same time, but additionally also awaits the logger (used with [runDefaultTests])
-  static void testDefault(String name, InnerTestCallback callback) {
+  static void testDefault(String name, InnerTestCallback callback, {required bool initGameToolsLib}) {
     test(name, () async {
       try {
+        if (initGameToolsLib) {
+          final InitResult status = await initDefaultGameToolsLib();
+          if (status.hasError) {
+            throw TestFailure("init game tools lib returned $status");
+          }
+        }
         await callback.call();
+        if (initGameToolsLib) {
+          await GameToolsLib.close();
+        }
         await Logger.waitForLoggingToBeDone();
       } catch (e, s) {
         Logger.error("Failed $name", e, s);
+        if (initGameToolsLib) {
+          await GameToolsLib.close();
+        }
         await Logger.waitForLoggingToBeDone();
         rethrow;
       }
@@ -166,7 +184,10 @@ abstract final class TestHelper {
 
   /// Initializes [GameToolsLib] with a default [ExampleGameToolsConfig] for testing, creating a game window for the
   /// [searchName], but can also add the [moreWindows]. For less params, use [initDefaultGameToolsLib]
-  static Future<InitResult> initGameToolsLib(String searchName, [List<GameWindow> moreWindows = const <GameWindow>[]]) async {
+  static Future<InitResult> initGameToolsLib(
+    String searchName, [
+    List<GameWindow> moreWindows = const <GameWindow>[],
+  ]) async {
     final InitResult result = await GameToolsLib.initGameToolsLib(
       config: ExampleGameToolsConfig(),
       gameManager: ExampleGameManager(inputListeners: null),

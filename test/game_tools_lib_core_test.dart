@@ -34,7 +34,11 @@ void _testInit() {
     expect(GameToolsLib.baseConfig.fixed.logIntoStorage, false, reason: "log into storage is false");
     expect(await GameToolsLib.baseConfig.mutable.logLevel.getValue(), LogLevel.SPAM, reason: "log level is spam");
     expect(GameToolsLib.database.basePath, HiveDatabaseMock.FLUTTER_TEST_PATH, reason: "database path is testing");
-    expect(GameToolsLib.baseConfig.mutable.useDarkTheme.title.identifier, "config.useDarkTheme", reason: "no key change");
+    expect(
+      GameToolsLib.baseConfig.mutable.useDarkTheme.title.identifier,
+      "config.useDarkTheme",
+      reason: "no key change",
+    );
     expect(await GameToolsLib.baseConfig.mutable.useDarkTheme.getValue(), false, reason: "dark theme change");
     expect(GameToolsLib.baseConfig.fixed.logPeriodicSpamDelayMS, 0, reason: "periodic spam delay always");
   }, initDefaultGameToolsLib: false);
@@ -52,10 +56,13 @@ void _testInit() {
     expect(await GameToolsLib.baseConfig.mutable.useDarkTheme.getValue(), true, reason: "default dark theme");
     expect(GameToolsLib.baseConfig.fixed.logPeriodicSpamDelayMS, 150, reason: "periodic spam delay is max long delay");
   }, initDefaultGameToolsLib: false);
-  testO("simulating database error in init should return false", () async {
+  testO("simulating database error in init should return database error", () async {
     HiveDatabaseMock.throwExceptionInInit = true;
-    expect(await initDefaultGameToolsLib(), false);
-    HiveDatabaseMock.throwExceptionInInit = false;
+    try {
+      expect(await initDefaultGameToolsLib(), InitResult.DATABASE_ERROR);
+    } finally {
+      HiveDatabaseMock.throwExceptionInInit = false;
+    }
   }, initDefaultGameToolsLib: false);
   testO("user initializing game tools lib twice should just return true", () async {
     final InitResult success = await initDefaultGameToolsLib();

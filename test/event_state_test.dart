@@ -151,8 +151,8 @@ void _testGameLogWatcher() {
       gameLogFilePaths: <String>["INVALID_FILE"],
       listeners: <LogInputListener>[],
     );
-    expect(await lw.manualInit(), false, reason: "init fail without path");
-  });
+    expect(await lw.manualInit(), InitResult.LOG_NOT_FOUND, reason: "init fail without path");
+  }, initDefaultGameToolsLib: true);
 
   testD("With too much delay, old logs should not be added", () async {
     final String logFile = testFile("write_test_2.txt");
@@ -163,12 +163,12 @@ void _testGameLogWatcher() {
     await FileUtils.deleteFile(logFile);
     await FileUtils.writeFile(logFile, initialContent);
     await Utils.delayMS(2100); // file timestamp only counts seconds
-    expect(await lw.manualInit(), true, reason: "init success");
+    expect(await lw.manualInit(), InitResult.SUCCESS, reason: "init success");
     expect(lw.additionalListenerData.isEmpty, true, reason: "old logs should have taken too long");
     await lw.manualUpdate();
     expect(lw.additionalListenerData.isEmpty, true, reason: "also new logs should be produced");
     await FileUtils.deleteFile(logFile);
-  });
+  }, initDefaultGameToolsLib: true);
 
   testD("Small delay should add old logs and now also test new logs", () async {
     final String logFile = testFile("write_test_1.txt");
@@ -213,7 +213,7 @@ void _testGameLogWatcher() {
     await FileUtils.deleteFile(logFile);
     await FileUtils.writeFile(logFile, initialContent);
     await Utils.delayMS(999); // because milliseconds are not counted, a full second is still fine
-    expect(await lw.manualInit(), true, reason: "init success");
+    expect(await lw.manualInit(), InitResult.SUCCESS, reason: "init success");
     expect(l5, true, reason: "old lines parse last only");
     expect(l4 || l6, false, reason: "old don't parse others"); // old lines should be parsed here
     expect(lw.additionalListenerData, "Some Area", reason: "old also parse correct data");
@@ -241,5 +241,5 @@ void _testGameLogWatcher() {
     expect(l5, true, reason: "parse first");
     expect(l6, false, reason: "but not second");
     await FileUtils.deleteFile(logFile);
-  });
+  }, initDefaultGameToolsLib: true);
 }
