@@ -47,6 +47,14 @@
 
 - On windows copy microsoft dll files into exe dir: msvcp140.dll, vcruntime140.dll, vcruntime140_1.dll
 
+### Updating Flutter 
+
+- when updating ffi related packages or core framework, clean and pub get lib and then projects again 
+  - and recreate the "game_tools_lib/build/test" folder 
+- maybe importing projects need to delete their `windows/flutter/ephermeral` and `flutter-plugin-dependencies`  folder 
+  and flutter clean get and then build + run again
+- otherwise next trial and error steps would be `flutter pub cache clean` and deleting all .dart_tool folders
+
 ### Running Tests
 
 - Running `flutter test` inside of the root library directory needs to have the native code dll put into 
@@ -67,8 +75,8 @@
 
 - The native tests that need to interact with a window are moved into `example/integration_test` to be able to work 
   and they also open a test window app
-- start those with own command prompt "cd example && flutter text integration_test/native_tests.dart" and don't move 
-  mouse / keyboard during tests and keep command prompt in focus for them to work normally!
+- start those with ***OWN COMMAND PROMPT*** `cd example && flutter test integration_test/native_tests.dart` and don't 
+  move mouse / keyboard during tests and keep command prompt in focus for them to work normally!
 
 ### OpenCV build
 
@@ -87,9 +95,9 @@
 
 #### Changing Native Code 
 
-- after changes to the native code, the `# define _NATIVE_CODE_VERSION 7` in "native_window.h" should be incremented 
-  in the c++ code, but also the `const int _nativeCodeVersion = 7;` in "native_window.dart" in the dart code 
-- and then for tests of course the dll has to be build and updated again
+- after changes to the native code, the `# define _NATIVE_CODE_VERSION 10` in "native_window.h" should be incremented 
+  in the c++ code, but also the `const int _nativeCodeVersion = 10;` in "native_window.dart" in the dart code 
+- and then for tests of course the dll has to be build and updated again (SEE ABOVE in Running Tests)
 
 #### If the native code would be used directly inside of an app and not the plugin
 
