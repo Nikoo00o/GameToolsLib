@@ -318,10 +318,13 @@ final class NativeImage extends BaseNativeImage {
   ///
   /// Also very important: of course if using an asset image it also has to be scaled to the correct size as how it
   /// would look for the current window!!!
+  ///
+  /// Optionally [debugInfo] can be set to extract the similarity value from 0 to 1!
   Future<Bounds<int>?> findPositionOfSubImage(
     NativeImage subImage, {
     int matchMethod = cv.TM_CCOEFF_NORMED,
     double threshold = 0.63,
+    SubImagePositionDebugInfo? debugInfo,
   }) async {
     if (_data == null || subImage._data == null || subImage.width >= width || subImage.height >= height) {
       return null;
@@ -373,6 +376,9 @@ final class NativeImage extends BaseNativeImage {
       return null;
     }
     Logger.spam("Found sub image ", subImage, " in ", this, " with similarity: ", similarity);
+    if (debugInfo != null) {
+      debugInfo.similarity = similarity;
+    }
     final Bounds<int> bounds = Bounds<int>(
       x: matchLoc.x.toInt(),
       y: matchLoc.y.toInt(),
@@ -428,4 +434,10 @@ final class NativeImage extends BaseNativeImage {
   /// This will not be as high as the [BaseNativeImage._imgCounter], because it does not track garbage collection of
   /// native images allocated in dart code.
   static int get cleanupCounter => BaseNativeImage._imgCleanupCounter;
+}
+
+/// Optionally can be used in [NativeImage.findPositionOfSubImage]
+final class SubImagePositionDebugInfo {
+  /// Will be set from the method from 0 to 1
+  double similarity = 0;
 }

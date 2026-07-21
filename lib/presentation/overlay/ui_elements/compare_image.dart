@@ -302,10 +302,13 @@ base class CompareImage extends OverlayElement {
   /// example the middle pos).
   ///
   /// For many different small compares use [findPosInImage] instead with a captured image of the window!
+  ///
+  /// Optionally [debugInfo] can be set to extract the similarity value from 0 to 1!
   Future<Bounds<int>?> findPos(
     Bounds<int>? targetBounds, {
     int matchMethod = 5,
     double threshold = 0.72,
+    SubImagePositionDebugInfo? debugInfo,
   }) async {
     if (!attachedWindow.isOpen) {
       return null;
@@ -316,6 +319,7 @@ base class CompareImage extends OverlayElement {
       myImage,
       threshold: threshold,
       matchMethod: matchMethod,
+      debugInfo: debugInfo,
     );
     windowImage.cleanupMemory();
     return bounds;
@@ -326,10 +330,13 @@ base class CompareImage extends OverlayElement {
   ///
   /// Important: of course you have to check obscuring by the overlay yourself here because [windowImageToCompareAgainst]
   /// is not used!
+  ///
+  /// Optionally [debugInfo] can be set to extract the similarity value from 0 to 1!
   Future<Bounds<int>?> findPosInImage(
     NativeImage windowImage, {
     int matchMethod = 5,
     double threshold = 0.72,
+    SubImagePositionDebugInfo? debugInfo,
   }) async {
     if (!attachedWindow.isOpen) {
       return null;
@@ -339,6 +346,7 @@ base class CompareImage extends OverlayElement {
       myImage,
       threshold: threshold,
       matchMethod: matchMethod,
+      debugInfo: debugInfo,
     );
     return bounds;
   }

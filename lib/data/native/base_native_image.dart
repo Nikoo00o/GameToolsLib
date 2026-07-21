@@ -111,7 +111,7 @@ sealed class BaseNativeImage {
     _data = newData;
   }
 
-  /// Returns true if the [_data] was successfully stored in [path]
+  /// Returns true if the [_data] was successfully stored in the absolute [path]
   bool saveSync(String path) {
     if (_data != null) {
       Logger.verbose("Saving $this to path $path");
